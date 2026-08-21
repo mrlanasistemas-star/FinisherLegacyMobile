@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0A0A0C",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.finisherlegacy.app",
       "buildNumber": "1",
       "supportsTablet": true
@@ -52,7 +52,8 @@
         {
           "photosPermission": "Finisher Legacy necesita acceso a tus fotos para elegir la imagen de tu medalla o tu foto de perfil."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

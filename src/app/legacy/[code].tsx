@@ -6,8 +6,10 @@ import { Pressable, View } from 'react-native';
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
+import { PlateCard } from '@/components/brand/plate-card';
 import { Card } from '@/components/card';
 import { ErrorState } from '@/components/error-state';
+import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { useClaimLegacyCode, useLegacyCodeLookup } from '@/hooks/use-legacy-code';
@@ -43,77 +45,80 @@ export default function LegacyCodeLookupScreen() {
 
       {isPending ? (
         <View style={{ gap: spacing.md }}>
-          <Skeleton height={28} width="60%" />
-          <Skeleton height={160} radius={16} />
+          <Skeleton height={140} radius={22} />
+          <Skeleton height={100} radius={16} />
         </View>
       ) : isError || !data ? (
         <ErrorState message="No encontramos este Legacy Code." onRetry={refetch} />
       ) : (
-        <View style={{ gap: spacing.lg }}>
-          <View>
-            <AppText variant="label" tone="muted">
-              LEGACY CODE
-            </AppText>
-            <AppText variant="display">{data.code}</AppText>
-          </View>
-
+        <Reveal style={{ gap: spacing.lg }}>
           {!data.available ? (
-            <Card>
-              <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
-                <ShieldAlert color={colors.destructive} size={22} />
+            <PlateCard code={data.code}>
+              <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', marginTop: spacing.xs }}>
+                <ShieldAlert color={colors.destructive} size={20} />
                 <AppText variant="body" style={{ flex: 1 }}>
                   Este Legacy Code ya no está disponible.
                 </AppText>
               </View>
-            </Card>
+            </PlateCard>
           ) : data.owned_by_me ? (
-            <Card>
-              <AppText variant="bodyStrong">Esta placa ya es parte de tu Legacy.</AppText>
-              <AppButton
-                label="Ir a mi Legacy Vault"
-                variant="secondary"
-                onPress={() => router.replace('/medals')}
-                style={{ marginTop: spacing.md }}
-              />
-            </Card>
+            <>
+              <PlateCard code={data.code} />
+              <Card>
+                <AppText variant="bodyStrong">Esta placa ya es parte de tu Legacy.</AppText>
+                <AppButton
+                  label="Ir a mi Legacy Vault"
+                  variant="secondary"
+                  onPress={() => router.replace('/medals')}
+                  style={{ marginTop: spacing.md }}
+                />
+              </Card>
+            </>
           ) : data.linked ? (
-            <Card>
-              <AppText variant="bodyStrong">Esta placa ya forma parte de otro Legacy.</AppText>
-              {data.athlete ? (
-                <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
-                  Reclamada por @{data.athlete.username}
-                </AppText>
-              ) : null}
-            </Card>
+            <>
+              <PlateCard code={data.code} />
+              <Card>
+                <AppText variant="bodyStrong">Esta placa ya forma parte de otro Legacy.</AppText>
+                {data.athlete ? (
+                  <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
+                    Reclamada por @{data.athlete.username}
+                  </AppText>
+                ) : null}
+              </Card>
+            </>
           ) : (
             <>
-              {data.plate ? (
-                <Card>
-                  {data.plate.event_name ? <AppText variant="subtitle">{data.plate.event_name}</AppText> : null}
-                  {data.plate.race_name ? (
-                    <AppText variant="body" tone="muted">
-                      {data.plate.race_name}
-                    </AppText>
-                  ) : null}
-                  {data.plate.event_date ? (
-                    <AppText variant="caption" tone="gold" style={{ marginTop: spacing.xs }}>
-                      {formatLongDate(data.plate.event_date)}
-                    </AppText>
-                  ) : null}
-                  <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm }}>
-                    {data.plate.official_time ? (
+              <PlateCard code={data.code}>
+                {data.plate?.event_name ? (
+                  <AppText variant="subtitle" style={{ marginTop: spacing.sm }}>
+                    {data.plate.event_name}
+                  </AppText>
+                ) : null}
+                {data.plate?.race_name ? (
+                  <AppText variant="body" tone="muted">
+                    {data.plate.race_name}
+                  </AppText>
+                ) : null}
+                {data.plate?.event_date ? (
+                  <AppText variant="caption" tone="gold">
+                    {formatLongDate(data.plate.event_date)}
+                  </AppText>
+                ) : null}
+                {(data.plate?.official_time || data.plate?.pace) && (
+                  <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs }}>
+                    {data.plate?.official_time ? (
                       <AppText variant="caption" tone="muted">
                         Tiempo: {data.plate.official_time}
                       </AppText>
                     ) : null}
-                    {data.plate.pace ? (
+                    {data.plate?.pace ? (
                       <AppText variant="caption" tone="muted">
                         Ritmo: {data.plate.pace}
                       </AppText>
                     ) : null}
                   </View>
-                </Card>
-              ) : null}
+                )}
+              </PlateCard>
 
               {claimError ? (
                 <AppText variant="caption" tone="destructive">
@@ -124,7 +129,7 @@ export default function LegacyCodeLookupScreen() {
               <AppButton label="Reclamar este Legacy Code" onPress={handleClaim} loading={claim.isPending} />
             </>
           )}
-        </View>
+        </Reveal>
       )}
     </Screen>
   );

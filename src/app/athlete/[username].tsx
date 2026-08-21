@@ -4,11 +4,14 @@ import { ChevronLeft, User } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { GoldGlow } from '@/components/brand/gold-glow';
+import { MetricNumber } from '@/components/brand/metric-number';
 import { ErrorState } from '@/components/error-state';
+import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { usePublicAthlete } from '@/hooks/use-public-athlete';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function PublicAthleteScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -30,8 +33,9 @@ export default function PublicAthleteScreen() {
       ) : isError || !data ? (
         <ErrorState message="No pudimos cargar este perfil." onRetry={refetch} />
       ) : (
-        <View style={{ gap: spacing.lg }}>
-          <View style={{ alignItems: 'center', gap: spacing.xs }}>
+        <Reveal style={{ gap: spacing.lg }}>
+          <View style={{ alignItems: 'center', gap: spacing.xs, position: 'relative' }}>
+            <GoldGlow size={200} style={{ position: 'absolute', top: -20 }} />
             <View
               style={{
                 width: 88,
@@ -66,9 +70,9 @@ export default function PublicAthleteScreen() {
             )}
           </View>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xl }}>
-            <Stat label="Medallas" value={data.stats.medals} />
-            <Stat label="Eventos" value={data.stats.events} />
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxl }}>
+            <MetricNumber value={data.stats.medals} label="Medallas" size={40} tone="gold" />
+            <MetricNumber value={data.stats.events} label="Eventos" size={40} />
           </View>
 
           {data.medals.length > 0 ? (
@@ -84,26 +88,15 @@ export default function PublicAthleteScreen() {
               Aún no hay medallas públicas.
             </AppText>
           )}
-        </View>
+        </Reveal>
       )}
     </Screen>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={{ alignItems: 'center' }}>
-      <AppText variant="title">{value}</AppText>
-      <AppText variant="caption" tone="muted">
-        {label}
-      </AppText>
-    </View>
-  );
-}
-
 function PublicMedalTile({ title, thumbnailUrl }: { title: string | null; thumbnailUrl: string | null }) {
   return (
-    <View style={{ aspectRatio: 1, backgroundColor: colors.graphite, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}>
+    <View style={{ aspectRatio: 1, backgroundColor: colors.graphite, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border }}>
       {thumbnailUrl ? (
         <Image source={{ uri: thumbnailUrl }} style={{ width: '80%', height: '80%' }} contentFit="contain" />
       ) : (

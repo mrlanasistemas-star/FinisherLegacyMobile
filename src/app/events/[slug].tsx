@@ -2,66 +2,69 @@ import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
+import { GlassSurface } from '@/components/brand/glass-surface';
+import { GradientOverlay } from '@/components/brand/gradient-overlay';
 import { Card } from '@/components/card';
 import { ErrorState } from '@/components/error-state';
+import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { useEvent } from '@/hooks/use-events';
 import { formatLongDate } from '@/utils/dates';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
 export default function EventDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: event, isPending, isError, refetch } = useEvent(slug);
+  const insets = useSafeAreaInsets();
 
   return (
-    <Screen scroll edges={['top', 'left', 'right']} padded={false}>
-      <View style={{ position: 'absolute', top: spacing.sm, left: spacing.lg, zIndex: 1 }}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Volver"
-          style={{
-            backgroundColor: 'rgba(10,10,12,0.6)',
-            borderRadius: radius.pill,
-            padding: spacing.xs,
-          }}>
-          <ChevronLeft color={colors.foreground} size={24} />
-        </Pressable>
+    <Screen scroll edges={['left', 'right']} padded={false}>
+      <View style={{ position: 'absolute', top: insets.top + spacing.xs, left: spacing.md, zIndex: 1 }}>
+        <GlassSurface style={{ width: 40, height: 40 }}>
+          <Pressable
+            onPress={() => router.back()}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+            accessibilityRole="button"
+            accessibilityLabel="Volver">
+            <ChevronLeft color={colors.foreground} size={22} />
+          </Pressable>
+        </GlassSurface>
       </View>
 
       {isPending ? (
-        <View style={{ padding: spacing.lg, gap: spacing.md }}>
+        <View style={{ padding: spacing.lg, gap: spacing.md, marginTop: insets.top + spacing.xl }}>
           <Skeleton height={200} radius={16} />
           <Skeleton height={24} width="60%" />
         </View>
       ) : isError || !event ? (
-        <View style={{ padding: spacing.lg }}>
+        <View style={{ padding: spacing.lg, marginTop: insets.top + spacing.xl }}>
           <ErrorState message="No pudimos cargar este evento." onRetry={refetch} />
         </View>
       ) : (
         <View>
-          <View style={{ aspectRatio: 16 / 9, backgroundColor: colors.graphite }}>
+          <View style={{ height: 300, backgroundColor: colors.graphite }}>
             {event.cover_url ? (
               <Image source={{ uri: event.cover_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
             ) : null}
+            <GradientOverlay variant="bottom" />
+            <View style={{ position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: spacing.lg }}>
+              <AppText variant="label" tone="gold" style={{ letterSpacing: 2 }}>
+                {event.sport?.toUpperCase()}
+              </AppText>
+              <AppText variant="display">{event.name}</AppText>
+            </View>
           </View>
 
-          <View style={{ padding: spacing.lg, gap: spacing.lg }}>
-            <View>
-              <AppText variant="caption" tone="gold">
-                {event.sport}
+          <Reveal style={{ padding: spacing.lg, gap: spacing.lg }}>
+            {event.organizer ? (
+              <AppText variant="caption" tone="muted">
+                Organiza {event.organizer}
               </AppText>
-              <AppText variant="title">{event.name}</AppText>
-              {event.organizer ? (
-                <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
-                  Organiza {event.organizer}
-                </AppText>
-              ) : null}
-            </View>
+            ) : null}
 
             {event.edition ? (
               <>
@@ -120,7 +123,7 @@ export default function EventDetailScreen() {
                 </AppText>
               </View>
             ) : null}
-          </View>
+          </Reveal>
         </View>
       )}
     </Screen>

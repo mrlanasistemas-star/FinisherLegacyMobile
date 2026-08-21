@@ -1,13 +1,21 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { ChevronRight, LogOut, Settings, User as UserIcon } from 'lucide-react-native';
-import { View } from 'react-native';
+import { useMemo } from 'react';
+import { ScrollView, View } from 'react-native';
 
+import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
+import { GoldGlow } from '@/components/brand/gold-glow';
+import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
+import { MedalHeroTile } from '@/components/brand/medal-hero-tile';
+import { MetricNumber } from '@/components/brand/metric-number';
 import { Card } from '@/components/card';
+import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { useLogout } from '@/hooks/use-logout';
+import { useMedals } from '@/hooks/use-medals';
 import { useProfile } from '@/hooks/use-profile';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, spacing } from '@/theme/tokens';
@@ -16,15 +24,21 @@ export default function ProfileScreen() {
   const user = useAuthStore((state) => state.user);
   const { data: profile, isPending } = useProfile();
   const { logout, loading } = useLogout();
+  const medals = useMedals();
+
+  const collection = useMemo(() => medals.data?.pages[0]?.data.slice(0, 6) ?? [], [medals.data]);
+  const totalMedals = medals.data?.pages[0]?.meta.total ?? null;
 
   return (
-    <Screen scroll>
-      <View style={{ alignItems: 'center', marginTop: spacing.xl, gap: spacing.sm }}>
+    <Screen scroll padded={false}>
+      <View style={{ alignItems: 'center', marginTop: spacing.xl, gap: spacing.sm, position: 'relative' }}>
+        <GoldGlow size={220} style={{ position: 'absolute', top: -30 }} />
+
         <View
           style={{
-            width: 88,
-            height: 88,
-            borderRadius: 44,
+            width: 96,
+            height: 96,
+            borderRadius: 48,
             backgroundColor: colors.graphite,
             alignItems: 'center',
             justifyContent: 'center',
@@ -35,7 +49,7 @@ export default function ProfileScreen() {
           {profile?.profile_photo_url ? (
             <Image source={{ uri: profile.profile_photo_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
           ) : (
-            <UserIcon color={colors.muted} size={36} />
+            <UserIcon color={colors.muted} size={38} />
           )}
         </View>
 
@@ -53,14 +67,38 @@ export default function ProfileScreen() {
             Aún no configuras tu perfil público
           </AppText>
         )}
-        {user?.legacy_id ? (
-          <AppText variant="caption" tone="gold">
-            Legacy ID · {user.legacy_id}
-          </AppText>
-        ) : null}
+        {user?.legacy_id ? <LegacyIdTag legacyId={user.legacy_id} /> : null}
       </View>
 
-      <View style={{ marginTop: spacing.xl, gap: spacing.sm }}>
+      <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
+        {medals.isPending ? <Skeleton width={80} height={48} /> : <MetricNumber value={totalMedals ?? 0} size={48} tone="gold" />}
+        <AppText variant="caption" tone="muted" style={{ marginTop: 2, letterSpacing: 1.5 }}>
+          MEDALLAS
+        </AppText>
+      </View>
+
+      {collection.length > 0 ? (
+        <Reveal style={{ marginTop: spacing.xl }}>
+          <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
+            <AppText variant="label" tone="muted" style={{ letterSpacing: 2 }}>
+              MI HISTORIA
+            </AppText>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
+            {collection.map((medal) => (
+              <MedalHeroTile key={medal.id} medal={medal} onPress={() => router.push(`/medals/${medal.id}`)} width={128} />
+            ))}
+          </ScrollView>
+          <AppButton
+            label="Ver Legacy Vault →"
+            variant="ghost"
+            onPress={() => router.push('/medals')}
+            style={{ marginTop: spacing.sm }}
+          />
+        </Reveal>
+      ) : null}
+
+      <View style={{ marginTop: spacing.xl, paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.xl }}>
         <MenuRow icon={UserIcon} label="Editar perfil" onPress={() => router.push('/settings/account')} />
         <MenuRow icon={Settings} label="Configuración" onPress={() => router.push('/settings')} />
         <MenuRow icon={LogOut} label="Cerrar sesión" tone="destructive" onPress={logout} loading={loading} />

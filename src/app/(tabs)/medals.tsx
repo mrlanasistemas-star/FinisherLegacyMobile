@@ -1,10 +1,12 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Medal as MedalIcon, Plus } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
+import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
-import { EmptyState } from '@/components/empty-state';
+import { GoldGlow } from '@/components/brand/gold-glow';
 import { ErrorState } from '@/components/error-state';
 import { MedalCard } from '@/components/medal-card';
 import { Screen } from '@/components/screen';
@@ -18,71 +20,100 @@ export default function MedalsScreen() {
     useMedals();
 
   const medals = useMemo<Medal[]>(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
+  const total = data?.pages[0]?.meta.total ?? medals.length;
+  const [featured, ...rest] = medals;
 
-  return (
-    <Screen edges={['top', 'left', 'right']} padded={false}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          paddingHorizontal: spacing.lg,
-          paddingTop: spacing.lg,
-          paddingBottom: spacing.sm,
-        }}>
-        <View>
-          <AppText variant="title">Legacy Vault</AppText>
-          <AppText variant="body" tone="muted">
-            Tu colección de medallas
-          </AppText>
+  const header = (
+    <View>
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <View>
+            <AppText variant="hero" style={{ fontSize: 40, lineHeight: 40 }}>
+              LEGACY
+            </AppText>
+            <AppText variant="hero" style={{ fontSize: 40, lineHeight: 40 }}>
+              VAULT
+            </AppText>
+            <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xs, letterSpacing: 1 }}>
+              {total === 1 ? '1 HISTORIA PRESERVADA' : `${total} HISTORIAS PRESERVADAS`}
+            </AppText>
+          </View>
+          <Pressable
+            onPress={() => router.push('/medals/create')}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Agregar medalla"
+            style={{
+              backgroundColor: colors.gold,
+              borderRadius: radius.pill,
+              width: 40,
+              height: 40,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Plus color={colors.black} size={20} />
+          </Pressable>
         </View>
-        <Pressable
-          onPress={() => router.push('/medals/create')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Agregar medalla"
-          style={{
-            backgroundColor: colors.gold,
-            borderRadius: radius.pill,
-            width: 36,
-            height: 36,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          <Plus color={colors.black} size={20} />
-        </Pressable>
       </View>
 
+      {featured ? (
+        <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
+          <MedalCard medal={featured} onPress={() => router.push(`/medals/${featured.id}`)} aspectRatio={16 / 10} />
+        </View>
+      ) : null}
+    </View>
+  );
+
+  return (
+    <Screen edges={['top', 'left', 'right']} padded={false} style={{ position: 'relative' }}>
+      <GoldGlow size={260} style={{ position: 'absolute', top: -60, right: -60 }} />
+
       {isPending ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingHorizontal: spacing.lg }}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} width="47%" height={180} radius={16} />
-          ))}
+        <View>
+          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
+            <Skeleton width={160} height={40} />
+            <Skeleton width={120} height={40} style={{ marginTop: 4 }} />
+          </View>
+          <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg }}>
+            <Skeleton height={200} radius={16} />
+          </View>
         </View>
       ) : isError ? (
         <ErrorState message="No pudimos cargar tus medallas." onRetry={refetch} />
       ) : medals.length === 0 ? (
-        <EmptyState
-          icon={MedalIcon}
-          title="Tu Legacy empieza aquí."
-          message="Agrega tu primera medalla o escanea un Legacy Code."
-          actionLabel="Escanear Legacy Code"
-          onAction={() => router.push('/legacy/scan')}
-        />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.sm }}>
+          <Image
+            source={require('@/assets/images/brand/mascot-hero.png')}
+            style={{ width: 140, height: 140 }}
+            contentFit="contain"
+          />
+          <AppText variant="title" align="center" style={{ marginTop: spacing.sm }}>
+            Tu Legacy empieza aquí.
+          </AppText>
+          <AppText variant="body" tone="muted" align="center">
+            Cada carrera merece un lugar en tu historia.
+          </AppText>
+          <AppButton
+            label="Escanear Legacy Code"
+            onPress={() => router.push('/legacy/scan')}
+            fullWidth={false}
+            style={{ paddingHorizontal: spacing.xl, marginTop: spacing.md }}
+          />
+          <AppButton label="Agregar manualmente" variant="ghost" onPress={() => router.push('/medals/create')} />
+        </View>
       ) : (
         <FlatList
-          data={medals}
+          data={rest}
           keyExtractor={(item) => item.id}
           numColumns={2}
+          ListHeaderComponent={header}
           columnWrapperStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}
           contentContainerStyle={{ gap: spacing.sm, paddingBottom: spacing.xl }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReachedThreshold={0.4}
           onEndReached={() => hasNextPage && fetchNextPage()}
           ListFooterComponent={isFetchingNextPage ? <Skeleton height={40} style={{ marginTop: spacing.sm }} /> : null}
-          renderItem={({ item }) => (
-            <MedalCard medal={item} onPress={() => router.push(`/medals/${item.id}`)} />
-          )}
+          renderItem={({ item }) => <MedalCard medal={item} onPress={() => router.push(`/medals/${item.id}`)} />}
         />
       )}
     </Screen>

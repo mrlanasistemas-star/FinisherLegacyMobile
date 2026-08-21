@@ -9,11 +9,12 @@ import { AppError } from '@/api/errors';
 import { tokenStorage } from '@/api/secureStore';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
+import { GoldGlow } from '@/components/brand/gold-glow';
 import { FormInput } from '@/components/form-input';
 import { Screen } from '@/components/screen';
 import { loginSchema, type LoginFormValues } from '@/schemas/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function LoginScreen() {
   const [formError, setFormError] = useState<string | null>(null);
@@ -58,15 +59,33 @@ export default function LoginScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Screen scroll>
-        <View style={{ marginTop: spacing.xl, marginBottom: spacing.xl }}>
+      <Screen scroll padded={false}>
+        <View
+          style={{
+            height: 148,
+            marginBottom: spacing.lg,
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+          }}>
+          <GoldGlow size={220} style={{ position: 'absolute' }} />
+          <View style={{ width: 64, height: 64, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.goldDim, alignItems: 'center', justifyContent: 'center' }}>
+            <AppText variant="title" tone="gold">
+              FL
+            </AppText>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.xl }}>
           <AppText variant="title">Inicia sesión</AppText>
           <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs }}>
             Continúa construyendo tu Legacy.
           </AppText>
         </View>
 
-        <View style={{ gap: spacing.md }}>
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
           {formError ? (
             <AppText variant="caption" tone="destructive">
               {formError}

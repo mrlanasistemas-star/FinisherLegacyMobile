@@ -49,6 +49,30 @@ export const fontSize = {
   xl: 22,
   xxl: 28,
   display: 34,
+  /** Editorial hero headline — scales down on compact widths via useResponsive(). */
+  hero: 52,
+  /** Big decorative/real numerals (Legacy stats, medal metrics). */
+  metric: 72,
+} as const;
+
+/** Wide letter-spacing for small uppercase labels (eyebrows, tags, "LEGACY ID"). */
+export const tracking = {
+  tight: -0.5,
+  normal: 0,
+  wide: 1,
+  wider: 2.5,
+} as const;
+
+export const surface = {
+  /** Level 1 — base app background. */
+  canvas: colors.black,
+  /** Level 2 — elevated content (cards, sheets, inputs). */
+  elevated: colors.graphite,
+  elevatedLight: colors.graphiteLight,
+  /** Level 3 — hero/media scrims, always paired with a gradient overlay. */
+  scrim: 'rgba(10,10,12,0.55)',
+  scrimStrong: 'rgba(10,10,12,0.82)',
+  glassTint: 'rgba(25,25,28,0.55)',
 } as const;
 
 export const shadows = {

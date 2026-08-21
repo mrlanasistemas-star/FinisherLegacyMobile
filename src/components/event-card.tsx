@@ -2,41 +2,81 @@ import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { AppText } from './app-text';
-import { Card } from './card';
+import { GradientOverlay } from './brand/gradient-overlay';
+import { PressScale } from './motion/press-scale';
 
-import { formatShortDate } from '@/utils/dates';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
+
+const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 interface EventCardProps {
   edition: EventEditionCard;
   onPress: () => void;
+  featured?: boolean;
 }
 
-export function EventCard({ edition, onPress }: EventCardProps) {
+function DateBadge({ isoDate }: { isoDate: string }) {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        top: spacing.sm,
+        left: spacing.sm,
+        backgroundColor: colors.black,
+        borderRadius: radius.md,
+        width: 52,
+        alignItems: 'center',
+        paddingVertical: spacing.xxs,
+      }}>
+      <AppText variant="title" style={{ fontSize: 20, lineHeight: 22 }}>
+        {String(day).padStart(2, '0')}
+      </AppText>
+      <AppText variant="label" tone="gold">
+        {MONTHS[month - 1]}
+      </AppText>
+    </View>
+  );
+}
+
+export function EventCard({ edition, onPress, featured = false }: EventCardProps) {
   const location = [edition.city, edition.state, edition.country].filter(Boolean).join(', ');
 
   return (
-    <Card onPress={onPress} style={{ padding: 0, overflow: 'hidden' }}>
-      <View style={{ aspectRatio: 16 / 9, backgroundColor: colors.graphite }}>
-        {edition.event.cover_url ? (
-          <Image source={{ uri: edition.event.cover_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
-        ) : null}
-      </View>
-      <View style={{ padding: spacing.md, gap: spacing.xxs }}>
-        <AppText variant="caption" tone="gold">
-          {formatShortDate(edition.event_date)}
-        </AppText>
-        <AppText variant="subtitle" numberOfLines={2}>
-          {edition.event.name} {edition.year}
-        </AppText>
-        {location ? (
-          <AppText variant="caption" tone="muted">
-            {location}
-          </AppText>
-        ) : null}
+    <PressScale onPress={onPress} haptic>
+      <View
+        style={{
+          borderRadius: radius.lg,
+          overflow: 'hidden',
+          backgroundColor: colors.graphite,
+          borderWidth: 1,
+          borderColor: colors.border,
+          ...shadows.card,
+        }}>
+        <View style={{ aspectRatio: featured ? 4 / 3 : 16 / 10, backgroundColor: colors.graphite }}>
+          {edition.event.cover_url ? (
+            <Image source={{ uri: edition.event.cover_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
+          ) : null}
+          <GradientOverlay variant="bottom" />
+          <DateBadge isoDate={edition.event_date} />
+
+          <View style={{ position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.md }}>
+            <AppText variant={featured ? 'title' : 'subtitle'} numberOfLines={2}>
+              {edition.event.name} {edition.year}
+            </AppText>
+            {location ? (
+              <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
+                {location}
+              </AppText>
+            ) : null}
+          </View>
+        </View>
+
         {edition.distances.length > 0 ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xxs, marginTop: spacing.xs }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xxs, padding: spacing.sm }}>
             {edition.distances.map((distance) => (
               <View
                 key={distance}
@@ -53,6 +93,6 @@ export function EventCard({ edition, onPress }: EventCardProps) {
           </View>
         ) : null}
       </View>
-    </Card>
+    </PressScale>
   );
 }

@@ -1,31 +1,47 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
-import { Screen } from '@/components/screen';
+import { GoldGlow } from '@/components/brand/gold-glow';
+import { MetricNumber } from '@/components/brand/metric-number';
+import { Reveal } from '@/components/motion/reveal';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, spacing } from '@/theme/tokens';
 
 const SLIDES = [
   {
-    title: 'Tus carreras.',
-    body: 'Cada meta cruzada, cada kilómetro recorrido. Finisher Legacy guarda tu historia como atleta.',
+    title: 'CORRE',
+    body: 'Cada meta empieza mucho antes de cruzar la línea.',
+    metric: '10K',
+    art: 'metric' as const,
   },
   {
-    title: 'Tus medallas.',
-    body: 'Colecciona y revive cada medalla que ganaste, con el detalle real de cada evento.',
+    title: 'PRESERVA',
+    body: 'Convierte tu logro en algo que permanece.',
+    metric: '03:42:18',
+    art: 'metric' as const,
   },
   {
-    title: 'Tu Legacy.',
-    body: 'Reclama tu Legacy Code, construye tu identidad deportiva y compártela con el mundo.',
+    title: 'CONSTRUYE TU LEGACY',
+    body: 'Una carrera es un recuerdo.\nMuchas carreras son tu Legacy.',
+    art: 'mascot' as const,
   },
 ];
 
 export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
   const setHasSeenOnboarding = useUiStore((state) => state.setHasSeenOnboarding);
@@ -51,7 +67,7 @@ export default function OnboardingScreen() {
   }
 
   return (
-    <Screen padded={false}>
+    <View style={{ flex: 1, backgroundColor: colors.black }}>
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -60,45 +76,51 @@ export default function OnboardingScreen() {
         onMomentumScrollEnd={handleScroll}
         style={{ flex: 1 }}>
         {SLIDES.map((slide) => (
-          <View key={slide.title} style={{ width, paddingHorizontal: spacing.lg, justifyContent: 'center' }}>
-            <Image
-              source={require('@/assets/images/brand/logo-mark-gold.png')}
-              style={styles.mark}
-              contentFit="contain"
-            />
-            <AppText variant="display" style={{ marginTop: spacing.xl }}>
-              {slide.title}
-            </AppText>
-            <AppText variant="body" tone="muted" style={{ marginTop: spacing.sm }}>
-              {slide.body}
-            </AppText>
+          <View key={slide.title} style={{ width, flex: 1 }}>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              {slide.art === 'metric' ? (
+                <>
+                  <GoldGlow size={320} style={{ position: 'absolute' }} />
+                  <MetricNumber value={slide.metric!} decorative size={140} />
+                </>
+              ) : (
+                <>
+                  <GoldGlow size={280} style={{ position: 'absolute' }} />
+                  <Image
+                    source={require('@/assets/images/brand/mascot-hero.png')}
+                    style={{ width: 220, height: 220 }}
+                    contentFit="contain"
+                  />
+                </>
+              )}
+            </View>
+
+            <Reveal style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}>
+              <AppText variant="hero" style={{ fontSize: 40, lineHeight: 42 }}>
+                {slide.title}
+              </AppText>
+              <AppText variant="body" tone="muted" style={{ marginTop: spacing.sm }}>
+                {slide.body}
+              </AppText>
+            </Reveal>
           </View>
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md, gap: spacing.sm }}>
         <View style={styles.dots}>
           {SLIDES.map((slide, dotIndex) => (
-            <View
-              key={slide.title}
-              style={[styles.dot, dotIndex === index && styles.dotActive]}
-            />
+            <View key={slide.title} style={[styles.dot, dotIndex === index && styles.dotActive]} />
           ))}
         </View>
         <AppButton label={isLast ? 'Comenzar' : 'Siguiente'} onPress={next} />
         {!isLast && <AppButton label="Omitir" variant="ghost" onPress={finish} />}
       </View>
-    </Screen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  mark: { width: 56, height: 56 },
-  footer: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-    gap: spacing.sm,
-  },
   dots: {
     flexDirection: 'row',
     justifyContent: 'center',
