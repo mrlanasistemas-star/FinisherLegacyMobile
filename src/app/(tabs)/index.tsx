@@ -10,6 +10,7 @@ import { AppText } from '@/components/app-text';
 import { CinematicHero } from '@/components/brand/cinematic-hero';
 import { HeroFallback } from '@/components/brand/hero-fallback';
 import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
+import { MascotTip } from '@/components/brand/mascot-tip';
 import { MedalHeroTile } from '@/components/brand/medal-hero-tile';
 import { MetricNumber } from '@/components/brand/metric-number';
 import { SectionTitle } from '@/components/brand/section-title';
@@ -59,6 +60,12 @@ export default function HomeScreen() {
             </Reveal>
           </View>
         </CinematicHero>
+
+        <MascotTip
+          id="home-intro"
+          message="Toca el botón dorado para escanear tu Legacy Code, o desliza para ver tus medallas y tu próxima meta."
+          style={{ marginHorizontal: spacing.lg, marginTop: spacing.lg }}
+        />
 
         <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
           {medals.isPending ? (

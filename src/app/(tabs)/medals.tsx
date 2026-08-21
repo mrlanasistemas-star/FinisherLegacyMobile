@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useMemo } from 'react';
@@ -44,15 +45,16 @@ export default function MedalsScreen() {
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Agregar medalla"
-            style={{
-              backgroundColor: colors.gold,
-              borderRadius: radius.pill,
-              width: 40,
-              height: 40,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Plus color={colors.black} size={20} />
+            style={({ pressed }) => [{ borderRadius: radius.pill, opacity: pressed ? 0.85 : 1 }]}>
+            {/* Gradient fill, not a flat color: the flat gold FAB was
+                reported as rendering gray/black against the black tab. */}
+            <LinearGradient
+              colors={[colors.goldSoft, colors.gold]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={{ width: 40, height: 40, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' }}>
+              <Plus color={colors.black} size={20} />
+            </LinearGradient>
           </Pressable>
         </View>
       </View>

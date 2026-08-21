@@ -1,11 +1,12 @@
 import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, Tabs } from 'expo-router';
 import { CalendarDays, Home, Medal, ScanLine, User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, type ColorValue } from 'react-native';
 
 import { PressScale } from '@/components/motion/press-scale';
-import { colors, radius, shadows, spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 
 const TAB_ICON_SIZE = 22;
 
@@ -71,12 +72,24 @@ export default function TabsLayout() {
           width: 56,
           height: 56,
           borderRadius: radius.pill,
-          backgroundColor: colors.gold,
-          alignItems: 'center',
-          justifyContent: 'center',
-          ...shadows.gold,
+          shadowColor: colors.gold,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.45,
+          shadowRadius: 10,
+          // 0, not shadows.gold's default: Android elevation ignores
+          // shadowColor and paints a flat grey halo over pure black, which
+          // read as a dirty smudge around the gold circle.
+          elevation: 0,
         }}>
-        <ScanLine color={colors.black} size={26} strokeWidth={2.2} />
+        {/* Gradient fill, not a flat color, so the gold never renders as a
+            flat gray/dark disc against the black tab bar. */}
+        <LinearGradient
+          colors={[colors.goldSoft, colors.gold]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 56, height: 56, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' }}>
+          <ScanLine color={colors.black} size={26} strokeWidth={2.2} />
+        </LinearGradient>
       </PressScale>
     </View>
   );
