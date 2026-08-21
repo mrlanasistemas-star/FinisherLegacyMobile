@@ -9,66 +9,74 @@ import { CinematicHero } from '@/components/brand/cinematic-hero';
 import { HeroFallback } from '@/components/brand/hero-fallback';
 import { MascotGuideBubble } from '@/components/brand/mascot-guide-bubble';
 import { Reveal } from '@/components/motion/reveal';
+import { AppLink } from '@/components/ui/app-link';
 import { useResponsive } from '@/hooks/use-responsive';
 import { colors, spacing } from '@/theme/tokens';
 
 const HERO_VIDEO_URL = 'https://finisherlegacy.com/media/home/hero/finisher-hero-desktop.mp4';
 
-const GUIDE_MESSAGES = [
-  'Hola. Soy tu Legacy Guide — voy a acompañarte a preservar cada meta que cruces.',
-  'Cada carrera que registres aquí se queda contigo para siempre.',
-];
+const GUIDE_MESSAGES = ['Hola. Soy tu Legacy Guide — te acompaño a preservar cada meta que cruces.'];
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
-  const { height, isShort } = useResponsive();
-  const heroHeight = Math.min(Math.round(height * (isShort ? 0.42 : 0.5)), 440);
+  const { height, isShort, isTall } = useResponsive();
+  const heroHeight = Math.min(Math.round(height * (isShort ? 0.36 : isTall ? 0.46 : 0.42)), 380);
 
   return (
-    // No flex:1 / minHeight tricks below — the CTA section is sized purely
-    // by its own content (text + buttons + fixed padding), so it can never
-    // be squeezed into overlapping itself. On short screens the ScrollView
-    // simply scrolls; on tall screens there's a little extra breathing
-    // room at the bottom, never an overlap or an off-screen button.
-    <ScrollView style={{ flex: 1, backgroundColor: colors.black }} showsVerticalScrollIndicator={false} bounces={false}>
-      <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={heroHeight} gradient="full">
-        <View style={{ flex: 1, paddingTop: insets.top + spacing.md, paddingHorizontal: spacing.lg, justifyContent: 'space-between' }}>
-          <Image
-            source={require('@/assets/images/brand/logo-horizontal-gold.png')}
-            style={{ width: 168, height: 24 }}
-            contentFit="contain"
-          />
+    <View style={{ flex: 1, backgroundColor: colors.black }}>
+      {/*
+       * CTA is now rendered in-flow, directly under the content it belongs
+       * to — never pinned to the screen edge behind glass. A sticky bottom
+       * bar tested badly on real devices: the button read as a dark strip
+       * sunk behind translucent glass, not a clear call to action
+       * (AGENTS.md §218/§219/§227).
+       */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        showsVerticalScrollIndicator={false}
+        bounces={false}>
+        <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={heroHeight} gradient="full">
+          <View style={{ flex: 1, paddingTop: insets.top + spacing.sm, paddingHorizontal: spacing.lg, justifyContent: 'space-between' }}>
+            <Image
+              source={require('@/assets/images/brand/logo-horizontal-gold.png')}
+              style={{ width: 150, height: 22 }}
+              contentFit="contain"
+            />
 
-          <Reveal delay={100} style={{ paddingBottom: spacing.lg }}>
-            <AppText variant="hero" style={{ color: colors.foreground }}>
-              TU META TERMINA.
-            </AppText>
-            <AppText variant="hero" tone="gold">
-              TU HISTORIA NO.
+            <Reveal delay={100} style={{ paddingBottom: spacing.md }}>
+              <AppText variant="hero" style={{ color: colors.foreground, fontSize: isShort ? 30 : 36, lineHeight: isShort ? 32 : 38 }}>
+                TU META TERMINA.
+              </AppText>
+              <AppText variant="hero" tone="gold" style={{ fontSize: isShort ? 30 : 36, lineHeight: isShort ? 32 : 38 }}>
+                TU HISTORIA NO.
+              </AppText>
+            </Reveal>
+          </View>
+        </CinematicHero>
+
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md }}>
+          <Reveal delay={160}>
+            <MascotGuideBubble messages={GUIDE_MESSAGES} portraitSize={40} compact />
+          </Reveal>
+
+          <Reveal delay={210} style={{ marginTop: spacing.sm }}>
+            <AppText variant="caption" tone="muted" align="center" style={{ maxWidth: 320, alignSelf: 'center', lineHeight: 19 }}>
+              Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.
             </AppText>
           </Reveal>
+
+          {/* Gold capsule CTA — governed by content, not flex-grow, so it
+              never floats in a black void (AGENTS.md §222/§231). */}
+          <Reveal delay={260} style={{ marginTop: spacing.lg }}>
+            <AppButton label="EMPEZAR MI LEGACY" variant="legacy" onPress={() => router.push('/register')} />
+          </Reveal>
+
+          <Reveal delay={300} style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm }}>
+            <AppLink label="Ya tengo cuenta" onPress={() => router.push('/login')} />
+          </Reveal>
         </View>
-      </CinematicHero>
-
-      <View style={{ paddingHorizontal: spacing.lg }}>
-        {/* Overlaps the hero/form boundary so the mascot visually bridges the two areas instead of two blocks glued together (AGENTS.md §204). */}
-        <Reveal delay={160} style={{ marginTop: -26, marginBottom: spacing.lg }}>
-          <MascotGuideBubble messages={GUIDE_MESSAGES} />
-        </Reveal>
-      </View>
-
-      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.xl, gap: spacing.md }}>
-        <Reveal delay={220}>
-          <AppText variant="body" tone="muted" align="center">
-            Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.
-          </AppText>
-        </Reveal>
-
-        <Reveal delay={300} style={{ gap: spacing.md, marginTop: spacing.sm }}>
-          <AppButton label="EMPEZAR MI LEGACY" onPress={() => router.push('/register')} />
-          <AppButton label="Ya tengo cuenta" variant="secondary" onPress={() => router.push('/login')} />
-        </Reveal>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }

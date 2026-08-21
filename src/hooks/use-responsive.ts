@@ -13,6 +13,7 @@ export interface Responsive {
   isCompact: boolean;
   isTablet: boolean;
   isShort: boolean;
+  isTall: boolean;
   /** Scales a base size down slightly on compact phones, up on tablets — for hero/metric type. */
   scale: (base: number) => number;
 }
@@ -24,10 +25,10 @@ function classifyWidth(width: number): WidthClass {
   return 'compact';
 }
 
-/** Vertical space matters as much as width — a short device (SE-class, or any phone with a reduced usable height) needs a visibly more compact auth hero (AGENTS.md §194). */
+/** Vertical space matters as much as width — a short device (SE-class, or any phone with a reduced usable height) needs a visibly more compact auth hero (AGENTS.md §194/FASE 6). */
 function classifyHeight(height: number): HeightClass {
-  if (height < 700) return 'short';
-  if (height <= 850) return 'regular';
+  if (height <= 760) return 'short';
+  if (height <= 860) return 'regular';
   return 'tall';
 }
 
@@ -57,6 +58,7 @@ export function useResponsive(): Responsive {
     isCompact: widthClass === 'compact',
     isTablet: widthClass === 'tablet',
     isShort: heightClass === 'short',
+    isTall: heightClass === 'tall',
     scale,
   };
 }

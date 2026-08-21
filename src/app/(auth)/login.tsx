@@ -3,7 +3,8 @@ import { router } from 'expo-router';
 import { Lock, Mail } from 'lucide-react-native';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { loginRequest } from '@/api/auth';
 import { AppError } from '@/api/errors';
@@ -13,9 +14,9 @@ import { AppText } from '@/components/app-text';
 import { MascotGuideBubble } from '@/components/brand/mascot-guide-bubble';
 import { FormInput } from '@/components/form-input';
 import { Reveal } from '@/components/motion/reveal';
-import { Screen } from '@/components/screen';
 import { AppLink } from '@/components/ui/app-link';
 import { GoogleGlyph } from '@/components/ui/google-glyph';
+import { OrDivider } from '@/components/ui/or-divider';
 import { SocialButton } from '@/components/ui/social-button';
 import { loginSchema, type LoginFormValues } from '@/schemas/auth';
 import { useAuthStore } from '@/stores/authStore';
@@ -23,6 +24,7 @@ import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function LoginScreen() {
+  const insets = useSafeAreaInsets();
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -70,18 +72,21 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Screen scroll padded={false} keyboardShouldPersistTaps="handled">
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.black }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.lg }}>
           <Reveal>
-            <AppText variant="title">Qué bueno verte otra vez.</AppText>
+            <AppText variant="title">Qué bueno verte de nuevo.</AppText>
           </Reveal>
-          <Reveal delay={40} style={{ marginTop: spacing.md }}>
-            <MascotGuideBubble messages={['Tu Legacy sigue aquí, tal como lo dejaste.']} portraitSize={44} />
+          <Reveal delay={40} style={{ marginTop: spacing.sm }}>
+            <MascotGuideBubble messages={['Tu historia sigue aquí.']} portraitSize={38} compact />
           </Reveal>
         </View>
 
-        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, marginTop: spacing.xl }}>
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, marginTop: spacing.lg }}>
           {formError ? (
             <AppText variant="caption" tone="destructive">
               {formError}
@@ -136,32 +141,34 @@ export default function LoginScreen() {
             <AppLink label="¿Olvidaste tu contraseña?" onPress={handleForgotPassword} small />
           </Reveal>
 
-          {/* CTA sits directly under the fields — never hundreds of pixels
-              further down (AGENTS.md §188). */}
-          <Reveal delay={170}>
-            <AppButton label="ENTRAR A MI LEGACY" onPress={handleSubmit(onSubmit)} loading={submitting} />
+          {/* Primary CTA sits directly after the fields it belongs to — not
+              at the bottom of the screen, not behind glass (AGENTS.md §224). */}
+          <Reveal delay={170} style={{ marginTop: spacing.xs }}>
+            <AppButton label="ENTRAR A MI LEGACY" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
           </Reveal>
 
-          <Reveal delay={200} style={{ gap: spacing.sm, marginTop: spacing.xs }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginVertical: spacing.xs }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <AppText variant="caption" tone="muted">
-                o continúa con
-              </AppText>
-              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-            </View>
+          {/*
+           * Google sign-in has zero backend OAuth support today (verified
+           * against composer.json/config/services.php/routes) — showing it
+           * as a real, tappable production action would fake functionality
+           * that doesn't exist (AGENTS.md §198/§230). Kept visible only in
+           * dev builds so the UI can still be reviewed/iterated on.
+           */}
+          {__DEV__ ? (
+            <Reveal delay={200} style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+              <OrDivider label="o continúa con" />
+              <SocialButton label="Continuar con Google" icon={<GoogleGlyph />} onPress={handleGoogle} />
+            </Reveal>
+          ) : null}
 
-            <SocialButton label="Continuar con Google" icon={<GoogleGlyph />} onPress={handleGoogle} />
-          </Reveal>
-
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.lg, marginBottom: spacing.xl }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.lg }}>
             <AppText variant="body" tone="muted">
               ¿No tienes cuenta?
             </AppText>
             <AppLink label="Regístrate" onPress={() => router.replace('/register')} />
           </View>
         </View>
-      </Screen>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

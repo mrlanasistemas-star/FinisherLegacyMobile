@@ -84,3 +84,18 @@ Pruebas en dispositivo Android real detectaron que Welcome/Login/Register no est
 - **Ícono de engranaje flotante**: verificado por grep en todo `src/` — no existe ningún ícono de configuración/gear en el código de la app, ni superpuesto a Auth ni en ningún otro lado. Lo que se vio en el dispositivo es el propio overlay de desarrollo de Expo Go (menú "shake to open dev menu"), no parte de la app — desaparece por completo en un build real (`eas build`).
 
 **Pendiente de confirmación real:** todo lo anterior está verificado por tipos/lint/tests/bundle, pero — siguiendo la regla de este mismo documento — no se marca `✅` definitivo hasta que se confirme en el dispositivo Android real que motivó esta corrección.
+
+## Segunda corrección Auth — bug real de overlap + sticky CTA definitivo
+
+La corrección anterior no fue suficiente. Dos causas raíz reales encontradas y corregidas:
+
+1. **El botón/texto que "no se veía" era un bug real de Android, no percepción**: el `elevation: 8` que se agregó al glow del botón primary (y `shadows.card`/`shadows.gold` con elevation 6-8 usados en medal cards, event cards y el botón de escanear) promueve esa vista a su propia capa de composición en Android — con poco espacio entre elementos, esa capa se pintaba literalmente encima del control vecino, dejando sólo su borde visible. Confirmado y corregido bajando elevation a 2-3 en `theme/tokens.ts` (`shadows.card`/`shadows.gold`) y en `AppButton`.
+2. **CTA ahora sticky en las tres pantallas, no sólo Register**: en vez de confiar en que el cálculo de `flex`/scroll deje suficiente espacio, Welcome y Login ahora usan el mismo patrón que Register — el CTA principal vive en una barra fija al fondo (`position: 'absolute'` + `GlassSurface` + safe-area), fuera del flujo de scroll. Es imposible que quede fuera de vista sin importar el alto del dispositivo o el copy.
+
+Además:
+- **Warning real de `BlurView` resuelto**: `blurMethod="dimezisBlurView"` requiere un `blurTarget` (ref a un `BlurTargetView`) que nunca se configuró — sin él, sólo generaba el warning y no aplicaba blur real de todas formas. Se quitó esa prop; `GlassSurface` ahora usa `blurMethod` por defecto (`'none'` en Android) con el tint translúcido existente como base — mismo look, cero warning. iOS conserva blur real.
+- **Mascota reducida** ~30%: `portraitSize` bajó de 44-56 a 38-40, bubble en modo `compact` (menos padding, `numberOfLines={2}`, texto más chico) en Welcome/Login/Register, y el copy se acortó a una sola frase por pantalla.
+- **Hero de Welcome**: tamaño de fuente bajado (52→36, 30 en pantallas cortas), altura del hero recalculada con `isShort`/`isTall`, párrafo de apoyo movido a `variant="caption"` con `maxWidth` para que no ocupe media pantalla.
+- **`useResponsive` ganó `isTall`** además de `isShort`, con los cortes ajustados a ≤760 / 761–860 / >860.
+- **Ícono flotante — reconfirmado por tercera vez**: grep completo de `src/` (incluyendo `_layout.tsx`, providers, y cualquier `position: 'absolute'` a nivel raíz) no encuentra ningún ícono de configuración. Tampoco hay plugin de DevTools de Expo Router instalado. Es el overlay propio de Expo Go — para confirmarlo de forma concluyente: si aparece igual en Home/Vault (pantallas ya autenticadas, código completamente distinto), es 100% Expo Go y no la app.
+- **Cleanup**: nuevo `OrDivider` reemplaza el bloque de tres `View` duplicado en Login y Register; no se encontraron `Alert.alert` residuales, componentes huérfanos, ni `console.log` sueltos en un barrido completo de `src/`.

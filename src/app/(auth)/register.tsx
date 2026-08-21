@@ -11,12 +11,12 @@ import { AppError } from '@/api/errors';
 import { tokenStorage } from '@/api/secureStore';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
-import { GlassSurface } from '@/components/brand/glass-surface';
 import { MascotGuideBubble } from '@/components/brand/mascot-guide-bubble';
 import { FormInput } from '@/components/form-input';
 import { Reveal } from '@/components/motion/reveal';
 import { AppLink } from '@/components/ui/app-link';
 import { GoogleGlyph } from '@/components/ui/google-glyph';
+import { OrDivider } from '@/components/ui/or-divider';
 import { SocialButton } from '@/components/ui/social-button';
 import { registerSchema, type RegisterFormValues } from '@/schemas/auth';
 import { useAuthStore } from '@/stores/authStore';
@@ -24,7 +24,6 @@ import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 
 const FIELD_NAMES = ['first_name', 'last_name', 'email', 'password', 'password_confirmation'] as const;
-const STICKY_BAR_HEIGHT = 84;
 
 export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
@@ -78,167 +77,158 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.black }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={{ flex: 1 }}>
-        <ScrollView
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: STICKY_BAR_HEIGHT + insets.bottom + spacing.lg }}>
-          <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
-            <Reveal>
-              <AppText variant="title">Crea tu cuenta</AppText>
-            </Reveal>
-            <Reveal delay={40} style={{ marginTop: spacing.md }}>
-              <MascotGuideBubble
-                messages={['Vamos a crear tu Legacy. Sólo necesito unos datos para empezar.']}
-                portraitSize={44}
-              />
-            </Reveal>
-          </View>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.lg }}>
+          <Reveal>
+            <AppText variant="title">Crea tu cuenta</AppText>
+          </Reveal>
+          <Reveal delay={40} style={{ marginTop: spacing.sm }}>
+            <MascotGuideBubble messages={['Tu Legacy empieza aquí.']} portraitSize={38} compact />
+          </Reveal>
+        </View>
 
-          <Reveal delay={80} style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, marginTop: spacing.xl, marginBottom: spacing.lg }}>
+        {/* Google sign-in has no real backend OAuth support yet — never
+            presented as a working production action (AGENTS.md §198/§230). */}
+        {__DEV__ ? (
+          <Reveal delay={80} style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, marginTop: spacing.lg, marginBottom: spacing.md }}>
             <SocialButton label="Regístrate con Google" icon={<GoogleGlyph />} onPress={handleGoogle} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs }}>
-              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-              <AppText variant="caption" tone="muted">
-                o con tu correo
-              </AppText>
-              <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <OrDivider label="o con tu correo" />
+          </Reveal>
+        ) : null}
+
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, marginTop: __DEV__ ? 0 : spacing.lg }}>
+          <Reveal delay={120}>
+            <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+              <Controller
+                control={control}
+                name="first_name"
+                render={({ field }) => (
+                  <View style={{ flex: 1 }}>
+                    <FormInput
+                      label="Nombre"
+                      icon={User}
+                      placeholder="Tu nombre"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      error={errors.first_name?.message}
+                      autoComplete="given-name"
+                      returnKeyType="next"
+                    />
+                  </View>
+                )}
+              />
+              <Controller
+                control={control}
+                name="last_name"
+                render={({ field }) => (
+                  <View style={{ flex: 1 }}>
+                    <FormInput
+                      label="Apellido"
+                      icon={User}
+                      placeholder="Tu apellido"
+                      value={field.value}
+                      onChangeText={field.onChange}
+                      onBlur={field.onBlur}
+                      error={errors.last_name?.message}
+                      autoComplete="family-name"
+                      returnKeyType="next"
+                    />
+                  </View>
+                )}
+              />
             </View>
           </Reveal>
 
-          <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
-            <Reveal delay={120}>
-              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                <Controller
-                  control={control}
-                  name="first_name"
-                  render={({ field }) => (
-                    <View style={{ flex: 1 }}>
-                      <FormInput
-                        label="Nombre"
-                        icon={User}
-                        placeholder="Tu nombre"
-                        value={field.value}
-                        onChangeText={field.onChange}
-                        onBlur={field.onBlur}
-                        error={errors.first_name?.message}
-                        autoComplete="given-name"
-                        returnKeyType="next"
-                      />
-                    </View>
-                  )}
+          <Reveal delay={150}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field }) => (
+                <FormInput
+                  label="Correo electrónico"
+                  icon={Mail}
+                  placeholder="tú@correo.com"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.email?.message}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  keyboardType="email-address"
+                  returnKeyType="next"
                 />
-                <Controller
-                  control={control}
-                  name="last_name"
-                  render={({ field }) => (
-                    <View style={{ flex: 1 }}>
-                      <FormInput
-                        label="Apellido"
-                        icon={User}
-                        placeholder="Tu apellido"
-                        value={field.value}
-                        onChangeText={field.onChange}
-                        onBlur={field.onBlur}
-                        error={errors.last_name?.message}
-                        autoComplete="family-name"
-                        returnKeyType="next"
-                      />
-                    </View>
-                  )}
+              )}
+            />
+          </Reveal>
+
+          <Reveal delay={180}>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field }) => (
+                <FormInput
+                  label="Contraseña"
+                  icon={Lock}
+                  placeholder="Mínimo 8 caracteres"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.password?.message}
+                  secure
+                  autoComplete="password-new"
+                  returnKeyType="next"
                 />
-              </View>
-            </Reveal>
+              )}
+            />
+          </Reveal>
 
-            <Reveal delay={150}>
-              <Controller
-                control={control}
-                name="email"
-                render={({ field }) => (
-                  <FormInput
-                    label="Correo electrónico"
-                    icon={Mail}
-                    placeholder="tú@correo.com"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    error={errors.email?.message}
-                    autoCapitalize="none"
-                    autoComplete="email"
-                    keyboardType="email-address"
-                    returnKeyType="next"
-                  />
-                )}
-              />
-            </Reveal>
+          <Reveal delay={210}>
+            <Controller
+              control={control}
+              name="password_confirmation"
+              render={({ field }) => (
+                <FormInput
+                  label="Confirmar contraseña"
+                  icon={Lock}
+                  placeholder="Repite tu contraseña"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.password_confirmation?.message}
+                  secure
+                  autoComplete="password-new"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit(onSubmit)}
+                />
+              )}
+            />
+          </Reveal>
 
-            <Reveal delay={180}>
-              <Controller
-                control={control}
-                name="password"
-                render={({ field }) => (
-                  <FormInput
-                    label="Contraseña"
-                    icon={Lock}
-                    placeholder="Mínimo 8 caracteres"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    error={errors.password?.message}
-                    secure
-                    autoComplete="password-new"
-                    returnKeyType="next"
-                  />
-                )}
-              />
-            </Reveal>
+          {formError ? (
+            <AppText variant="caption" tone="destructive" align="center">
+              {formError}
+            </AppText>
+          ) : null}
 
-            <Reveal delay={210}>
-              <Controller
-                control={control}
-                name="password_confirmation"
-                render={({ field }) => (
-                  <FormInput
-                    label="Confirmar contraseña"
-                    icon={Lock}
-                    placeholder="Repite tu contraseña"
-                    value={field.value}
-                    onChangeText={field.onChange}
-                    onBlur={field.onBlur}
-                    error={errors.password_confirmation?.message}
-                    secure
-                    autoComplete="password-new"
-                    returnKeyType="done"
-                    onSubmitEditing={handleSubmit(onSubmit)}
-                  />
-                )}
-              />
-            </Reveal>
+          {/* CTA follows the last field directly — no floating bar, no
+              glass, always the next thing after "Confirmar contraseña"
+              (AGENTS.md §225). */}
+          <Reveal delay={240} style={{ marginTop: spacing.xs }}>
+            <AppButton label="CREAR MI CUENTA" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
+          </Reveal>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.lg }}>
-              <AppText variant="body" tone="muted">
-                ¿Ya tienes cuenta?
-              </AppText>
-              <AppLink label="Inicia sesión" onPress={() => router.replace('/login')} />
-            </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.sm }}>
+            <AppText variant="body" tone="muted">
+              ¿Ya tienes cuenta?
+            </AppText>
+            <AppLink label="Inicia sesión" onPress={() => router.replace('/login')} />
           </View>
-        </ScrollView>
-
-        {/* Sticky — the primary CTA is always reachable, never hidden below
-            the fold on a long form (AGENTS.md §188/§212). */}
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
-          <GlassSurface rounded={false} intensity={70} style={{ borderColor: colors.border }}>
-            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.sm }}>
-              {formError ? (
-                <AppText variant="caption" tone="destructive" align="center" style={{ marginBottom: spacing.xs }}>
-                  {formError}
-                </AppText>
-              ) : null}
-              <AppButton label="CREAR MI CUENTA" onPress={handleSubmit(onSubmit)} loading={submitting} />
-            </View>
-          </GlassSurface>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

@@ -13,6 +13,8 @@ interface MascotGuideBubbleProps {
   /** One message, or several — tapping the mascot cycles through them (a real interaction, not a static PNG). */
   messages: string[];
   portraitSize?: number;
+  /** Tighter padding/line-height — the guide should support the screen, never dominate it (FASE 3). */
+  compact?: boolean;
   style?: object;
 }
 
@@ -22,7 +24,7 @@ interface MascotGuideBubbleProps {
  * portrait gives a light reaction and cycles to the next line, never a
  * chatbot (AGENTS.md §121/§125/§192).
  */
-export function MascotGuideBubble({ messages, portraitSize = 56, style }: MascotGuideBubbleProps) {
+export function MascotGuideBubble({ messages, portraitSize = 44, compact = false, style }: MascotGuideBubbleProps) {
   const [index, setIndex] = useState(0);
   const scale = useSharedValue(1);
   const rotate = useSharedValue(0);
@@ -39,7 +41,7 @@ export function MascotGuideBubble({ messages, portraitSize = 56, style }: Mascot
   }));
 
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }, style]}>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }, style]}>
       <Pressable onPress={handleTap} accessibilityRole="button" accessibilityLabel="Tu Legacy Guide">
         <Animated.View
           style={[
@@ -58,8 +60,16 @@ export function MascotGuideBubble({ messages, portraitSize = 56, style }: Mascot
         </Animated.View>
       </Pressable>
 
-      <GlassSurface rounded={false} intensity={45} style={{ flex: 1, borderRadius: radius.lg, borderColor: colors.goldDim }}>
-        <AppText variant="caption" style={{ paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}>
+      <GlassSurface rounded={false} intensity={45} style={{ flex: 1, borderRadius: radius.md, borderColor: colors.goldDim }}>
+        <AppText
+          variant="caption"
+          numberOfLines={compact ? 2 : undefined}
+          style={{
+            paddingVertical: compact ? spacing.xs : spacing.sm,
+            paddingHorizontal: spacing.sm,
+            fontSize: compact ? 12 : undefined,
+            lineHeight: compact ? 16 : undefined,
+          }}>
           {messages[index]}
         </AppText>
       </GlassSurface>

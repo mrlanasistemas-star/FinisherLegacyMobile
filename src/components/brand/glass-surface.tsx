@@ -19,6 +19,15 @@ const ABSOLUTE_FILL: ViewStyle = { position: 'absolute', top: 0, left: 0, right:
  * effect on iOS 26+ and silently falls back to a plain unstyled View
  * everywhere else, which would leave Android with no glass look at all.
  *
+ * On Android, `blurMethod` is intentionally left at its default (`'none'`)
+ * — the real blur methods (`dimezisBlurView`/`...Sdk31Plus`) require a
+ * `blurTarget` ref to a `BlurTargetView` wrapping whatever should be
+ * blurred, which our floating controls (over arbitrary photos/video, not a
+ * single known view) don't have a stable target for. Without it those
+ * methods just log a warning and don't blur anyway, so `'none'` — a plain
+ * translucent tint — is the honest, warning-free choice here (confirmed
+ * against the SDK 57 docs), not a workaround.
+ *
  * The BlurView sits as an absolutely-positioned sibling BEHIND `children`
  * (not a wrapping layer around them) so this View's size is driven purely
  * by `children`/`style` exactly like a normal View — no flex/absolute
@@ -34,9 +43,8 @@ export function GlassSurface({ children, style, intensity = 40, rounded = true }
         style,
       ]}>
       <BlurView
-        intensity={intensity}
+        intensity={Platform.OS === 'android' ? 0 : intensity}
         tint="dark"
-        blurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
         style={[ABSOLUTE_FILL, { backgroundColor: surface.glassTint }]}
       />
       {children}
