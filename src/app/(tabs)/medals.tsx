@@ -7,6 +7,7 @@ import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
+import { MascotTip } from '@/components/brand/mascot-tip';
 import { ErrorState } from '@/components/error-state';
 import { MedalCard } from '@/components/medal-card';
 import { Screen } from '@/components/screen';
@@ -55,6 +56,12 @@ export default function MedalsScreen() {
           </Pressable>
         </View>
       </View>
+
+      <MascotTip
+        id="vault-intro"
+        message="Aquí vive tu historia. Cada medalla que reclames aparecerá en tu Legacy Vault."
+        style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}
+      />
 
       {featured ? (
         <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>

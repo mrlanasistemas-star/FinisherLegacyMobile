@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, User } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { ChevronLeft, Share2, User } from 'lucide-react-native';
+import { Pressable, Share, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
@@ -19,9 +19,16 @@ export default function PublicAthleteScreen() {
 
   return (
     <Screen scroll edges={['top', 'left', 'right']}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm }}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Volver">
           <ChevronLeft color={colors.foreground} size={26} />
+        </Pressable>
+        <Pressable
+          onPress={() => Share.share({ message: `https://finisherlegacy.com/@${username}` })}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Compartir perfil">
+          <Share2 color={colors.foreground} size={20} />
         </Pressable>
       </View>
 

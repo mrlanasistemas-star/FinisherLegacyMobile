@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, Pencil, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, EllipsisVertical, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
@@ -10,12 +10,17 @@ import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
 import { MetricNumber } from '@/components/brand/metric-number';
 import { GlassSurface } from '@/components/brand/glass-surface';
+import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Sheet } from '@/components/ui/sheet';
+import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { ErrorState } from '@/components/error-state';
 import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { useDeleteMedal } from '@/hooks/use-medal-mutations';
 import { useMedal } from '@/hooks/use-medals';
+import { showToast } from '@/stores/toastStore';
 import { formatLongDate } from '@/utils/dates';
 import { colors, radius, spacing } from '@/theme/tokens';
 
@@ -25,26 +30,22 @@ export default function MedalDetailScreen() {
   const deleteMedal = useDeleteMedal();
   const insets = useSafeAreaInsets();
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const title = medal?.title ?? medal?.event_name ?? medal?.event_name_manual ?? 'Medalla';
 
-  function confirmDelete() {
-    Alert.alert('Eliminar medalla', '¿Seguro que quieres eliminar esta medalla de tu Legacy Vault?', [
-      { text: 'Cancelar', style: 'cancel' },
-      {
-        text: 'Eliminar',
-        style: 'destructive',
-        onPress: async () => {
-          setDeleteError(null);
-          try {
-            await deleteMedal.mutateAsync(uuid);
-            router.back();
-          } catch (error) {
-            setDeleteError(error instanceof AppError ? error.message : 'No pudimos eliminar tu medalla.');
-          }
-        },
-      },
-    ]);
+  async function handleDelete() {
+    setDeleteError(null);
+    try {
+      await deleteMedal.mutateAsync(uuid);
+      setConfirmingDelete(false);
+      router.back();
+      showToast('Medalla eliminada.', 'success');
+    } catch (error) {
+      setConfirmingDelete(false);
+      setDeleteError(error instanceof AppError ? error.message : 'No pudimos eliminar tu medalla.');
+    }
   }
 
   if (isPending) {
@@ -91,26 +92,15 @@ export default function MedalDetailScreen() {
             </Pressable>
           </GlassSurface>
 
-          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-            <GlassSurface style={{ width: 40, height: 40 }}>
-              <Pressable
-                onPress={() => router.push(`/medals/edit/${uuid}`)}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-                accessibilityRole="button"
-                accessibilityLabel="Editar medalla">
-                <Pencil color={colors.foreground} size={18} />
-              </Pressable>
-            </GlassSurface>
-            <GlassSurface style={{ width: 40, height: 40 }}>
-              <Pressable
-                onPress={confirmDelete}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-                accessibilityRole="button"
-                accessibilityLabel="Eliminar medalla">
-                <Trash2 color={colors.destructive} size={18} />
-              </Pressable>
-            </GlassSurface>
-          </View>
+          <GlassSurface style={{ width: 40, height: 40 }}>
+            <Pressable
+              onPress={() => setActionsOpen(true)}
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+              accessibilityRole="button"
+              accessibilityLabel="Más acciones">
+              <EllipsisVertical color={colors.foreground} size={20} />
+            </Pressable>
+          </GlassSurface>
         </View>
       </View>
 
@@ -122,6 +112,7 @@ export default function MedalDetailScreen() {
         ) : null}
 
         <View>
+          <Badge label={medal.visibility === 'public' ? 'Público' : 'Privado'} variant={medal.visibility === 'public' ? 'gold' : 'neutral'} style={{ marginBottom: spacing.xs }} />
           <AppText variant="display">{title}</AppText>
           {medal.race_name ? (
             <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs }}>
@@ -142,8 +133,8 @@ export default function MedalDetailScreen() {
 
         {medal.pace || medal.city || medal.country ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            {medal.pace ? <Chip label={`Ritmo ${medal.pace}`} /> : null}
-            {(medal.city || medal.country) && <Chip label={[medal.city, medal.country].filter(Boolean).join(', ')} />}
+            {medal.pace ? <Badge label={`Ritmo ${medal.pace}`} /> : null}
+            {(medal.city || medal.country) && <Badge label={[medal.city, medal.country].filter(Boolean).join(', ')} />}
           </View>
         ) : null}
 
@@ -180,23 +171,36 @@ export default function MedalDetailScreen() {
           </View>
         ) : null}
       </Reveal>
-    </Screen>
-  );
-}
 
-function Chip({ label }: { label: string }) {
-  return (
-    <View
-      style={{
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: radius.pill,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xxs,
-      }}>
-      <AppText variant="caption" tone="muted">
-        {label}
-      </AppText>
-    </View>
+      <Sheet visible={actionsOpen} onClose={() => setActionsOpen(false)}>
+        <SheetActionRow
+          icon={Pencil}
+          label="Editar medalla"
+          onPress={() => {
+            setActionsOpen(false);
+            router.push(`/medals/edit/${uuid}`);
+          }}
+        />
+        <SheetActionRow
+          icon={Trash2}
+          label="Eliminar medalla"
+          destructive
+          onPress={() => {
+            setActionsOpen(false);
+            setConfirmingDelete(true);
+          }}
+        />
+      </Sheet>
+
+      <ConfirmDialog
+        visible={confirmingDelete}
+        title="Eliminar medalla"
+        description="Esta medalla se quitará de tu Legacy Vault. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        loading={deleteMedal.isPending}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmingDelete(false)}
+      />
+    </Screen>
   );
 }

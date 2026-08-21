@@ -14,6 +14,8 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { OfflineBanner } from '@/components/ui/offline-banner';
+import { ToastHost } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { useAuthStore } from '@/stores/authStore';
 import { useDeepLinks } from '@/hooks/use-deep-links';
@@ -73,6 +75,8 @@ export default function RootLayout() {
         <QueryProvider>
           <StatusBar style="light" />
           <RootNavigator />
+          <OfflineBanner />
+          <ToastHost />
         </QueryProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

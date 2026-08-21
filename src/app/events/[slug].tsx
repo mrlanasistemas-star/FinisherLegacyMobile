@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { ChevronLeft, Share2 } from 'lucide-react-native';
+import { Pressable, Share, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
@@ -23,7 +23,7 @@ export default function EventDetailScreen() {
 
   return (
     <Screen scroll edges={['left', 'right']} padded={false}>
-      <View style={{ position: 'absolute', top: insets.top + spacing.xs, left: spacing.md, zIndex: 1 }}>
+      <View style={{ position: 'absolute', top: insets.top + spacing.xs, left: spacing.md, right: spacing.md, zIndex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
         <GlassSurface style={{ width: 40, height: 40 }}>
           <Pressable
             onPress={() => router.back()}
@@ -33,6 +33,17 @@ export default function EventDetailScreen() {
             <ChevronLeft color={colors.foreground} size={22} />
           </Pressable>
         </GlassSurface>
+        {event ? (
+          <GlassSurface style={{ width: 40, height: 40 }}>
+            <Pressable
+              onPress={() => Share.share({ message: `https://finisherlegacy.com/events/${event.slug}` })}
+              style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+              accessibilityRole="button"
+              accessibilityLabel="Compartir evento">
+              <Share2 color={colors.foreground} size={18} />
+            </Pressable>
+          </GlassSurface>
+        ) : null}
       </View>
 
       {isPending ? (

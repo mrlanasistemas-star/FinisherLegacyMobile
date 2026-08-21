@@ -14,6 +14,7 @@ import { ScreenHeader } from '@/components/screen-header';
 import { useProfile } from '@/hooks/use-profile';
 import { useUpdateProfile } from '@/hooks/use-update-profile';
 import { profileSchema, type ProfileFormValues } from '@/schemas/profile';
+import { showToast } from '@/stores/toastStore';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 type PickedImage = { uri: string; name: string; type: string } | null;
@@ -22,7 +23,6 @@ export default function AccountSettingsScreen() {
   const { data: profile, isPending } = useProfile();
   const { mutateAsync, isPending: saving } = useUpdateProfile();
   const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<PickedImage>(null);
   const [coverPhoto, setCoverPhoto] = useState<PickedImage>(null);
 
@@ -70,7 +70,6 @@ export default function AccountSettingsScreen() {
 
   async function onSubmit(values: ProfileFormValues) {
     setFormError(null);
-    setSuccess(false);
     try {
       await mutateAsync({
         username: values.username,
@@ -82,7 +81,7 @@ export default function AccountSettingsScreen() {
         profile_photo: profilePhoto,
         cover_photo: coverPhoto,
       });
-      setSuccess(true);
+      showToast('Tu Legacy Profile fue actualizado.', 'success');
     } catch (error) {
       if (error instanceof AppError) {
         if (error.fieldErrors) {
@@ -118,12 +117,6 @@ export default function AccountSettingsScreen() {
               {formError}
             </AppText>
           ) : null}
-          {success ? (
-            <AppText variant="caption" tone="gold">
-              Tu Legacy Profile fue actualizado.
-            </AppText>
-          ) : null}
-
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <Pressable
               onPress={() => pickImage(setProfilePhoto)}

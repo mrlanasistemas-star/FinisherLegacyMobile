@@ -15,6 +15,7 @@ import { Screen } from '@/components/screen';
 import { useMedal } from '@/hooks/use-medals';
 import { useUpdateMedal } from '@/hooks/use-medal-mutations';
 import { manualMedalSchema, type ManualMedalFormValues } from '@/schemas/medal';
+import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function EditMedalScreen() {
@@ -77,6 +78,7 @@ export default function EditMedalScreen() {
         back_image: backImage,
       });
       router.back();
+      showToast('Medalla actualizada.', 'success');
     } catch (error) {
       setFormError(error instanceof AppError ? error.message : 'No pudimos guardar los cambios.');
     }

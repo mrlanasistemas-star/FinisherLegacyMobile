@@ -1,19 +1,21 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ChevronRight, LogOut, Settings, User as UserIcon } from 'lucide-react-native';
-import { useMemo } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ChevronRight, LogOut, Settings, Share2, User as UserIcon } from 'lucide-react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, Share, View } from 'react-native';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
 import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
+import { MascotTip } from '@/components/brand/mascot-tip';
 import { MedalHeroTile } from '@/components/brand/medal-hero-tile';
 import { MetricNumber } from '@/components/brand/metric-number';
 import { Card } from '@/components/card';
 import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useLogout } from '@/hooks/use-logout';
 import { useMedals } from '@/hooks/use-medals';
 import { useProfile } from '@/hooks/use-profile';
@@ -25,6 +27,7 @@ export default function ProfileScreen() {
   const { data: profile, isPending } = useProfile();
   const { logout, loading } = useLogout();
   const medals = useMedals();
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
 
   const collection = useMemo(() => medals.data?.pages[0]?.data.slice(0, 6) ?? [], [medals.data]);
   const totalMedals = medals.data?.pages[0]?.meta.total ?? null;
@@ -70,6 +73,12 @@ export default function ProfileScreen() {
         {user?.legacy_id ? <LegacyIdTag legacyId={user.legacy_id} /> : null}
       </View>
 
+      <MascotTip
+        id="profile-intro"
+        message="Tu perfil reúne todo lo que has construido carrera tras carrera."
+        style={{ marginHorizontal: spacing.lg, marginTop: spacing.lg }}
+      />
+
       <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
         {medals.isPending ? <Skeleton width={80} height={48} /> : <MetricNumber value={totalMedals ?? 0} size={48} tone="gold" />}
         <AppText variant="caption" tone="muted" style={{ marginTop: 2, letterSpacing: 1.5 }}>
@@ -100,9 +109,29 @@ export default function ProfileScreen() {
 
       <View style={{ marginTop: spacing.xl, paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.xl }}>
         <MenuRow icon={UserIcon} label="Editar perfil" onPress={() => router.push('/settings/account')} />
+        {profile?.username ? (
+          <MenuRow
+            icon={Share2}
+            label="Compartir mi perfil"
+            onPress={() => Share.share({ message: `https://finisherlegacy.com/@${profile.username}` })}
+          />
+        ) : null}
         <MenuRow icon={Settings} label="Configuración" onPress={() => router.push('/settings')} />
-        <MenuRow icon={LogOut} label="Cerrar sesión" tone="destructive" onPress={logout} loading={loading} />
+        <MenuRow icon={LogOut} label="Cerrar sesión" tone="destructive" onPress={() => setConfirmingLogout(true)} loading={loading} />
       </View>
+
+      <ConfirmDialog
+        visible={confirmingLogout}
+        title="Cerrar sesión"
+        description="Tendrás que iniciar sesión nuevamente para ver tu Legacy."
+        confirmLabel="Cerrar sesión"
+        loading={loading}
+        onConfirm={async () => {
+          await logout();
+          setConfirmingLogout(false);
+        }}
+        onCancel={() => setConfirmingLogout(false)}
+      />
     </Screen>
   );
 }

@@ -1,4 +1,4 @@
-import { formatLongDate, formatShortDate } from './dates';
+import { formatLongDate, formatShortDate, isPastDate } from './dates';
 
 describe('date-only formatting (AGENTS.md §82 — never shift a day via UTC parsing)', () => {
   it('formats a date-only string without shifting to the previous day', () => {
@@ -17,5 +17,21 @@ describe('date-only formatting (AGENTS.md §82 — never shift a day via UTC par
 
   it('falls back to the raw string on invalid input instead of throwing', () => {
     expect(formatShortDate('not-a-date')).toBe('not-a-date');
+  });
+});
+
+describe('isPastDate (drives the Events Próximos/Pasados filter)', () => {
+  it('treats a date far in the past as past', () => {
+    expect(isPastDate('2000-01-01')).toBe(true);
+  });
+
+  it('treats a date far in the future as not past', () => {
+    expect(isPastDate('2999-01-01')).toBe(false);
+  });
+
+  it('treats today as not past (same-day events stay in Próximos)', () => {
+    const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(isPastDate(iso)).toBe(false);
   });
 });

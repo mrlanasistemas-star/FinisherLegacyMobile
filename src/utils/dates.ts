@@ -11,6 +11,14 @@ function parseDateOnly(value: string): Date {
   return new Date(year, (month ?? 1) - 1, day ?? 1);
 }
 
+/** Whether a date-only string (event_date) is strictly before today, local time. */
+export function isPastDate(value: string): boolean {
+  const date = parseDateOnly(value);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return date.getTime() < today.getTime();
+}
+
 export function formatShortDate(value: string): string {
   try {
     return SHORT_DATE.format(parseDateOnly(value));

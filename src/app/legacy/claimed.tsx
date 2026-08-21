@@ -9,12 +9,17 @@ import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, with
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
-import { useMedal } from '@/hooks/use-medals';
+import { useMedal, useMedals } from '@/hooks/use-medals';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function LegacyClaimedScreen() {
   const { code, medalUuid } = useLocalSearchParams<{ code: string; medalUuid?: string }>();
   const { data: medal } = useMedal(medalUuid ?? '');
+  // The claim mutation already invalidated the medals list, so this total
+  // reflects the count *after* this claim — 1 means it really was the
+  // first (AGENTS.md §170), read from real data, never guessed.
+  const medals = useMedals();
+  const isFirstMedal = medals.data?.pages[0]?.meta.total === 1;
 
   const glow = useSharedValue(0);
   const badgeScale = useSharedValue(0.4);
@@ -70,7 +75,7 @@ export default function LegacyClaimedScreen() {
 
         <Animated.View style={[{ alignItems: 'center', gap: spacing.xs }, contentStyle]}>
           <AppText variant="title" align="center">
-            Esta historia ya forma parte de tu Legacy.
+            {isFirstMedal ? 'Tu primera historia ya está aquí.' : 'Esta historia ya forma parte de tu Legacy.'}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
             Legacy Code {code}

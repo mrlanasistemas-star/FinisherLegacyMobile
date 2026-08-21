@@ -48,3 +48,20 @@ Pendiente real (no bloqueante, requiere assets que el usuario todavía no ha pro
 | Fotos de eventos | JPEG/PNG | 16:10 aprox. | Ya conectado a `event.cover_url`/`edition.event.cover_url` reales de la API — sólo falta que los eventos reales tengan foto cargada en el backend |
 
 No se usaron placeholders genéricos para ninguno de estos — donde falta el asset, el fallback es una composición de marca (gradiente/glow/tipografía/mascota), nunca un rectángulo vacío ni una imagen de stock inventada.
+
+## Capa de componentes nativa tipo shadcn (`src/components/ui/`)
+
+Filosofía shadcn (composable, accesible, minimal, themeable) aplicada con primitives 100% nativas — sin `shadcn/ui` web ni Radix. No se instaló una librería de sheets/dialogs dedicada: `Sheet` y `ConfirmDialog` se construyeron sobre `Modal` + `react-native-gesture-handler` + Reanimated, ya dependencias del proyecto (AGENTS.md §165 disciplina de dependencias).
+
+- `Badge`, `Separator`, `SegmentedControl`, `Sheet`, `SheetActionRow`, `ConfirmDialog`, `Toast`/`toastStore`, `OfflineBanner`.
+- `AppButton` ganó una variante `glass` y un highlight superior sutil en las variantes sólidas (primary/destructive) — se evolucionó el componente existente en vez de crear `Button`/`GoldButton` paralelos (AGENTS.md §167).
+- **Toast** reemplaza el texto de éxito inline en Ajustes → Cuenta y la navegación silenciosa al editar/eliminar medalla.
+- **ConfirmDialog** reemplaza `Alert.alert()` nativo para eliminar medalla y cerrar sesión — mismo copy de acción/consecuencia/cancelación, pero de marca.
+- **Sheet** reemplaza los dos botones sueltos de editar/eliminar en Medal Detail por un menú de acciones (icono "más"), con eliminar separado y destructivo dentro del sheet.
+- **SegmentedControl** filtra Eventos en Próximos/Pasados comparando `event_date` real contra hoy — sin nuevo parámetro de API inventado.
+- **OfflineBanner** usa `expo-network`'s `useNetworkState()`; sin conexión muestra un banner discreto arriba, al reconectar dispara un toast "Conexión restaurada".
+- **Compartir real**: perfil propio, perfil público (`https://finisherlegacy.com/@{username}`) y evento (`https://finisherlegacy.com/events/{slug}`) usan `Share` de React Native — URLs confirmadas leyendo `routes/web.php` del backend, no inventadas. Medalla no tiene URL pública en el backend, así que no se agregó "compartir medalla".
+
+## Mascot Guide (`src/hooks/use-mascot-tip.ts`, `src/components/brand/mascot-tip.tsx`)
+
+Tips contextuales de la mascota, cada uno con un `id` fijo, mostrados una sola vez y persistidos en `uiStore.seenTips` (AsyncStorage, igual que el onboarding). Presentes en: Legacy Vault (primer contenido), Eventos, Perfil. El copy del Scanner ("Apunta al código de tu placa") ya cubre la guía equivalente sin duplicar con una burbuja extra — evita sobreusar la mascota (AGENTS.md §101, 5–15% de momentos). El momento de reclamo de la primera medalla usa el conteo real de `useMedals()` después de invalidar la cache (total === 1) para mostrar "Tu primera historia ya está aquí." sólo quien realmente reclama por primera vez — no se inventa el estado.

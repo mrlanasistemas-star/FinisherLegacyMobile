@@ -1,24 +1,34 @@
 import { router } from 'expo-router';
 import { CalendarDays } from 'lucide-react-native';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { MascotTip } from '@/components/brand/mascot-tip';
 import { SectionTitle } from '@/components/brand/section-title';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { EventCard } from '@/components/event-card';
 import { Screen } from '@/components/screen';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/skeleton';
 import { useEvents } from '@/hooks/use-events';
+import { isPastDate } from '@/utils/dates';
 import { spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
+
+type Filter = 'upcoming' | 'past';
 
 export default function EventsScreen() {
   const { data, isPending, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useEvents();
+  const [filter, setFilter] = useState<Filter>('upcoming');
 
-  const editions = useMemo<EventEditionCard[]>(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
+  const allEditions = useMemo<EventEditionCard[]>(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
+  const editions = useMemo(
+    () => allEditions.filter((edition) => isPastDate(edition.event_date) === (filter === 'past')),
+    [allEditions, filter],
+  );
   const [featured, ...rest] = editions;
 
   const header = (
@@ -27,13 +37,22 @@ export default function EventsScreen() {
         <AppText variant="hero" style={{ fontSize: 40, lineHeight: 40 }}>
           EVENTOS
         </AppText>
-        <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs }}>
+        <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs, marginBottom: spacing.md }}>
           Descubre tu siguiente meta
         </AppText>
+        <MascotTip id="events-intro" message="¿Cuál será tu próxima meta?" style={{ marginBottom: spacing.md }} />
+        <SegmentedControl
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'upcoming', label: 'Próximos' },
+            { value: 'past', label: 'Pasados' },
+          ]}
+        />
       </View>
 
       {featured ? (
-        <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.lg }}>
+        <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.lg, marginTop: spacing.md }}>
           <EventCard edition={featured} featured onPress={() => router.push(`/events/${featured.event.slug}`)} />
         </View>
       ) : null}
@@ -53,8 +72,15 @@ export default function EventsScreen() {
         </View>
       ) : isError ? (
         <ErrorState message="No pudimos cargar los eventos." onRetry={refetch} />
-      ) : editions.length === 0 ? (
+      ) : allEditions.length === 0 ? (
         <EmptyState icon={CalendarDays} title="Sin eventos por ahora" message="Vuelve pronto para ver las próximas carreras." />
+      ) : editions.length === 0 ? (
+        <View>
+          {header}
+          <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing.lg }}>
+            {filter === 'upcoming' ? 'No hay eventos próximos por ahora.' : 'Aún no hay eventos pasados.'}
+          </AppText>
+        </View>
       ) : (
         <FlatList
           data={rest}
