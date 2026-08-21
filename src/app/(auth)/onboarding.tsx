@@ -16,6 +16,7 @@ import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
 import { MetricNumber } from '@/components/brand/metric-number';
 import { Reveal } from '@/components/motion/reveal';
+import { useResponsive } from '@/hooks/use-responsive';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -41,6 +42,7 @@ const SLIDES = [
 
 export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
+  const { isShort } = useResponsive();
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
@@ -80,15 +82,15 @@ export default function OnboardingScreen() {
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {slide.art === 'metric' ? (
                 <>
-                  <GoldGlow size={320} style={{ position: 'absolute' }} />
-                  <MetricNumber value={slide.metric!} decorative size={140} />
+                  <GoldGlow size={isShort ? 220 : 320} style={{ position: 'absolute' }} />
+                  <MetricNumber value={slide.metric!} decorative size={isShort ? 96 : 140} />
                 </>
               ) : (
                 <>
-                  <GoldGlow size={280} style={{ position: 'absolute' }} />
+                  <GoldGlow size={isShort ? 190 : 280} style={{ position: 'absolute' }} />
                   <Image
                     source={require('@/assets/images/brand/mascot-hero.png')}
-                    style={{ width: 220, height: 220 }}
+                    style={{ width: isShort ? 150 : 220, height: isShort ? 150 : 220 }}
                     contentFit="contain"
                   />
                 </>
@@ -96,7 +98,7 @@ export default function OnboardingScreen() {
             </View>
 
             <Reveal style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }}>
-              <AppText variant="hero" style={{ fontSize: 40, lineHeight: 42 }}>
+              <AppText variant="hero" style={{ fontSize: isShort ? 32 : 40, lineHeight: isShort ? 34 : 42 }}>
                 {slide.title}
               </AppText>
               <AppText variant="body" tone="muted" style={{ marginTop: spacing.sm }}>

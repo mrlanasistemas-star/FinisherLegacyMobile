@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { AppText } from './app-text';
@@ -21,8 +22,9 @@ interface AppButtonProps {
   style?: ViewStyle;
 }
 
-/** Solid-color variants get a faint top highlight so they read as lit metal, not a flat fill (AGENTS.md §109). */
+/** Solid-color variants get a faint top highlight so they read as lit metal, not a flat fill (AGENTS.md §109/§196). */
 const HIGHLIGHT_VARIANTS: Variant[] = ['primary', 'destructive'];
+const BUTTON_RADIUS = radius.lg;
 
 export function AppButton({
   label,
@@ -35,6 +37,7 @@ export function AppButton({
   style,
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
+  const [hovered, setHovered] = useState(false);
 
   function handlePress() {
     if (isDisabled) return;
@@ -51,6 +54,9 @@ export function AppButton({
   );
 
   const sizeStyle = size === 'lg' ? styles.lg : styles.md;
+  // Pointer devices only (tablet trackpad, Expo Web) — onHoverIn/Out never
+  // fire from a touch press, so this is purely additive (AGENTS.md §110/§202).
+  const hoverHandlers = { onHoverIn: () => setHovered(true), onHoverOut: () => setHovered(false) };
 
   if (variant === 'glass') {
     return (
@@ -60,8 +66,9 @@ export function AppButton({
         disabled={isDisabled}
         onPress={handlePress}
         hitSlop={8}
+        {...hoverHandlers}
         style={({ pressed }) => [fullWidth && styles.fullWidth, isDisabled && styles.disabled, pressed && !isDisabled && styles.pressed, style]}>
-        <GlassSurface rounded={false} style={{ borderRadius: radius.md }}>
+        <GlassSurface rounded={false} style={[{ borderRadius: BUTTON_RADIUS }, hovered && !isDisabled && styles.glassHovered]}>
           <View style={[styles.base, sizeStyle]}>{content}</View>
         </GlassSurface>
       </Pressable>
@@ -75,19 +82,22 @@ export function AppButton({
       disabled={isDisabled}
       onPress={handlePress}
       hitSlop={8}
+      {...hoverHandlers}
       style={({ pressed }) => [
         styles.base,
         VARIANT_STYLE[variant],
+        variant === 'primary' && !isDisabled && styles.primaryGlow,
         sizeStyle,
         fullWidth && styles.fullWidth,
-        isDisabled && styles.disabled,
+        hovered && !isDisabled && !pressed && HOVER_STYLE[variant],
         pressed && !isDisabled && styles.pressed,
+        isDisabled && styles.disabled,
         style,
       ]}>
-      {HIGHLIGHT_VARIANTS.includes(variant) ? (
+      {HIGHLIGHT_VARIANTS.includes(variant) && !isDisabled ? (
         <LinearGradient
-          colors={['rgba(255,255,255,0.16)', 'rgba(255,255,255,0)']}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', borderTopLeftRadius: radius.md, borderTopRightRadius: radius.md }}
+          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0)']}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', borderTopLeftRadius: BUTTON_RADIUS, borderTopRightRadius: BUTTON_RADIUS }}
           pointerEvents="none"
         />
       ) : null}
@@ -98,7 +108,7 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: radius.md,
+    borderRadius: BUTTON_RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -106,30 +116,56 @@ const styles = StyleSheet.create({
   md: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
-    minHeight: 44,
+    minHeight: 46,
   },
   lg: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
-    minHeight: 52,
+    minHeight: 56,
   },
   fullWidth: {
     alignSelf: 'stretch',
   },
+  primaryGlow: {
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    // Kept deliberately low: Android's `elevation` promotes the view to its
+    // own compositing layer with real shadow casting — at high values (was
+    // 8) that layer visually painted over closely-spaced siblings below it
+    // (a button's own border showing through where the next control's text
+    // should be). A small elevation still reads as "lifted" without eating
+    // neighboring content.
+    elevation: 2,
+  },
+  glassHovered: {
+    borderColor: colors.goldDim,
+  },
   pressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.985 }],
+    opacity: 0.88,
+    transform: [{ scale: 0.985 }, { translateY: 1 }],
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 1,
   },
   disabled: {
-    opacity: 0.45,
+    opacity: 0.5,
   },
 });
 
 const VARIANT_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
   primary: { backgroundColor: colors.gold },
-  secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.gold },
+  secondary: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.gold },
   ghost: { backgroundColor: 'transparent' },
   destructive: { backgroundColor: colors.destructive },
+};
+
+const HOVER_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
+  primary: { transform: [{ translateY: -1 }] },
+  secondary: { backgroundColor: 'rgba(201,161,89,0.1)', borderColor: colors.goldSoft },
+  ghost: { backgroundColor: 'rgba(245,245,245,0.06)' },
+  destructive: { transform: [{ translateY: -1 }] },
 };
 
 const TEXT_COLOR: Record<Variant, string> = {

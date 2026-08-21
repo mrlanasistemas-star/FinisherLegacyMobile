@@ -1,11 +1,11 @@
 import { BlurView } from 'expo-blur';
 import type { PropsWithChildren } from 'react';
-import { Platform, View, type ViewStyle } from 'react-native';
+import { Platform, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { colors, radius, surface } from '@/theme/tokens';
 
 interface GlassSurfaceProps extends PropsWithChildren {
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   intensity?: number;
   rounded?: boolean;
 }

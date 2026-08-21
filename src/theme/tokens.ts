@@ -75,20 +75,29 @@ export const surface = {
   glassTint: 'rgba(25,25,28,0.55)',
 } as const;
 
+/**
+ * Elevation kept deliberately low (2-3, not 6-8) across the board: Android's
+ * `elevation` promotes a view to its own compositing layer with real shadow
+ * casting, and at high values that layer visually paints over closely-spaced
+ * siblings (medal/event cards in a grid, the scan button over the tab bar) —
+ * a button/card's own edge showing through where a neighbor's text should
+ * be. Confirmed on a real Android device. iOS shadow props (shadowOpacity/
+ * shadowRadius) are unaffected and can stay soft/generous.
+ */
 export const shadows = {
   card: {
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 3,
   },
   gold: {
     shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.28,
+    shadowRadius: 6,
+    elevation: 3,
   },
 } as const;
 

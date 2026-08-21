@@ -32,7 +32,9 @@ Foundation → Navigation (tab bar + scan action) → Auth (welcome/onboarding/l
 
 ## Estado
 
-Todas las pantallas de la lista anterior están rediseñadas y verificadas (`tsc`, `expo lint`, `expo-doctor`, `npx expo export` para Android e iOS, `npm test`, todo en verde). Ningún dato/hook/mutación real cambió — sólo composición, media y movimiento.
+Todas las pantallas de la lista anterior están rediseñadas (`tsc`, `expo lint`, `expo-doctor`, `npx expo export` para Android e iOS, `npm test`, todo en verde). Ningún dato/hook/mutación real cambió — sólo composición, media y movimiento.
+
+**Nota honesta (AGENTS.md §215):** "todo en verde" cubre tipos/lint/tests/bundle — no reemplaza revisar la app en un dispositivo real. Auth (Welcome/Login/Register/Onboarding) se marcó ✅ demasiado pronto en la primera pasada; con pruebas reales aparecieron CTAs cortados y una mascota puramente decorativa. Esa corrección específica está en `## Corrección Auth §186–217` más abajo — sólo esa sección puede considerarse validada contra dispositivo real hasta la próxima ronda de pruebas del usuario.
 
 Componentes de marca nuevos: `CinematicHero`, `GradientOverlay`, `GoldGlow`, `MetricNumber`, `SectionTitle`, `LegacyIdTag`, `PlateCard`, `GlassSurface`, `HeroFallback`, `MedalHeroTile`. Motion: `Reveal`/`Stagger`, `PressScale`. `MedalCard`/`EventCard` reconstruidos edge-to-edge con gradient overlay en vez del patrón ícono+texto anterior.
 
@@ -65,3 +67,20 @@ Filosofía shadcn (composable, accesible, minimal, themeable) aplicada con primi
 ## Mascot Guide (`src/hooks/use-mascot-tip.ts`, `src/components/brand/mascot-tip.tsx`)
 
 Tips contextuales de la mascota, cada uno con un `id` fijo, mostrados una sola vez y persistidos en `uiStore.seenTips` (AsyncStorage, igual que el onboarding). Presentes en: Legacy Vault (primer contenido), Eventos, Perfil. El copy del Scanner ("Apunta al código de tu placa") ya cubre la guía equivalente sin duplicar con una burbuja extra — evita sobreusar la mascota (AGENTS.md §101, 5–15% de momentos). El momento de reclamo de la primera medalla usa el conteo real de `useMedals()` después de invalidar la cache (total === 1) para mostrar "Tu primera historia ya está aquí." sólo quien realmente reclama por primera vez — no se inventa el estado.
+
+## Corrección Auth §186–217
+
+Pruebas en dispositivo Android real detectaron que Welcome/Login/Register no estaban al nivel — CTAs parcialmente ocultos, mascota puramente decorativa, formularios sin suficiente vida. Corregido:
+
+- **Causa real del corte de CTA**: `Welcome` usaba un `View` con `flex: 1` para la sección de botones dentro de una pantalla ya de altura fija — en pantallas cortas ese `flex:1` se comprimía a una fracción insuficiente para el texto + 2 botones, y sin `ScrollView` el exceso quedaba fuera del viewport. Fix: la sección de CTA ahora tiene tamaño natural (sin `flex`), toda la pantalla es un `ScrollView`, y el alto del hero se calcula con `useResponsive().isShort` en vez de un porcentaje fijo. El mismo patrón (contenido sin `flex` + scroll) ya estaba correcto en Onboarding, que no tenía este bug.
+- **Login**: el CTA ahora aparece inmediatamente después de los campos (antes había secciones intermedias que lo empujaban fuera de la primera vista). Se agregó enlace "¿Olvidaste tu contraseña?" — honesto, sin backend, muestra un toast en vez de fingir un envío (mismo patrón que Google).
+- **Register**: CTA principal ahora **sticky** al fondo (`GlassSurface` + `AppButton`, con `paddingBottom` en el scroll para que ningún campo quede detrás), reachable sin importar cuánto haya scrolleado el usuario — sin convertirlo en wizard de varios pasos.
+- **`useResponsive` ganó `heightClass`** (`short` < 700 / `regular` / `tall` > 850) y `isShort`, usado para achicar hero/mascota/tipografía en Welcome y Onboarding en pantallas cortas.
+- **Mascota real, no decoración**: nuevo `MascotGuideBubble` — siempre visible (a diferencia de `MascotTip`, que se oculta tras verse una vez), con copy contextual real (bienvenida en Welcome, "qué bueno verte otra vez" en Login, "vamos a crear tu Legacy" en Register) y una microinteracción real al tocar el portrait (scale + rotate ≤2° + haptic + cambia de mensaje si hay más de uno) — nunca chatbot, nunca sonido.
+- **`AppButton` primary**: ahora siempre lleva el glow dorado (antes era opt-in por pantalla), radio 16, `minHeight` 56, `pressed` con `translateY`+reducción de glow, y estados `onHoverIn/onHoverOut` reales para tablet/puntero (nunca requeridos para descubrir la acción — touch sigue siendo el camino principal).
+- **`FormInput`**: el ícono y el label ahora también cambian a dorado en foco (antes sólo el borde animaba), más un glow externo sutil (`shadowOpacity`/`shadowRadius` animados) — nunca en estado de error.
+- **`SocialButton`/Google**: hover real, radio 16, altura 54 — ya no se percibe como texto con ícono.
+- **Nuevo `AppLink`**: unifica los enlaces de texto ("Regístrate", "Inicia sesión", "¿Olvidaste tu contraseña?") con hover (subrayado) y touch target de 44pt vía `hitSlop`, reemplazando `Pressable`+`AppText` sueltos repetidos en cada pantalla.
+- **Ícono de engranaje flotante**: verificado por grep en todo `src/` — no existe ningún ícono de configuración/gear en el código de la app, ni superpuesto a Auth ni en ningún otro lado. Lo que se vio en el dispositivo es el propio overlay de desarrollo de Expo Go (menú "shake to open dev menu"), no parte de la app — desaparece por completo en un build real (`eas build`).
+
+**Pendiente de confirmación real:** todo lo anterior está verificado por tipos/lint/tests/bundle, pero — siguiendo la regla de este mismo documento — no se marca `✅` definitivo hasta que se confirme en el dispositivo Android real que motivó esta corrección.
