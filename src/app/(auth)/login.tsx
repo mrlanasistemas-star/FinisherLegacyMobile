@@ -74,9 +74,10 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.black }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
+        style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        contentContainerStyle={{ paddingBottom: spacing.lg }}>
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.lg }}>
           <Reveal>
             <AppText variant="title">Qué bueno verte de nuevo.</AppText>
@@ -140,35 +141,38 @@ export default function LoginScreen() {
           <Reveal delay={140} style={{ alignSelf: 'flex-end' }}>
             <AppLink label="¿Olvidaste tu contraseña?" onPress={handleForgotPassword} small />
           </Reveal>
-
-          {/* Primary CTA sits directly after the fields it belongs to — not
-              at the bottom of the screen, not behind glass (AGENTS.md §224). */}
-          <Reveal delay={170} style={{ marginTop: spacing.xs }}>
-            <AppButton label="ENTRAR A MI LEGACY" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
-          </Reveal>
-
-          {/*
-           * Google sign-in has zero backend OAuth support today (verified
-           * against composer.json/config/services.php/routes) — showing it
-           * as a real, tappable production action would fake functionality
-           * that doesn't exist (AGENTS.md §198/§230). Kept visible only in
-           * dev builds so the UI can still be reviewed/iterated on.
-           */}
-          {__DEV__ ? (
-            <Reveal delay={200} style={{ gap: spacing.sm, marginTop: spacing.xs }}>
-              <OrDivider label="o continúa con" />
-              <SocialButton label="Continuar con Google" icon={<GoogleGlyph />} onPress={handleGoogle} />
-            </Reveal>
-          ) : null}
-
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.lg }}>
-            <AppText variant="body" tone="muted">
-              ¿No tienes cuenta?
-            </AppText>
-            <AppLink label="Regístrate" onPress={() => router.replace('/register')} />
-          </View>
         </View>
       </ScrollView>
+
+      {/* CTA pinned to the true bottom of the screen — solid black, matching
+          the page background, so it reads as the screen's natural floor
+          rather than a dark strip or glass overlay. */}
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.md, backgroundColor: colors.black }}>
+        <Reveal delay={170}>
+          <AppButton label="ENTRAR A MI LEGACY" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
+        </Reveal>
+
+        {/*
+         * Google sign-in has zero backend OAuth support today (verified
+         * against composer.json/config/services.php/routes) — showing it
+         * as a real, tappable production action would fake functionality
+         * that doesn't exist (AGENTS.md §198/§230). Kept visible only in
+         * dev builds so the UI can still be reviewed/iterated on.
+         */}
+        {__DEV__ ? (
+          <Reveal delay={200} style={{ gap: spacing.sm, marginTop: spacing.md }}>
+            <OrDivider label="o continúa con" />
+            <SocialButton label="Continuar con Google" icon={<GoogleGlyph />} onPress={handleGoogle} />
+          </Reveal>
+        ) : null}
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.md }}>
+          <AppText variant="body" tone="muted">
+            ¿No tienes cuenta?
+          </AppText>
+          <AppLink label="Regístrate" onPress={() => router.replace('/register')} />
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 }

@@ -24,16 +24,9 @@ export default function WelcomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.black }}>
-      {/*
-       * CTA is now rendered in-flow, directly under the content it belongs
-       * to — never pinned to the screen edge behind glass. A sticky bottom
-       * bar tested badly on real devices: the button read as a dark strip
-       * sunk behind translucent glass, not a clear call to action
-       * (AGENTS.md §218/§219/§227).
-       */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}
+        contentContainerStyle={{ paddingBottom: spacing.lg }}
         showsVerticalScrollIndicator={false}
         bounces={false}>
         <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={heroHeight} gradient="full">
@@ -65,18 +58,21 @@ export default function WelcomeScreen() {
               Finisher Legacy transforma cada logro deportivo en una historia que puedes conservar, revivir y compartir.
             </AppText>
           </Reveal>
-
-          {/* Gold capsule CTA — governed by content, not flex-grow, so it
-              never floats in a black void (AGENTS.md §222/§231). */}
-          <Reveal delay={260} style={{ marginTop: spacing.lg }}>
-            <AppButton label="EMPEZAR MI LEGACY" variant="legacy" onPress={() => router.push('/register')} />
-          </Reveal>
-
-          <Reveal delay={300} style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm }}>
-            <AppLink label="Ya tengo cuenta" onPress={() => router.push('/login')} />
-          </Reveal>
         </View>
       </ScrollView>
+
+      {/* CTA pinned to the true bottom of the screen — solid black, same tone
+          as the page itself, so it never reads as a dark strip or glass
+          overlay, just the natural floor of the screen. */}
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: insets.bottom + spacing.md, backgroundColor: colors.black }}>
+        <Reveal delay={260}>
+          <AppButton label="EMPEZAR MI LEGACY" variant="legacy" onPress={() => router.push('/register')} />
+        </Reveal>
+
+        <Reveal delay={300} style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.sm }}>
+          <AppLink label="Ya tengo cuenta" onPress={() => router.push('/login')} />
+        </Reveal>
+      </View>
     </View>
   );
 }

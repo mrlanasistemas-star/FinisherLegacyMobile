@@ -78,9 +78,10 @@ export default function RegisterScreen() {
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.black }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
+        style={{ flex: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl }}>
+        contentContainerStyle={{ paddingBottom: spacing.lg }}>
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + spacing.lg }}>
           <Reveal>
             <AppText variant="title">Crea tu cuenta</AppText>
@@ -213,22 +214,24 @@ export default function RegisterScreen() {
               {formError}
             </AppText>
           ) : null}
-
-          {/* CTA follows the last field directly — no floating bar, no
-              glass, always the next thing after "Confirmar contraseña"
-              (AGENTS.md §225). */}
-          <Reveal delay={240} style={{ marginTop: spacing.xs }}>
-            <AppButton label="CREAR MI CUENTA" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
-          </Reveal>
-
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.sm }}>
-            <AppText variant="body" tone="muted">
-              ¿Ya tienes cuenta?
-            </AppText>
-            <AppLink label="Inicia sesión" onPress={() => router.replace('/login')} />
-          </View>
         </View>
       </ScrollView>
+
+      {/* CTA pinned to the true bottom of the screen — solid black, matching
+          the page background, so it reads as the screen's natural floor
+          rather than a dark strip or glass overlay. */}
+      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.md, backgroundColor: colors.black }}>
+        <Reveal delay={240}>
+          <AppButton label="CREAR MI CUENTA" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
+        </Reveal>
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.sm }}>
+          <AppText variant="body" tone="muted">
+            ¿Ya tienes cuenta?
+          </AppText>
+          <AppLink label="Inicia sesión" onPress={() => router.replace('/login')} />
+        </View>
+      </View>
     </KeyboardAvoidingView>
   );
 }

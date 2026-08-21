@@ -25,10 +25,12 @@ interface AppButtonProps {
 }
 
 /** Solid-color variants get a faint top highlight so they read as lit metal, not a flat fill (AGENTS.md §109/§196). */
-const HIGHLIGHT_VARIANTS: Variant[] = ['primary', 'destructive', 'legacy'];
+const HIGHLIGHT_VARIANTS: Variant[] = ['primary', 'destructive'];
 const BUTTON_RADIUS = radius.lg;
-/** The primary CTA capsule (AGENTS.md §220) reads more like a signature object with a larger, rounder shape. */
-const LEGACY_RADIUS = radius.xl;
+/** True capsule/pill (AGENTS.md §220): `radius.pill` always clamps to exactly
+ * half the button's rendered height, so it stays a perfect stadium shape at
+ * any size instead of a rounded rectangle. */
+const LEGACY_RADIUS = radius.pill;
 
 export function AppButton({
   label,
@@ -73,10 +75,19 @@ export function AppButton({
     <>
       <AppText
         variant="bodyStrong"
-        style={{ fontFamily: fontFamily.bold, fontSize: fontSize.md, letterSpacing: tracking.wide, color: textColor }}>
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.88}
+        style={{
+          fontFamily: fontFamily.bold,
+          fontSize: fontSize.md,
+          letterSpacing: tracking.normal,
+          color: textColor,
+          flexShrink: 1,
+        }}>
         {label}
       </AppText>
-      <Animated.View style={arrowStyle}>
+      <Animated.View style={[arrowStyle, { flexShrink: 0 }]}>
         <ArrowRight size={20} color={textColor} strokeWidth={2.5} />
       </Animated.View>
     </>
@@ -102,6 +113,45 @@ export function AppButton({
     },
   };
 
+  if (isLegacy) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
+        disabled={isDisabled}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        hitSlop={8}
+        {...hoverHandlers}
+        style={({ pressed }) => [
+          { borderRadius: buttonRadius },
+          fullWidth && styles.fullWidth,
+          !disabled && styles.legacyGlow,
+          hovered && !isDisabled && !pressed && HOVER_STYLE.legacy,
+          pressed && !isDisabled && styles.pressed,
+          disabled && styles.disabled,
+          style,
+        ]}>
+        {/* Real two-stop gradient fill, not a flat color: makes the gold
+            impossible to mistake for a flat gray/dark surface, and directly
+            delivers the "gold blended with another tone" look requested. */}
+        <LinearGradient
+          colors={[colors.goldSoft, colors.gold]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.base, styles.legacyContent, sizeStyle, { borderRadius: buttonRadius, overflow: 'hidden' }]}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.32)', 'rgba(255,255,255,0)']}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%' }}
+            pointerEvents="none"
+          />
+          {content}
+        </LinearGradient>
+      </Pressable>
+    );
+  }
+
   if (variant === 'glass') {
     return (
       <Pressable
@@ -111,7 +161,7 @@ export function AppButton({
         onPress={handlePress}
         hitSlop={8}
         {...hoverHandlers}
-        style={({ pressed }) => [fullWidth && styles.fullWidth, isDisabled && styles.disabled, pressed && !isDisabled && styles.pressed, style]}>
+        style={({ pressed }) => [fullWidth && styles.fullWidth, disabled && styles.disabled, pressed && !isDisabled && styles.pressed, style]}>
         <GlassSurface rounded={false} style={[{ borderRadius: BUTTON_RADIUS }, hovered && !isDisabled && styles.glassHovered]}>
           <View style={[styles.base, sizeStyle]}>{content}</View>
         </GlassSurface>
@@ -133,16 +183,15 @@ export function AppButton({
         styles.base,
         { borderRadius: buttonRadius },
         VARIANT_STYLE[variant],
-        (variant === 'primary' || isLegacy) && !isDisabled && styles.primaryGlow,
+        variant === 'primary' && !disabled && styles.primaryGlow,
         sizeStyle,
-        isLegacy && styles.legacyContent,
         fullWidth && styles.fullWidth,
         hovered && !isDisabled && !pressed && HOVER_STYLE[variant],
         pressed && !isDisabled && styles.pressed,
-        isDisabled && styles.disabled,
+        disabled && styles.disabled,
         style,
       ]}>
-      {HIGHLIGHT_VARIANTS.includes(variant) && !isDisabled ? (
+      {HIGHLIGHT_VARIANTS.includes(variant) && !disabled ? (
         <LinearGradient
           colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0)']}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', borderTopLeftRadius: buttonRadius, borderTopRightRadius: buttonRadius }}
@@ -172,11 +221,16 @@ const styles = StyleSheet.create({
   },
   legacy: {
     paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
     minHeight: 60,
   },
   legacyContent: {
-    justifyContent: 'space-between',
+    // Grouped as one centered unit (label + arrow together), not spread to
+    // the two edges — `space-between` with a single child (the loading
+    // spinner) collapsed to the left edge instead of centering, and with
+    // both children it read as the label jammed against the left border.
+    justifyContent: 'center',
+    gap: spacing.sm,
   },
   fullWidth: {
     alignSelf: 'stretch',
@@ -193,6 +247,18 @@ const styles = StyleSheet.create({
     // should be). A small elevation still reads as "lifted" without eating
     // neighboring content.
     elevation: 2,
+  },
+  legacyGlow: {
+    shadowColor: colors.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    // 0, not a small positive value: Android's elevation shadow ignores
+    // shadowColor and always renders as a flat grey/black halo — against
+    // the pure-black auth background that halo read as a dirty smudge
+    // around the gold pill ("barra oscura"). The gold glow only needs to
+    // exist on iOS, where shadowColor is actually honored.
+    elevation: 0,
   },
   glassHovered: {
     borderColor: colors.goldDim,
@@ -214,7 +280,8 @@ const VARIANT_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
   secondary: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.gold },
   ghost: { backgroundColor: 'transparent' },
   destructive: { backgroundColor: colors.destructive },
-  legacy: { backgroundColor: colors.gold, borderWidth: 1, borderColor: 'rgba(255,224,160,0.35)' },
+  // Unused: `legacy` renders its own gradient fill in a dedicated branch above.
+  legacy: { backgroundColor: colors.gold },
 };
 
 const HOVER_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
@@ -222,7 +289,7 @@ const HOVER_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
   secondary: { backgroundColor: 'rgba(201,161,89,0.1)', borderColor: colors.goldSoft },
   ghost: { backgroundColor: 'rgba(245,245,245,0.06)' },
   destructive: { transform: [{ translateY: -1 }] },
-  legacy: { transform: [{ translateY: -1 }], borderColor: 'rgba(255,224,160,0.55)' },
+  legacy: { transform: [{ translateY: -1 }] },
 };
 
 const TEXT_COLOR: Record<Variant, string> = {
