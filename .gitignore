@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+#apk de expo
+*.apk
+*.aab
+
 # Expo
 .expo/
 dist/
@@ -31,7 +35,9 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
+!.env.example
 
 # typescript
 *.tsbuildinfo

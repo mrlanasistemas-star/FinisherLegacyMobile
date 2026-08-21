@@ -1,18 +1,24 @@
 {
   "expo": {
-    "name": "FinisherLegacyMobile",
+    "name": "Finisher Legacy",
     "slug": "FinisherLegacyMobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "finisherlegacymobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "finisherlegacy",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0A0C",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.finisherlegacy.app",
+      "buildNumber": "1",
+      "supportsTablet": true
     },
     "android": {
+      "package": "com.finisherlegacy.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0A0A0C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -28,9 +34,23 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#0A0A0C",
+          "image": "./assets/images/brand/logo-mark-gold.png",
+          "imageWidth": 140
+        }
+      ],
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Finisher Legacy necesita acceso a tu cámara para escanear el código QR de tu Legacy."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Finisher Legacy necesita acceso a tus fotos para elegir la imagen de tu medalla o tu foto de perfil."
         }
       ]
     ],
