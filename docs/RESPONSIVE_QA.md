@@ -1,3 +1,5 @@
+> **Histórico/superseded** — auditoría de código de la primera pasada (auth/home/vault/scanner/events/profile). Las prácticas descritas aquí (Screen+SafeAreaView, sin `width`/`height` fijos, `numColumns`+flex en grids, `KeyboardAvoidingView`, `hitSlop`/`minHeight` táctil) siguen siendo la convención del proyecto y se usaron también en las pantallas nuevas, pero éstas no tuvieron la misma auditoría línea por línea documentada aquí. Ver [`DEVICE_QA.md`](./DEVICE_QA.md) para el checklist de verificación vigente (incluye las pantallas nuevas).
+
 # Responsive QA
 
 ## Estado

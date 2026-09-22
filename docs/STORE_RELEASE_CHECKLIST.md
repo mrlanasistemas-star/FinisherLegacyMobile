@@ -1,3 +1,5 @@
+> **Histórico/superseded** — reemplazado por [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md), que corrige dos afirmaciones de este documento que ya no son ciertas: el ícono de la app **ya no es el placeholder de Expo** (se regeneró a partir de la marca real — ver `VISUAL_OVERHAUL.md`), y **`extra.eas.projectId` ya existe** en `app.json` (alguien corrió `eas init` después de que este documento se escribió). El resto del contenido (checklist de cuentas Apple/Google, Universal Links) sigue siendo información real, fusionada en el documento nuevo.
+
 # Store Release Checklist
 
 ## Ya resuelto en el proyecto

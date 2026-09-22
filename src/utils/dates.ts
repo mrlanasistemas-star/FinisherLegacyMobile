@@ -34,3 +34,26 @@ export function formatLongDate(value: string): string {
     return value;
   }
 }
+
+const DATE_TIME = new Intl.DateTimeFormat('es-MX', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+});
+
+/**
+ * Full ISO8601 timestamps (`created_at`, `read_at`, notification/support
+ * message times) — unlike `event_date` these DO carry real time/timezone
+ * info, so `new Date(value)` is the correct parse here (the opposite of
+ * `parseDateOnly` above, which exists specifically to avoid that for
+ * date-only strings).
+ */
+export function formatDateTime(value: string): string {
+  try {
+    return DATE_TIME.format(new Date(value));
+  } catch {
+    return value;
+  }
+}

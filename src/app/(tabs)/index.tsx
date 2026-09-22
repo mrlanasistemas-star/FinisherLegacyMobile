@@ -1,13 +1,14 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ScanLine } from 'lucide-react-native';
+import { Bell, ChevronRight, ScanLine } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { CinematicHero } from '@/components/brand/cinematic-hero';
+import { GearIconBadge } from '@/components/brand/gear-icon-badge';
 import { HeroFallback } from '@/components/brand/hero-fallback';
 import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
 import { MascotTip } from '@/components/brand/mascot-tip';
@@ -15,32 +16,78 @@ import { MedalHeroTile } from '@/components/brand/medal-hero-tile';
 import { MetricNumber } from '@/components/brand/metric-number';
 import { SectionTitle } from '@/components/brand/section-title';
 import { EventCard } from '@/components/event-card';
+import { MyEventRow } from '@/components/my-event-row';
+import { ProductCard } from '@/components/product-card';
 import { Reveal } from '@/components/motion/reveal';
 import { Skeleton } from '@/components/skeleton';
 import { useEvents } from '@/hooks/use-events';
+import { useMyGear } from '@/hooks/use-gear';
 import { useMedals } from '@/hooks/use-medals';
+import { useMyEvents } from '@/hooks/use-my-events';
+import { useNotifications } from '@/hooks/use-notifications';
+import { useProducts } from '@/hooks/use-store-products';
 import { useAuthStore } from '@/stores/authStore';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 import { timeOfDayGreeting } from '@/utils/greeting';
+
+// Confirmed live (200 OK, ~17MB, Range-request capable) — same URL Welcome
+// already uses. No mobile-optimized cut exists yet (no ffmpeg in this
+// environment), so `CinematicHero`/`useCanAutoplayVideo` only autoplay it
+// on Wi-Fi; every other case falls back to `HeroFallback` gracefully.
+const HERO_VIDEO_URL = 'https://finisherlegacy.com/media/home/hero/finisher-hero-desktop.mp4';
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
   const medals = useMedals();
   const events = useEvents();
+  const myEvents = useMyEvents();
+  const gear = useMyGear();
+  const products = useProducts();
+  const notifications = useNotifications();
 
   const latestMedals = useMemo(() => medals.data?.pages[0]?.data.slice(0, 6) ?? [], [medals.data]);
   const totalMedals = medals.data?.pages[0]?.meta.total ?? null;
   const nextEdition = events.data?.pages[0]?.data[0] ?? null;
+  const latestParticipation = myEvents.data?.pages[0]?.rows[0] ?? null;
+  const gearPreview = useMemo(() => gear.data?.slice(0, 4) ?? [], [gear.data]);
+  const featuredProducts = useMemo(() => products.data?.pages[0]?.rows.slice(0, 4) ?? [], [products.data]);
+  const hasUnreadNotifications = useMemo(
+    () => notifications.data?.pages[0]?.rows.some((row) => row.read_at === null) ?? false,
+    [notifications.data],
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.black }}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <CinematicHero fallback={<HeroFallback />} height={340} gradient="full">
+        <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={340} gradient="full">
           <View style={{ flex: 1, paddingTop: insets.top + spacing.sm, paddingHorizontal: spacing.lg, justifyContent: 'space-between' }}>
-            <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
-              FINISHER LEGACY
-            </AppText>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
+                FINISHER LEGACY
+              </AppText>
+              <Pressable
+                onPress={() => router.push('/notifications')}
+                hitSlop={12}
+                accessibilityRole="button"
+                accessibilityLabel="Notificaciones"
+                style={{ padding: spacing.xxs }}>
+                <Bell color={colors.foreground} size={22} />
+                {hasUnreadNotifications ? (
+                  <View
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: colors.gold,
+                    }}
+                  />
+                ) : null}
+              </Pressable>
+            </View>
 
             <Reveal style={{ gap: spacing.sm }}>
               <View>
@@ -141,6 +188,84 @@ export default function HomeScreen() {
           <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.lg }}>
             <SectionTitle title="Tu próxima meta" style={{ marginBottom: spacing.md }} />
             <EventCard edition={nextEdition} onPress={() => router.push(`/events/${nextEdition.event.slug}`)} />
+          </View>
+        ) : null}
+
+        {latestParticipation ? (
+          <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.lg }}>
+            <SectionTitle title="Tu última participación" style={{ marginBottom: spacing.md }} />
+            <MyEventRow row={latestParticipation} onPress={() => router.push(`/my-events/${latestParticipation.id}`)} />
+          </View>
+        ) : null}
+
+        {gearPreview.length > 0 ? (
+          <View style={{ marginTop: spacing.xxl }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: spacing.lg,
+                marginBottom: spacing.md,
+              }}>
+              <SectionTitle title="Mi equipo" />
+              <Pressable onPress={() => router.push('/gear')} style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="button">
+                <AppText variant="caption" tone="gold">
+                  Ver todo
+                </AppText>
+                <ChevronRight color={colors.gold} size={16} />
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
+              {gearPreview.map((item) => (
+                <Pressable
+                  key={item.uuid}
+                  onPress={() => router.push(`/gear/${item.uuid}`)}
+                  style={{
+                    width: 108,
+                    alignItems: 'center',
+                    gap: spacing.xs,
+                    borderRadius: radius.lg,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.graphite,
+                    padding: spacing.sm,
+                  }}>
+                  <GearIconBadge productName={item.product_name} size={48} />
+                  <AppText variant="caption" numberOfLines={2} align="center">
+                    {item.product_name}
+                  </AppText>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {featuredProducts.length > 0 ? (
+          <View style={{ marginTop: spacing.xxl }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: spacing.lg,
+                marginBottom: spacing.md,
+              }}>
+              <SectionTitle title="Finisher Legacy Store" />
+              <Pressable onPress={() => router.push('/store')} style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="button">
+                <AppText variant="caption" tone="gold">
+                  Ver tienda
+                </AppText>
+                <ChevronRight color={colors.gold} size={16} />
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
+              {featuredProducts.map((product) => (
+                <View key={product.uuid} style={{ width: 150 }}>
+                  <ProductCard product={product} onPress={() => router.push(`/store/${product.slug}`)} />
+                </View>
+              ))}
+            </ScrollView>
           </View>
         ) : null}
 

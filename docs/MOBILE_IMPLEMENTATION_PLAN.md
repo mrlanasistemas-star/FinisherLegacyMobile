@@ -1,3 +1,5 @@
+> **Histórico/superseded** — este documento cubre sólo FASE 0-15 (auth/profile/medals/legacy/events, previo a la sincronización completa con el ecosistema de tienda/media/comunidad). Para el estado actual del proyecto ver [`ARCHITECTURE.md`](./ARCHITECTURE.md); para deuda de backend ver [`MOBILE_BACKEND_REQUIREMENTS.md`](./MOBILE_BACKEND_REQUIREMENTS.md); para checklist de publicación ver [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md). Se conserva sin cambios por su valor histórico (contrato de API confirmado en su momento, identidad de marca, estado por fase original).
+
 # Mobile Implementation Plan
 
 Plan corto de FASE 0, basado en la auditoría real del backend `C:\wamp64\www\finisherLegacy` (Laravel 13 + Sanctum) y del proyecto móvil ya scaffoldeado con `create-expo-app` (Expo SDK 57, Router, TS, tabs template).

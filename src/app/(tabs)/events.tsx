@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { CalendarDays } from 'lucide-react-native';
+import { CalendarDays, ChevronRight, Store as StoreIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { MascotTip } from '@/components/brand/mascot-tip';
@@ -14,8 +14,36 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Skeleton } from '@/components/skeleton';
 import { useEvents } from '@/hooks/use-events';
 import { isPastDate } from '@/utils/dates';
-import { spacing } from '@/theme/tokens';
+import { colors, radius, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
+
+function StoreTeaser() {
+  return (
+    <Pressable
+      onPress={() => router.push('/store')}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.goldDim,
+        backgroundColor: colors.graphite,
+        padding: spacing.md,
+        opacity: pressed ? 0.85 : 1,
+      })}>
+      <StoreIcon color={colors.gold} size={20} />
+      <View style={{ flex: 1 }}>
+        <AppText variant="bodyStrong">Finisher Legacy Store</AppText>
+        <AppText variant="caption" tone="muted">
+          Equipo y gear que se suma a tu historia
+        </AppText>
+      </View>
+      <ChevronRight color={colors.muted} size={18} />
+    </Pressable>
+  );
+}
 
 type Filter = 'upcoming' | 'past';
 
@@ -41,6 +69,8 @@ export default function EventsScreen() {
           Descubre tu siguiente meta
         </AppText>
         <MascotTip id="events-intro" message="¿Cuál será tu próxima meta?" style={{ marginBottom: spacing.md }} />
+        <StoreTeaser />
+        <View style={{ height: spacing.md }} />
         <SegmentedControl
           value={filter}
           onChange={setFilter}

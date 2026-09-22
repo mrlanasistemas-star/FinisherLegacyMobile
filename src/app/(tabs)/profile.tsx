@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ChevronRight, LogOut, Settings, Share2, User as UserIcon } from 'lucide-react-native';
+import { Bell, ChevronRight, LifeBuoy, LogOut, Package, Settings, Share2, User as UserIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { ScrollView, Share, View } from 'react-native';
 
@@ -116,6 +116,9 @@ export default function ProfileScreen() {
             onPress={() => Share.share({ message: `https://finisherlegacy.com/@${profile.username}` })}
           />
         ) : null}
+        <MenuRow icon={Package} label="Mis pedidos" onPress={() => router.push('/orders')} />
+        <MenuRow icon={Bell} label="Notificaciones" onPress={() => router.push('/notifications')} />
+        <MenuRow icon={LifeBuoy} label="Mi equipo de apoyo" onPress={() => router.push('/support')} />
         <MenuRow icon={Settings} label="Configuración" onPress={() => router.push('/settings')} />
         <MenuRow icon={LogOut} label="Cerrar sesión" tone="destructive" onPress={() => setConfirmingLogout(true)} loading={loading} />
       </View>

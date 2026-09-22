@@ -12,7 +12,7 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.finisherlegacy.app",
       "buildNumber": "1",
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "package": "com.finisherlegacy.app",
@@ -23,7 +23,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "output": "static",
@@ -53,11 +56,19 @@
           "photosPermission": "Finisher Legacy necesita acceso a tus fotos para elegir la imagen de tu medalla o tu foto de perfil."
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f6dce084-4b31-4f64-980a-917784b1f5c3"
+      }
+    },
+    "owner": "zuriel2026s-team"
   }
 }

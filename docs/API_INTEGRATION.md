@@ -1,3 +1,5 @@
+> **Histórico/superseded** — fusionado en [`ARCHITECTURE.md`](./ARCHITECTURE.md) §"Integración con la API", extendido con los dominios nuevos (Store/Cart/Checkout/Orders/Payments, My Events/Media/Gear, Notifications/Push/Support). Se conserva sin cambios por referencia.
+
 # Integración con la API
 
 Base: `EXPO_PUBLIC_API_URL` (`.env` / `.env.example`) → `https://finisherlegacy.com/api/v1` en producción.

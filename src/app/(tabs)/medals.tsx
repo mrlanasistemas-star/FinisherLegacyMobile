@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { Plus, Shirt, Trophy } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 
@@ -16,6 +16,32 @@ import { Skeleton } from '@/components/skeleton';
 import { useMedals } from '@/hooks/use-medals';
 import { colors, radius, spacing } from '@/theme/tokens';
 import type { Medal } from '@/types/models';
+
+function LegacyHubLink({ icon: Icon, label, onPress }: { icon: typeof Trophy; label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={({ pressed }) => ({
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.graphite,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.sm,
+        opacity: pressed ? 0.85 : 1,
+      })}>
+      <Icon color={colors.gold} size={16} />
+      <AppText variant="caption" tone="default" numberOfLines={1} style={{ flex: 1 }}>
+        {label}
+      </AppText>
+    </Pressable>
+  );
+}
 
 export default function MedalsScreen() {
   const { data, isPending, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -57,6 +83,11 @@ export default function MedalsScreen() {
             </LinearGradient>
           </Pressable>
         </View>
+      </View>
+
+      <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
+        <LegacyHubLink icon={Trophy} label="Mis Eventos" onPress={() => router.push('/my-events')} />
+        <LegacyHubLink icon={Shirt} label="Mi Equipo" onPress={() => router.push('/gear')} />
       </View>
 
       <MascotTip

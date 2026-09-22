@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { ChevronRight, FileText, LogOut, Shield, User } from 'lucide-react-native';
+import { Bell, ChevronRight, FileText, LogOut, Shield, User } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, View } from 'react-native';
 
@@ -21,6 +21,8 @@ export default function SettingsIndexScreen() {
 
       <View style={{ marginTop: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
         <Row icon={User} label="Cuenta" onPress={() => router.push('/settings/account')} />
+        <Separator inset={spacing.lg + 20 + spacing.md} />
+        <Row icon={Bell} label="Notificaciones" onPress={() => router.push('/settings/notifications')} />
         <Separator inset={spacing.lg + 20 + spacing.md} />
         <Row icon={Shield} label="Privacidad" onPress={() => router.push('/settings/privacy')} />
         <Separator inset={spacing.lg + 20 + spacing.md} />

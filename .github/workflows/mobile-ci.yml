@@ -1,0 +1,38 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # Non-blocking: today this only surfaces the same SDK-patch-drift
+      # noise already triaged in docs/RELEASE_CHECKLIST.md, never a real
+      # config error. Flip this to blocking once the project's dependency
+      # versions are kept in lockstep with each Expo SDK patch release.
+      - name: Expo Doctor (informational)
+        run: npx expo-doctor
+        continue-on-error: true

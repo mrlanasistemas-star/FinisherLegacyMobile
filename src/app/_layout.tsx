@@ -39,6 +39,22 @@ function RootNavigator() {
         <Stack.Screen name="legacy/[code]" />
         <Stack.Screen name="legacy/claimed" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="events/[slug]" />
+        <Stack.Screen name="my-events/index" />
+        <Stack.Screen name="my-events/[participantId]" />
+        <Stack.Screen name="my-events/memory-upgrades" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="gear/index" />
+        <Stack.Screen name="gear/[uuid]" />
+        <Stack.Screen name="gear/claim" options={{ presentation: 'fullScreenModal' }} />
+        <Stack.Screen name="gear/claimed" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
+        <Stack.Screen name="store/index" />
+        <Stack.Screen name="store/[slug]" />
+        <Stack.Screen name="cart/index" />
+        <Stack.Screen name="checkout/index" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="orders/index" />
+        <Stack.Screen name="orders/[uuid]" />
+        <Stack.Screen name="notifications/index" />
+        <Stack.Screen name="support/index" />
+        <Stack.Screen name="support/[id]" />
         <Stack.Screen name="athlete/[username]" />
         <Stack.Screen name="settings" />
       </Stack.Protected>

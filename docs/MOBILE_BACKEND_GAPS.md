@@ -1,3 +1,5 @@
+> **Histórico/superseded** — todo el contenido de este documento fue fusionado en [`MOBILE_BACKEND_REQUIREMENTS.md`](./MOBILE_BACKEND_REQUIREMENTS.md) (secciones P0/P1). Se conserva aquí sin cambios por su valor histórico; para el estado actual, usar el documento nuevo.
+
 # Mobile Backend Gaps
 
 Gaps reales encontrados al auditar `C:\wamp64\www\finisherLegacy` (Laravel 13) contra `docs/api/v1.md`, `routes/api.php`, controllers, Form Requests y Resources reales. Nada hipotético — cada punto fue verificado leyendo el código fuente del backend, no inferido.

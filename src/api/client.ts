@@ -52,6 +52,10 @@ apiClient.interceptors.response.use(
       handlingUnauthorized = false;
     }
 
-    return Promise.reject(error);
+    // Reject with the already-normalized AppError, not the raw AxiosError —
+    // every src/api/*.ts module's own `catch { throw toAppError(error) }`
+    // still works unchanged (toAppError is idempotent on an AppError), but
+    // the body only gets parsed once instead of twice per failed request.
+    return Promise.reject(appError);
   },
 );

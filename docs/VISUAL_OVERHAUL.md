@@ -1,3 +1,5 @@
+> **Histórico/superseded** — cubre la reconstrucción visual de FASE 0-9 (Foundation → Auth → Home → Vault → Scanner → Events → Profile → Settings), previa a los dominios de tienda/media/gear/comunidad. Sigue siendo la referencia real de historia del design system (por qué `GlassSurface` no usa `expo-glass-effect` directo, por qué `shadows.card`/`shadows.gold` bajaron de elevation 8 a 2-3, la corrección real de Auth en dispositivo) — se conserva sin cambios. Las pantallas nuevas (My Events, Media, Gear, Store, Cart, Checkout, Orders, Notifications, Support) siguen estos mismos principios pero no tuvieron todavía la misma pasada de verificación en dispositivo real que Auth sí tuvo aquí (§Corrección Auth) — ver [`DEVICE_QA.md`](./DEVICE_QA.md).
+
 # Visual Overhaul
 
 Dirección de arte para la reconstrucción visual de Finisher Legacy Mobile. Cambia composición/media/movimiento — no toca API, auth, stores, navegación ni CRUD ya construidos.
