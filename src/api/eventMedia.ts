@@ -1,25 +1,24 @@
 import { apiClient } from '@/api/client';
 import { toAppError } from '@/api/errors';
-import type { AthleteEventMedia } from '@/types/models';
-
-/**
- * Real free limits — `config('finisher.event_media')` on the backend,
- * confirmed by reading the config file, not the product brief. Client-side
- * validation only; the server is always the authority and re-checks MIME
- * from real file content, never the extension.
- */
-export const EVENT_MEDIA_LIMITS = {
-  freeImages: 5,
-  freeVideos: 1,
-  maxImageBytes: 8 * 1024 * 1024,
-  maxVideoBytes: 100 * 1024 * 1024,
-  imageMimes: ['image/jpeg', 'image/png', 'image/webp'] as const,
-  videoMimes: ['video/mp4', 'video/webm'] as const,
-};
+import type { AthleteEventMedia, MediaEntitlement } from '@/types/models';
 
 export async function fetchEventMedia(participantId: number): Promise<AthleteEventMedia[]> {
   try {
     const { data } = await apiClient.get<{ data: AthleteEventMedia[] }>(`me/events/${participantId}/media`);
+    return data.data;
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/**
+ * Limits live on the backend (free tier + any Memory Pack) — the app reads
+ * used/limit/remaining, max bytes and allowed MIME types from here instead
+ * of hardcoding them. The server still re-checks everything on upload.
+ */
+export async function fetchMediaEntitlement(participantId: number): Promise<MediaEntitlement> {
+  try {
+    const { data } = await apiClient.get<{ data: MediaEntitlement }>(`me/events/${participantId}/media-entitlement`);
     return data.data;
   } catch (error) {
     throw toAppError(error);
@@ -47,6 +46,7 @@ export async function uploadEventMedia(
   try {
     const { data } = await apiClient.post<{ data: AthleteEventMedia }>(`me/events/${participantId}/media`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
       onUploadProgress: (event) => {
         if (!onProgress || !event.total) return;
         onProgress(Math.round((event.loaded / event.total) * 100));
@@ -75,10 +75,14 @@ export async function deleteEventMedia(uuid: string): Promise<void> {
   }
 }
 
-// NOTE: `POST /me/events/{participant}/media/reorder` deliberately has no
-// client here. It requires an internal integer `media_ids[]` (the row's
-// primary key), but `AthleteEventMediaResource` — the only way the client
-// ever sees a media item — exposes `uuid` only, never that integer id.
-// There is no legitimate way for the app to construct a valid request.
-// See docs/MOBILE_BACKEND_REQUIREMENTS.md — one-field backend fix needed
-// (`'id' => $this->id` in the Resource) before drag-to-reorder can be real.
+/** Persists a new order by media `uuid` — the backend rejects uuids from another participation. */
+export async function reorderEventMedia(participantId: number, mediaUuids: string[]): Promise<AthleteEventMedia[]> {
+  try {
+    const { data } = await apiClient.post<{ data: AthleteEventMedia[] }>(`me/events/${participantId}/media/reorder`, {
+      media_uuids: mediaUuids,
+    });
+    return data.data;
+  } catch (error) {
+    throw toAppError(error);
+  }
+}

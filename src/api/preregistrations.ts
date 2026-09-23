@@ -3,7 +3,8 @@ import { toAppError } from '@/api/errors';
 import type { Preregistration } from '@/types/models';
 
 export interface PreregisterPayload {
-  event_race_id: number;
+  /** The race's public uuid, exactly as `GET /events/{slug}` exposes it. */
+  event_race_uuid: string;
   first_name: string;
   last_name: string;
   email: string;

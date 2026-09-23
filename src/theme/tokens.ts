@@ -13,6 +13,25 @@ export const colors = {
   destructive: '#E5473F',
   success: '#4FAE7D',
   white: '#FFFFFF',
+  /** Hairline dividers between rows — quieter than `border`. */
+  hairline: '#1F1F24',
+  /** Near-black input fill — sits just above the canvas, never a grey box. */
+  input: '#111114',
+  inputBorder: '#26262C',
+  /** Secondary text on dark that still passes 4.5:1 against `black`. */
+  subtle: '#7C7C85',
+  goldWash: 'rgba(201,161,89,0.10)',
+  destructiveWash: 'rgba(229,71,63,0.10)',
+} as const;
+
+/** Form controls — one place for the input rhythm (44–48 high, 12 radius). */
+export const control = {
+  height: 48,
+  compactHeight: 44,
+  radius: 12,
+  paddingX: 14,
+  fontSize: 16,
+  labelSize: 13,
 } as const;
 
 export const spacing = {

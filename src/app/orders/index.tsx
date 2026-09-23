@@ -1,77 +1,94 @@
 import { router } from 'expo-router';
-import { Receipt } from 'lucide-react-native';
+import { ChevronRight, Receipt } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
-import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
-import { FulfillmentStatusBadge, OrderStatusBadge, PaymentStatusBadge } from '@/components/order-status-badge';
-import { Screen } from '@/components/screen';
-import { ScreenHeader } from '@/components/screen-header';
 import { Skeleton } from '@/components/skeleton';
+import { TopBar } from '@/components/ui/top-bar';
+import { PAYMENT_STATE_LABEL } from '@/features/commerce/order-timeline';
 import { useOrders } from '@/hooks/use-orders';
-import { colors, spacing } from '@/theme/tokens';
+import { colors, fontFamily, spacing } from '@/theme/tokens';
+import type { Order } from '@/types/models';
 import { formatLongDate } from '@/utils/dates';
 import { formatMoney } from '@/utils/money';
-import type { Order } from '@/types/models';
 
-function OrderRow({ order }: { order: Order }) {
-  return (
-    <Card onPress={() => router.push(`/orders/${order.uuid}`)} style={{ gap: spacing.xs }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <View>
-          <AppText variant="bodyStrong">#{order.order_number}</AppText>
-          <AppText variant="caption" tone="muted">
-            {formatLongDate(order.created_at.slice(0, 10))}
-          </AppText>
-        </View>
-        <AppText variant="bodyStrong" tone="gold">
-          {formatMoney(order.total_minor, order.currency)}
-        </AppText>
-      </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginTop: spacing.xxs }}>
-        <OrderStatusBadge status={order.status} />
-        <PaymentStatusBadge status={order.payment_status} />
-        <FulfillmentStatusBadge status={order.fulfillment_status} />
-      </View>
-    </Card>
-  );
-}
+const TONE_COLOR = { gold: colors.gold, success: colors.success, destructive: colors.destructive, muted: colors.muted } as const;
 
 export default function OrdersScreen() {
-  const { data, isPending, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useOrders();
-
-  const orders = useMemo<Order[]>(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
+  const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useOrders();
+  const orders = useMemo<Order[]>(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
 
   return (
-    <Screen edges={['top', 'left', 'right']} padded={false}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <ScreenHeader title="Mis pedidos" />
+        <TopBar title="Mis pedidos" />
       </View>
 
       {isPending ? (
-        <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg }}>
-          <Skeleton height={90} radius={16} />
-          <Skeleton height={90} radius={16} />
+        <View style={{ gap: spacing.md, padding: spacing.lg }}>
+          <Skeleton height={64} />
+          <Skeleton height={64} />
         </View>
       ) : isError ? (
-        <ErrorState message="No pudimos cargar tus pedidos." onRetry={refetch} />
-      ) : orders.length === 0 ? (
-        <EmptyState icon={Receipt} title="Sin pedidos todavía" message="Cuando compres algo en la tienda lo verás aquí." />
+        <ErrorState error={error} message="No pudimos cargar tus pedidos." onRetry={refetch} />
       ) : (
         <FlatList
           data={orders}
           keyExtractor={(item) => item.uuid}
-          contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }}
+          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.gold} />}
           onEndReachedThreshold={0.4}
-          onEndReached={() => hasNextPage && fetchNextPage()}
-          ListFooterComponent={isFetchingNextPage ? <Skeleton height={90} radius={16} /> : null}
+          onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+          ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.gold} style={{ marginVertical: spacing.md }} /> : null}
           renderItem={({ item }) => <OrderRow order={item} />}
+          ListEmptyComponent={
+            <EmptyState icon={Receipt} title="Aún no tienes pedidos" message="Cuando compres algo en la tienda, aquí podrás seguir su estado." actionLabel="Ir a la tienda" onAction={() => router.replace('/store')} />
+          }
         />
       )}
-    </Screen>
+    </SafeAreaView>
+  );
+}
+
+function OrderRow({ order }: { order: Order }) {
+  const state = PAYMENT_STATE_LABEL[order.payment_state] ?? PAYMENT_STATE_LABEL.pending;
+  const label = order.status === 'cancelled' && order.payment_state !== 'paid' ? 'Cancelado' : order.fulfillment_status === 'fulfilled' ? 'Entregado' : state.label;
+  const tone = order.status === 'cancelled' && order.payment_state !== 'paid' ? 'muted' : order.fulfillment_status === 'fulfilled' ? 'success' : state.tone;
+  const itemCount = order.items?.reduce((sum, item) => sum + item.quantity, 0);
+
+  return (
+    <Pressable
+      onPress={() => router.push(`/orders/${order.uuid}`)}
+      accessibilityRole="button"
+      accessibilityLabel={`Pedido ${order.order_number}, ${label}, ${formatMoney(order.total_minor, order.currency)}`}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        paddingVertical: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.hairline,
+        opacity: pressed ? 0.7 : 1,
+      })}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>#{order.order_number}</AppText>
+        <AppText variant="caption" tone="muted">
+          {formatLongDate(order.created_at.slice(0, 10))}
+          {itemCount ? ` · ${itemCount} ${itemCount === 1 ? 'producto' : 'productos'}` : ''}
+        </AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: TONE_COLOR[tone] }} />
+          <AppText variant="caption" style={{ color: TONE_COLOR[tone] }}>
+            {label}
+          </AppText>
+        </View>
+      </View>
+      <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>{formatMoney(order.total_minor, order.currency)}</AppText>
+      <ChevronRight size={18} color={colors.subtle} />
+    </Pressable>
   );
 }

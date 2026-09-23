@@ -4,6 +4,8 @@
  * confirmed by reading the actual Resource class, nothing invented.
  */
 
+import type { LegacyMoment } from './social';
+
 export type Visibility = 'public' | 'private';
 
 export interface User {
@@ -72,6 +74,7 @@ export interface PublicAthleteProfile {
   username: string;
   bio: string | null;
   city: string | null;
+  state: string | null;
   country: string | null;
   sport: string | null;
   photo_url: string | null;
@@ -81,12 +84,55 @@ export interface PublicAthleteProfile {
 export interface PublicAthleteStats {
   medals: number;
   events: number;
+  followers: number;
+  following: number;
+  moments: number;
 }
 
+/** One row of the public "Carreras" list — `PublicAthleteProfileService::recentEvents()`. */
+export interface PublicAthleteRace {
+  event: string | null;
+  event_slug: string | null;
+  edition: string | null;
+  event_date: string | null;
+  race: string | null;
+  distance: string | null;
+  official_time: string | null;
+  pace: string | null;
+}
+
+/** GET /athletes/{username} — `PublicAthleteController::show`. */
 export interface PublicAthlete {
   profile: PublicAthleteProfile;
   stats: PublicAthleteStats;
+  viewer: {
+    is_own: boolean;
+    is_following: boolean;
+    is_blocked: boolean;
+    can_follow: boolean;
+  };
   medals: PublicMedal[];
+  recent_moments: LegacyMoment[];
+  recent_events: PublicAthleteRace[];
+}
+
+/** GET /profile (a.k.a. /me/profile) — `Api\V1\ProfileController::show`. */
+export interface MyProfileResponse {
+  athlete: { legacy_id: string; full_name: string };
+  profile: AthleteProfile | null;
+  stats: {
+    event_count: number;
+    total_distance_km: number | null;
+    legacy_plate_count: number;
+    medal_count: number;
+    gear_count: number;
+    media_count: number;
+  };
+  social: {
+    followers_count: number;
+    following_count: number;
+    moments_count: number;
+  };
 }
 
 export type LegacyCodeStatus = 'active' | 'blocked' | 'cancelled' | 'replaced' | (string & {});
@@ -118,6 +164,8 @@ export interface LegacyCodeClaimResult {
 }
 
 export interface EventRace {
+  /** Public race id — what `POST /events/{edition}/preregister` takes as `event_race_uuid`. */
+  uuid: string;
   name: string;
   distance_value: number;
   distance_unit: string;
@@ -150,7 +198,9 @@ export interface EventDetail {
   sport: string;
   organizer: string | null;
   edition: {
+    id: number;
     name: string;
+    preregistration_open: boolean;
     year: number;
     event_date: string;
     city: string | null;
@@ -406,14 +456,38 @@ export interface PublicGear {
 // Notifications — GET /me/notifications, POST .../read, POST .../read-all
 // ---------------------------------------------------------------------------
 
+/** Structured deep-link target — whitelisted server-side from the notification metadata. */
+export interface NotificationTarget {
+  kind: 'athlete' | 'moment' | 'order' | 'event';
+  username?: string;
+  moment_uuid?: string;
+  order_uuid?: string;
+}
+
 export interface AppNotification {
   id: string;
   title: string | null;
   message: string | null;
   type: string | null;
   action_url: string | null;
+  target: NotificationTarget | null;
   read_at: string | null;
   created_at: string;
+}
+
+/** GET /me/events/{participant}/media-entitlement — the only source of media limits. */
+export interface MediaEntitlementBucket {
+  used: number;
+  limit: number;
+  remaining: number;
+  max_bytes: number;
+  allowed_mimes: string[];
+}
+
+export interface MediaEntitlement {
+  images: MediaEntitlementBucket;
+  videos: MediaEntitlementBucket;
+  memory_packs_enabled: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -484,9 +558,17 @@ export interface ProductSummary {
   type: string;
   brand: string | null;
   category: string | null;
+  category_slug: string | null;
+  /** Any active variant available — boolean only, never a stock count. */
+  in_stock: boolean;
   from_price_minor: number | null;
   currency: string;
   image_url: string | null;
+}
+
+export interface ProductCategoryOption {
+  name: string;
+  slug: string;
 }
 
 export interface ProductGalleryItem {
@@ -587,32 +669,64 @@ export interface OrderItem {
   fulfilled: boolean;
 }
 
+/**
+ * The one field payment UX renders from — derived server-side in
+ * `OrderResource::paymentState()`. "Order created" (`status`) and "payment
+ * paid" (`payment_state === 'paid'`) are never the same thing.
+ */
+export type PaymentState = 'pending' | 'processing' | 'paid' | 'failed' | 'cancelled' | 'refunded';
+
+export interface OrderPaymentSummary {
+  status: PaymentStatus;
+  provider: string;
+  method: string;
+  paid_at: string | null;
+  failed_at: string | null;
+}
+
 export interface Order {
   uuid: string;
   order_number: string;
   status: OrderStatus;
   payment_status: PaymentStatus;
+  payment_state: PaymentState;
+  /** Server decides: not paid, not cancelled/completed, not expired. */
+  payable: boolean;
   fulfillment_status: FulfillmentStatus;
   subtotal_minor: number;
   discount_minor: number;
   tax_minor: number;
   total_minor: number;
   currency: string;
+  coupon_code: string | null;
   created_at: string;
   confirmed_at: string | null;
-  items: OrderItem[];
+  cancelled_at: string | null;
+  completed_at: string | null;
+  /** When an unpaid order stops being payable (null once paid/closed). */
+  expires_at: string | null;
+  payment: OrderPaymentSummary | null;
+  /** Omitted when the server didn't load items (e.g. right after checkout it does). */
+  items?: OrderItem[];
 }
 
 // ---------------------------------------------------------------------------
 // Payments — POST /orders/{uuid}/payments/online
 // ---------------------------------------------------------------------------
 
-/** `client_payload` shape depends on the configured gateway — today only Stripe has a real SDK wired (`{client_secret, publishable_key}`); OpenPay's gateway class exists but is unverified/not production-ready. Neither has real keys configured in this environment — see docs/MOBILE_BACKEND_REQUIREMENTS.md. */
+/**
+ * `POST /orders/{uuid}/payments/online` with `provider: 'stripe'` — what
+ * Stripe's PaymentSheet needs. Never a secret key. Calling it again for the
+ * same order returns the SAME PaymentIntent (resume), never a second charge.
+ */
 export interface OnlinePaymentResult {
+  order_uuid: string;
   provider_reference: string;
   client_payload: {
+    provider?: string;
     client_secret?: string;
     publishable_key?: string | null;
+    merchant_display_name?: string;
     [key: string]: unknown;
   };
 }

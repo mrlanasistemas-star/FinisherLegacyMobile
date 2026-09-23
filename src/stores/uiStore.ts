@@ -16,6 +16,9 @@ interface UiState {
    * device row on the backend is "this phone" to delete it again.
    */
   pushDeviceUuid: string | null;
+  /** The Home "Primeros pasos" guide was dismissed (it also hides itself once every step is done). */
+  dismissedGettingStarted: boolean;
+  setDismissedGettingStarted: (dismissed: boolean) => void;
   setHasSeenOnboarding: (seen: boolean) => void;
   setPendingDeepLink: (href: string | null) => void;
   markTipSeen: (id: string) => void;
@@ -35,6 +38,8 @@ export const useUiStore = create<UiState>()(
       pendingDeepLink: null,
       seenTips: [],
       pushDeviceUuid: null,
+      dismissedGettingStarted: false,
+      setDismissedGettingStarted: (dismissed) => set({ dismissedGettingStarted: dismissed }),
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
       setPendingDeepLink: (href) => set({ pendingDeepLink: href }),
       markTipSeen: (id) => set((state) => (state.seenTips.includes(id) ? state : { seenTips: [...state.seenTips, id] })),
@@ -47,6 +52,7 @@ export const useUiStore = create<UiState>()(
         hasSeenOnboarding: state.hasSeenOnboarding,
         seenTips: state.seenTips,
         pushDeviceUuid: state.pushDeviceUuid,
+        dismissedGettingStarted: state.dismissedGettingStarted,
       }),
     },
   ),

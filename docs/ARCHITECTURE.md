@@ -2,83 +2,87 @@
 
 ## Stack
 
-Expo SDK 57 · React Native 0.86 · React 19 · TypeScript · Expo Router (file-based, `src/app`) · TanStack Query · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Camera · Expo Image Picker · Expo Image Manipulator (compresión client-side) · Expo Video · Expo Notifications · Reanimated · Gesture Handler.
+Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · Expo Router (file-based, `src/app`, typed routes) · TanStack Query v5 (+ persistencia en AsyncStorage) · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Camera · Expo Image / Image Picker / Image Manipulator · Expo Video · Expo Notifications · Reanimated · Gesture Handler · `@stripe/stripe-react-native` (PaymentSheet) · `expo-apple-authentication` · `expo-auth-session` (Google).
 
-**Estilos:** StyleSheet + un design system centralizado en `src/theme/tokens.ts` (colores, spacing, radius, tipografía, sombras), no NativeWind. Se evaluó NativeWind (ya estaba configurado por una sesión anterior — `tailwind.config.js`/`babel.config.js`/`metro.config.js` siguen en el repo) pero el desarrollo continuó sobre componentes con tokens directos por simplicidad; los archivos de NativeWind no se eliminaron por si se retoma su uso.
+**Estilos:** StyleSheet + design system en `src/theme/tokens.ts` (colores, `control` para inputs, spacing, radius, tipografía). NativeWind sigue configurado pero no se usa.
+
+## Navegación
+
+```
+Inicio · Legacy · [ESCANEAR] · Tienda · Perfil
+```
+
+- **Inicio** — lanzadera: hero, "Primeros pasos" (guía derivada de datos reales que se oculta sola al completarse), próxima meta, última carrera (+ "Compartir como Legacy Moment"), vista previa del Legacy, CTA de escaneo, 2 momentos de la comunidad. Iconos de búsqueda (Explorar) y notificaciones (badge real de no leídas).
+- **Legacy** — colección: medallas, carreras, recuerdos (tus momentos), equipo y Legacy Plates. "+" agrega cualquier cosa.
+- **Escanear** — el FAB dorado central ocupa un slot real de la barra (espaciado parejo en cualquier ancho) y abre el escáner a pantalla completa.
+- **Tienda** — buscador, categorías reales, lo más nuevo, catálogo; carrito con badge en la pestaña.
+- **Perfil** — identidad deportiva (portada, avatar, @usuario, Legacy ID, bio, ubicación, stats tocables, Momentos/Carreras/Medallas/Equipo). Configuración sólo detrás del engrane.
+
+Pantallas apiladas: `feed`, `explore`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*` (cuenta, privacidad, seguridad, notificaciones, acerca de), y en `(auth)`: onboarding, welcome, login, register, forgot-password, reset-password.
+
+**Toda ruta autenticada debe registrarse en `Stack.Protected` de `src/app/_layout.tsx`.**
 
 ## Carpetas
 
 ```
 src/
-├── api/          # axios client + un módulo por recurso
-├── components/    # design system + componentes de dominio (gear-card, product-card, media/, ...)
-├── features/      # arquitectura preparada para dominios sin backend real (community/, moments/) — feature-flagged OFF
-├── hooks/         # hooks de TanStack Query + hooks de sesión/deep links
-├── payments/      # PaymentGatewayAdapter — abstracción sobre el gateway de pago online
-├── schemas/       # Zod schemas de formularios
-├── stores/        # Zustand: authStore (sesión), uiStore (onboarding, mascot tips vistos, deep link pendiente, pushDeviceUuid)
-├── theme/         # tokens de diseño
-├── types/         # tipos del contrato de API (api.ts, auth.ts, models.ts)
-├── utils/         # fechas, env, logger, uuid, money, image-compress
-└── app/           # rutas Expo Router — TODA ruta autenticada debe registrarse explícitamente en
-                    # `Stack.Protected` dentro de src/app/_layout.tsx, no basta con crear el archivo
-    ├── (auth)/    # onboarding, welcome, login, register
-    ├── (tabs)/    # inicio, medallas (Legacy Vault), eventos, perfil
-    ├── medals/, legacy/, events/, athlete/, settings/
-    ├── my-events/  # Mi Historia — timeline + detalle de participación + media
-    ├── gear/       # Digital Closet — mi equipo + claim QR/manual
-    ├── store/, cart/, checkout/, orders/   # ecosistema comercial
-    ├── notifications/, support/            # inbox + Mi Equipo de Apoyo
+├── api/          # axios client + un módulo por recurso (social.ts, account.ts, payments.ts, …)
+├── app/          # rutas Expo Router (+native-intent.tsx reescribe enlaces entrantes)
+├── components/   # design system (ui/), social/, profile/, guide/, events/, media/, brand/
+├── features/     # lógica pura y testeada: social/moment-state, commerce/order-timeline,
+│                 # links/map-incoming-path, auth/social-sign-in
+├── hooks/        # TanStack Query (query-keys.ts centraliza TODAS las claves)
+├── payments/     # payment-flow.ts (máquina de estados, testeada) + stripe.ts (PaymentSheet)
+├── providers/    # QueryProvider (persistencia + limpieza al cerrar sesión)
+├── schemas/      # Zod (auth, profile, moment)
+├── stores/       # Zustand: sesión, UI local, toasts
+├── theme/        # tokens
+├── types/        # contrato de API (api.ts, auth.ts, models.ts, social.ts)
+└── utils/        # money, dates, relative-time, media-file, network, haptics, …
 ```
 
-## API real — dominios cubiertos
+## Contrato con el backend
 
-**Auth/Profile/Medals/Legacy Codes/Events/Preregistrations/Public Athlete** — base original, sin cambios de contrato en esta pasada.
+Laravel (`/api/v1`) es la fuente de verdad. Todo identificador público es un **UUID o username** — la app nunca necesita una PK entera:
+carrito `product_variant_uuid`, reordenar media `media_uuids[]`, prerregistro `event_race_uuid`, momentos/comentarios `uuid`, atletas `username`.
 
-**My Events/History** (`src/api/meEvents.ts`) — `GET /me/events`/`/me/history` (mismo controller, mismo Query — `me/history` acepta los mismos filtros), `GET /me/events/{participant}` (detalle bundleado: resultado+splits, medallas, Legacy Plate, media, gear, compras, sesión de apoyo — una sola llamada).
-
-**Event Media** (`src/api/eventMedia.ts`) — `GET/POST /me/events/{participant}/media`, `PATCH/DELETE /me/media/{uuid}`. Límites reales (`config('finisher.event_media')`, nunca hardcodeados por adivinanza): 5 imágenes/1 video gratis por participación, 8MB/100MB máx, `image/jpeg|png|webp` + `video/mp4|webm`. Reorder (`POST .../media/reorder`) **no implementado** — gap real de backend, ver `MOBILE_BACKEND_REQUIREMENTS.md` P0.
-
-**Event Gear** (`src/api/eventGear.ts`) — gear usado en una participación específica, distinto del Digital Closet general.
-
-**Gear / Digital Closet** (`src/api/gear.ts`) — `GET /me/gear`, `POST /gear/{code}/claim`, `GET /gear/{code}` (público, sin PII). El QR de gear codifica la URL cruda de la API (`/api/v1/gear/{code}`), formato distinto al de Legacy Code (`/l/{code}`) — parsers separados, nunca reutilizados entre sí.
-
-**Store/Cart/Checkout/Orders/Payments** (`src/api/storeProducts.ts`, `cart.ts`, `checkout.ts`, `orders.ts`, `payments.ts`) — catálogo público, carrito/checkout/pedidos autenticados. **"Agregar al carrito" deshabilitado honestamente** — gap real de backend (`product_variant_id` entero nunca expuesto), ver `MOBILE_BACKEND_REQUIREMENTS.md` P0. Checkout usa `Idempotency-Key` generado antes del primer intento y reutilizado en reintentos del mismo intento (`src/hooks/use-checkout.ts`). Pagos vía `src/payments/gateway-adapter.ts` — gateway-agnostic, sin `@stripe/stripe-react-native` instalado (sin llaves reales que probar contra), maneja el 501 "gateway no configurado" honestamente.
-
-**Legacy Plate Models** (`src/api/legacyPlateModels.ts`) — catálogo público, usado en la selección de modelo de placa dentro del flujo de compra de `legacy_plate`.
-
-**Notifications/Push** (`src/api/notifications.ts`, `pushDevices.ts`) — inbox con badge de no-leídos derivado client-side (no existe endpoint de conteo). Push es persistencia real en backend; delivery real depende de `extra.eas.projectId` (existe en `app.json`) y de que el backend reemplace su `NullPushNotificationGateway` — ver `MOBILE_BACKEND_REQUIREMENTS.md` P1.
-
-**Support** (`src/api/support.ts`) — "Mi Equipo de Apoyo": sesiones, manifest (metadata sin contenido, para no arruinar sorpresas), triggered (contenido real una vez disparado), mensajes de audio reproducidos vía `expo-video`'s `useVideoPlayer` en modo sólo-audio (sin instalar `expo-av`/`expo-audio`).
-
-## Sesión
-
-`src/hooks/use-session-bootstrap.ts` lee el token de SecureStore al iniciar, valida con `GET /me`, y resuelve `authStore.status` a `authenticated` o `unauthenticated` antes de ocultar el splash — nunca se ve un flash de login. `src/app/_layout.tsx` usa `Stack.Protected` para separar el árbol `(auth)` del árbol autenticado — **toda ruta autenticada debe declararse explícitamente ahí**, no sólo `(tabs)`; añadir una carpeta bajo `src/app/` sin registrar su `Stack.Screen` la deja fuera del guard de autenticación.
-
-## Manejo de errores
-
-Cada función de `src/api/*.ts` normaliza cualquier error de Axios a una instancia de `AppError` (`src/api/errors.ts`) con un `kind`, mensaje en español, y opcionalmente `fieldErrors`/`code`/`details`. Las pantallas nunca manejan `AxiosError` directamente. Un 401 en cualquier request autenticado limpia la sesión centralizadamente desde el interceptor de `src/api/client.ts` (con guard contra 401 simultáneos).
-
-**`kind` no se decide sólo por status HTTP** — un 422 puede ser `validation` (Laravel `ValidationException`, shape `{message, errors}`) o `business_rule` (una `App\Exceptions\Api\ApiException` de dominio — `COUPON_NOT_APPLICABLE`, `MEDIA_LIMIT_REACHED`, `PRODUCT_OUT_OF_STOCK`, etc. — shape `{error:{code,message,details}}`, la misma que usan los demás status). `toAppError()` distingue por la forma real del body (¿tiene `errors`? ¿tiene `error.code`?), nunca asume por el status code solo — confirmado leyendo `App\Support\Api\ApiExceptionRenderer`, que envuelve cualquier `ApiException` igual sin importar el status. Código que necesite reaccionar a un error de negocio específico debe leer `error.code` (y `error.details` cuando aplica, p. ej. `details.reason` de un cupón rechazado), nunca comparar `error.message`.
+Dominios: Auth (+ reset de contraseña, Google/Apple, borrar cuenta) · Perfil (portada/avatar con quitar, visibilidad, `social` counts) · Medallas · Legacy Codes · Eventos (+ prerregistro) · Mi Historia / Event Media (+ `media-entitlement`, reorder por uuid, `.mov`) · Gear · Tienda/Carrito/Checkout/Pedidos/Pagos → ver `COMMERCE_ARCHITECTURE.md` · Social → ver `SOCIAL_ARCHITECTURE.md` · Notificaciones (`target` estructurado + `unread_count`) · Push devices · Equipo de apoyo.
 
 ## Envelope y paginación
 
-Éxito de recurso único: `{data, message, meta:{request_id}}`. Listas: **tres formas distintas conviven en la API real** (verificado leyendo cada controller, no asumido uniforme):
+Recurso único: `{data, message, meta:{request_id}}`. Listas:
 
-1. **Estándar** (`ResourceCollection::response()`) — `/medals`, `/events`, `/athletes` — `{data:[], links:{first,last,prev,next}, meta:{current_page,last_page,per_page,total}}`. `PaginatedResponse<T>` en `src/types/api.ts`.
-2. **Paginador crudo anidado** (`respond($paginator)` sin pasar por Resource) — `/me/events`, `/me/history`, `/me/notifications` — el paginador de Laravel completo queda anidado en `data.data`, con `current_page`/`per_page`/`last_page`/`total` dentro de `data`, no en `meta`. `NestedPaginatorEnvelope<T>`.
-3. **Meta plano** (`respond(collection, meta:[...])`) — `/store/products`, `/me/support-sessions` — `data` plano, `meta` sólo con `current_page`/`last_page`/`total`. `FlatMetaPaginatedResponse<T>`.
+1. **Estándar** `{data, links, meta}` — medallas, eventos, **pedidos** (corregido en backend), comentarios, seguidores/siguiendo, bloqueados. `PaginatedResponse<T>`.
+2. **Cursor** `{data, links, meta:{next_cursor}}` — feed y momentos de un atleta. `CursorPage<T>`.
+3. **Paginador anidado** — `/me/events`, `/me/history`, `/me/notifications`. `NestedPaginatorEnvelope<T>`.
+4. **Meta plano** — `/store/products` (+ `meta.categories`), `/me/support-sessions`. `FlatMetaPaginatedResponse<T>`.
 
-Cada módulo de `src/api/*.ts` usa el tipo correcto para su endpoint — nunca asumir que todas las listas se ven igual. `GET /orders` es un caso aparte: por un bug real de backend (ver `MOBILE_BACKEND_REQUIREMENTS.md` P0), no expone metadata de paginación en absoluto; `src/api/orders.ts` usa un heurístico ("página llena de 20 → puede haber más") en vez de fingir un total.
+## Errores
 
-## Deep links
+`src/api/errors.ts` normaliza todo a `AppError` (`kind`, mensaje en español, `code`, `fieldErrors`, `details`). Un 422 de dominio (`{error:{code}}`) es `business_rule`; uno de validación (`{errors}`) es `validation`. Las pantallas nunca muestran `AxiosError`, códigos ni stack traces: usan `InlineError` (con "Reintentar"), toasts, o `ErrorState` (distingue "sin conexión" de error del servidor). Un 401 limpia la sesión centralmente.
 
-`src/hooks/use-deep-links.ts` — Expo Router enruta `finisherlegacy://...` automáticamente mientras el usuario está autenticado. El hook cubre el caso que Router no resuelve solo: un link abierto sin sesión activa se captura en `uiStore.pendingDeepLink` y se reproduce con `router.replace` en cuanto el status pasa a `authenticated`. `action_url` de una notificación (`GET /me/notifications`) se resuelve con la misma lógica cuando es un path interno; si no, se abre externamente.
+## Offline
 
-## Rutas EAS / distribución
+- **Lectura:** TanStack persiste en AsyncStorage (24 h, versionado por versión de app) sólo datos de lectura — perfil, medallas, feed, atletas, momentos, historia, explorar, eventos. Nunca carrito, pedidos ni pagos.
+- **Escritura:** follow, comentario, reacción, carrito, checkout, pago, subida de archivos y edición de perfil llaman `ensureOnline()` y fallan al instante con "Sin conexión…" — nunca un éxito falso.
+- Al terminar la sesión (logout, token vencido, cuenta eliminada) se borra todo el caché, en memoria y persistido.
 
-`extra.eas.projectId` existe en `app.json` (`eas init` ya se corrió). `ios.supportsTablet` está deliberadamente en `false` para V1 — ningún layout de la app se diseñó ni verificó específicamente para tablet; ver `RELEASE_CHECKLIST.md`.
+## Sesión y seguridad
 
-## Comunidad / Legacy Moments
+Token sólo en SecureStore. `useSessionBootstrap` valida con `GET /me` antes de ocultar el splash. El logger es silencioso en producción y nunca registra tokens, contraseñas, secretos de pago ni cuerpos de requests. Los datos de tarjeta nunca pasan por la app→Laravel: van del SDK de Stripe a Stripe.
 
-`src/features/community/`, `src/features/moments/` — sólo tipos TypeScript anticipados y un flag (`COMMUNITY_ENABLED = false`). El backend no tiene follow/feed/moments/likes/comments hoy — ver `MOBILE_BACKEND_REQUIREMENTS.md` P2. No hay ninguna pantalla ni hook construido contra esto; construirlos antes de que el backend exista significaría fingir una red social o dejar código muerto.
+## Archivos (fotos y videos)
+
+`src/utils/media-file.ts`: toda foto se comprime a JPEG (≤2000 px, 80 %) y su nombre **siempre** termina en `.jpg`; los videos conservan un nombre coherente con su MIME (`video/quicktime` → `.mov`). Los límites vienen del backend (`GET /me/events/{participant}/media-entitlement`).
+
+## Enlaces
+
+`src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts`: `finisherlegacy://athlete/u`, `finisherlegacy://moments/uuid`, `https://finisherlegacy.com/@u`, `/moments/uuid`, `/events/slug`, `/reset-password/{token}`; el retorno de 3-D Secure de Stripe (`/stripe-redirect`) se entrega al SDK sin navegar. Un enlace abierto sin sesión se guarda y se reproduce al iniciar sesión (`use-deep-links.ts`).
+
+## Eliminación de cuenta
+
+`DELETE /me/account` (contraseña, o escribir `ELIMINAR` en cuentas sólo Google/Apple): revoca tokens, borra perfil, fotos, momentos, comentarios, reacciones, follows, bloqueos y dispositivos push; anonimiza nombre/correo/teléfono; las medallas personales quedan privadas; pedidos y resultados oficiales se conservan de forma anónima; el usuario se soft-deletea.
+
+## Calidad
+
+`npm run typecheck` · `npm run lint` · `npm test` · `npx expo export --platform android` — los cuatro en CI (`.github/workflows/mobile-ci.yml`), más `expo-doctor` informativo.

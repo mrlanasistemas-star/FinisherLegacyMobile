@@ -1,3 +1,5 @@
+> **OBSOLETO (2026-09-23).** Todos los huecos de backend listados aquí se cerraron en la pasada "Full Product Completion" (carrito por UUID, paginación de pedidos, reorder de media por UUID, UUID de carrera para prerregistro, borrar cuenta, reset de contraseña, Google/Apple, Stripe PaymentSheet, capa social Legacy Moments). Se conserva sólo como historial — estado actual: `ARCHITECTURE.md`, `COMMERCE_ARCHITECTURE.md`, `SOCIAL_ARCHITECTURE.md`, `RELEASE_CHECKLIST.md`.
+
 # Mobile Backend Requirements
 
 Deuda real, verificada leyendo el backend actual (`C:\wamp64\www\finisherLegacy`), que bloquea que una función de Mobile sea 100% real en vez de un estado honesto de "no disponible todavía". Cada sección corresponde a una función ya implementada en Mobile que consume la API real, pero que tiene un límite externo (contrato/cuenta/credenciales) documentado en vez de fingido. Organizado por prioridad; el detalle técnico exacto (snippets PHP reales, diffs mínimos) vive dentro de cada item, no se resume.

@@ -1,42 +1,82 @@
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { Bell, ChevronRight, FileText, LogOut, Shield, User } from 'lucide-react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { Bell, CircleHelp, Info, KeyRound, LifeBuoy, LogOut, Mail, Receipt, Shield, UserPen } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
-import { Screen } from '@/components/screen';
-import { ScreenHeader } from '@/components/screen-header';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Separator } from '@/components/ui/separator';
+import { ListRow } from '@/components/ui/list-row';
+import { TopBar } from '@/components/ui/top-bar';
 import { useLogout } from '@/hooks/use-logout';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { useProfile } from '@/hooks/use-profile';
+import { useAuthStore } from '@/stores/authStore';
+import { colors, spacing } from '@/theme/tokens';
 
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={{ marginTop: spacing.lg }}>
+      <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xxs }}>
+        {title.toUpperCase()}
+      </AppText>
+      {children}
+    </View>
+  );
+}
+
+/** Settings is just settings — identity lives on the Profile. */
 export default function SettingsIndexScreen() {
   const { logout, loading } = useLogout();
+  const user = useAuthStore((s) => s.user);
+  const profile = useProfile();
   const [confirmingLogout, setConfirmingLogout] = useState(false);
+  const version = Constants.expoConfig?.version ?? '1.0.0';
+  const isPrivate = profile.data?.profile?.profile_visibility === 'private';
 
   return (
-    <Screen scroll>
-      <ScreenHeader title="Configuración" />
-
-      <View style={{ marginTop: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
-        <Row icon={User} label="Cuenta" onPress={() => router.push('/settings/account')} />
-        <Separator inset={spacing.lg + 20 + spacing.md} />
-        <Row icon={Bell} label="Notificaciones" onPress={() => router.push('/settings/notifications')} />
-        <Separator inset={spacing.lg + 20 + spacing.md} />
-        <Row icon={Shield} label="Privacidad" onPress={() => router.push('/settings/privacy')} />
-        <Separator inset={spacing.lg + 20 + spacing.md} />
-        <Row icon={FileText} label="Acerca de" onPress={() => router.push('/settings/about')} />
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+      <View style={{ paddingHorizontal: spacing.lg }}>
+        <TopBar title="Configuración" />
       </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl }}>
+        <Group title="Cuenta">
+          <ListRow icon={UserPen} label="Editar perfil" description={user?.email} onPress={() => router.push('/settings/account')} />
+          <ListRow icon={Receipt} label="Mis pedidos" onPress={() => router.push('/orders')} />
+          <ListRow icon={LifeBuoy} label="Mi equipo de apoyo" description="Mensajes de ánimo para tus carreras" onPress={() => router.push('/support')} divider={false} />
+        </Group>
 
-      <View style={{ marginTop: spacing.lg, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
-        <Row icon={LogOut} label="Cerrar sesión" tone="destructive" onPress={() => setConfirmingLogout(true)} loading={loading} />
-      </View>
+        <Group title="Privacidad">
+          <ListRow icon={Shield} label="Privacidad y bloqueos" value={isPrivate ? 'Perfil privado' : 'Perfil público'} onPress={() => router.push('/settings/privacy')} divider={false} />
+        </Group>
+
+        <Group title="Notificaciones">
+          <ListRow icon={Bell} label="Notificaciones push" onPress={() => router.push('/settings/notifications')} divider={false} />
+        </Group>
+
+        <Group title="Seguridad">
+          <ListRow icon={KeyRound} label="Contraseña y cuenta" description="Cambiar contraseña o eliminar tu cuenta" onPress={() => router.push('/settings/security')} divider={false} />
+        </Group>
+
+        <Group title="Ayuda">
+          <ListRow icon={CircleHelp} label="Centro de ayuda" onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/ayuda')} />
+          <ListRow icon={Mail} label="Escríbenos" value="hola@finisherlegacy.com" onPress={() => Linking.openURL('mailto:hola@finisherlegacy.com')} divider={false} />
+        </Group>
+
+        <Group title="Acerca de">
+          <ListRow icon={Info} label="Acerca de Finisher Legacy" value={`v${version}`} onPress={() => router.push('/settings/about')} divider={false} />
+        </Group>
+
+        <View style={{ marginTop: spacing.xl }}>
+          <ListRow icon={LogOut} label="Cerrar sesión" destructive onPress={() => setConfirmingLogout(true)} loading={loading} divider={false} />
+        </View>
+      </ScrollView>
 
       <ConfirmDialog
         visible={confirmingLogout}
-        title="Cerrar sesión"
-        description="Tendrás que iniciar sesión nuevamente para ver tu Legacy."
+        title="¿Cerrar sesión?"
+        description="Tendrás que iniciar sesión otra vez para ver tu Legacy."
         confirmLabel="Cerrar sesión"
         loading={loading}
         onConfirm={async () => {
@@ -45,32 +85,6 @@ export default function SettingsIndexScreen() {
         }}
         onCancel={() => setConfirmingLogout(false)}
       />
-    </Screen>
-  );
-}
-
-function Row({
-  icon: Icon,
-  label,
-  onPress,
-  tone = 'default',
-  loading = false,
-}: {
-  icon: typeof User;
-  label: string;
-  onPress: () => void;
-  tone?: 'default' | 'destructive';
-  loading?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={loading ? undefined : onPress}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, backgroundColor: colors.graphite }}>
-      <Icon color={tone === 'destructive' ? colors.destructive : colors.foreground} size={20} />
-      <AppText variant="bodyStrong" tone={tone} style={{ flex: 1 }}>
-        {label}
-      </AppText>
-      {!loading && <ChevronRight color={colors.muted} size={18} />}
-    </Pressable>
+    </SafeAreaView>
   );
 }

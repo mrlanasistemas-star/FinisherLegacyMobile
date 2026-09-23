@@ -11,12 +11,13 @@ export async function fetchCart(): Promise<Cart> {
   }
 }
 
+/** The variant is identified by its public `uuid` — the backend resolves the internal id. */
 export interface AddCartItemPayload {
-  product_variant_id: number;
+  product_variant_uuid: string;
   quantity: number;
   /** Required by the server when the variant's product type is `legacy_plate`. */
   event_edition_id?: number;
-  legacy_plate_model_id?: number;
+  legacy_plate_model_uuid?: string;
 }
 
 export async function addCartItem(payload: AddCartItemPayload): Promise<Cart> {

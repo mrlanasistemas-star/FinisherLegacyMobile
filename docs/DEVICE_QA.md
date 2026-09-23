@@ -1,108 +1,73 @@
 # Device QA
 
-Checklist manual para correr en un dispositivo físico real (APK de `eas build --profile preview` en Android, TestFlight/simulador real en iOS) — nada de esto sustituye a `npm run typecheck`/`lint`/`test`, los complementa. Marcar cada casilla sólo tras verificarla en el dispositivo, no por inferencia del código.
+Checklist manual en dispositivo físico (APK de `eas build --profile preview`; TestFlight en iOS). Complementa — no sustituye — typecheck/lint/test/export. Marcar sólo lo verificado en el dispositivo.
+
+**Tamaños a cubrir:** 320×568 · 360×800 · 375×812 · 390×844 · 412×915 · 430×932. Android con navegación por gestos y con botones; iPhone con home indicator. Sin tablet en V1.
 
 ## Instalación y arranque
-
-- [ ] Instalar el APK/build sin depender de Metro/USB/LAN — el dispositivo debe estar en datos móviles o Wi-Fi normal, sin PC cerca.
-- [ ] Cold start: splash aparece inmediatamente, sin pantalla blanca/negra intermedia.
-- [ ] Ningún crash al abrir por primera vez.
+- [ ] Instalación limpia sin Metro/USB; datos móviles o Wi-Fi normal.
+- [ ] Cold start sin pantalla blanca; sin crash.
+- [ ] Reabrir la app: sesión restaurada sin login.
 
 ## Auth
+- [ ] Registro (errores reales del backend), login correcto/incorrecto.
+- [ ] "¿Olvidaste tu contraseña?" → correo recibido → abrir el enlace → restablecer (web o `finisherlegacy://reset-password?token=…&email=…`) → login con la nueva.
+- [ ] (iOS) Continuar con Apple — incluye "Ocultar mi correo". (Con client ids) Continuar con Google. Sin ids configurados el botón no aparece.
+- [ ] Logout: vuelve a Welcome; al entrar con otra cuenta no queda nada de la anterior (feed, perfil, carrito).
 
-- [ ] Onboarding (si es la primera vez) — 3 slides, swipe funciona, "Saltar"/"Continuar" correctos.
-- [ ] Welcome — CTA principal visible sin scroll, texto completo dentro del botón.
-- [ ] Registro — todos los campos, validación de errores real (probar email inválido, password corto), CTA alcanzable con teclado abierto.
-- [ ] Login — credenciales correctas entran; credenciales incorrectas muestran error real del backend, no genérico.
-- [ ] Cerrar la app completamente y reabrir — sesión se restaura sin pasar por login (SecureStore).
-- [ ] Logout — confirmación, vuelve a Welcome, no queda ningún dato de sesión anterior visible.
+## Navegación
+- [ ] Inicio · Legacy · Escanear · Tienda · Perfil — etiquetas legibles, haptic sutil al cambiar de pestaña.
+- [ ] El FAB dorado queda centrado, no tapa contenido, respeta barra de gestos/home indicator.
+- [ ] Badge de la Tienda = número de artículos del carrito; se actualiza al agregar/quitar.
+- [ ] "Primeros pasos" en Inicio: cada paso lleva a su pantalla y se marca solo al cumplirse; "✕" lo oculta.
 
 ## Perfil
+- [ ] Perfil propio: portada, avatar, @usuario, Legacy ID, bio, ubicación, stats; engrane → Configuración.
+- [ ] Editar perfil: cambiar/quitar avatar y portada (vista previa inmediata), username (muestra `finisherlegacy.com/@…`), bio con contador, ubicación en hoja inferior, switch de perfil privado con explicación. Guardar persiste.
+- [ ] Seguidores / Siguiendo tocables → lista con botón Seguir.
+- [ ] Perfil de otro atleta: Seguir/Siguiendo (toast "Listo. Ya sigues a …"), compartir, ••• → reportar / bloquear.
+- [ ] Perfil privado de otro: "Este perfil no está disponible".
 
-- [ ] Ver perfil propio con datos reales.
-- [ ] Editar perfil — cambiar bio/ciudad/username, subir foto de perfil y portada — persiste tras recargar.
-- [ ] Perfil público de otro atleta (`/athlete/[username]`) carga correctamente.
+## Social
+- [ ] Feed "Siguiendo" / "Descubrir", pull-to-refresh, scroll infinito, ningún video se reproduce solo.
+- [ ] ❤️ y 👏: respuesta instantánea, conteo correcto, idempotente (tocar rápido varias veces).
+- [ ] Momento: detalle, mensajes de apoyo con input fijo sobre el teclado, borrar el propio, reportar ajeno.
+- [ ] Crear momento: entrenamiento (distancia + tiempo → ritmo calculado), récord personal, recuerdo con fotos (hasta 4), visibilidad Todos/Seguidores/Solo yo.
+- [ ] "Compartir como Legacy Moment" desde: última carrera (Inicio), detalle de carrera, foto recién subida, medalla reclamada, gear reclamado — llega prellenado y no se publica solo.
+- [ ] Explorar: Para ti / Atletas / Eventos; búsqueda (espera ~350 ms, no busca por cada letra) de atletas, eventos y productos.
+- [ ] Bloquear a alguien: desaparece de feed/búsqueda; Configuración › Privacidad lo lista y permite desbloquear.
+- [ ] Notificaciones: agrupadas Hoy / Esta semana / Antes; seguidor/reacción/mensaje abren el perfil o momento correcto.
 
-## Medallas / Legacy Vault
+## Legacy
+- [ ] Pestaña Legacy: medallas, carreras, recuerdos, equipo y Legacy Plates; "+" abre las acciones.
+- [ ] Escanear Legacy Code (permiso de cámara), reclamar, pantalla de éxito.
+- [ ] Detalle de carrera: subir foto (cámara/galería) y video (iOS `.mov` se sube sin error), contador contra el límite del backend, "Mover antes/después" reordena y persiste, límite alcanzado → Memory Upgrades.
 
-- [ ] Crear medalla manual — foto frontal obligatoria, galería opcional, guarda y aparece en el Vault.
-- [ ] Ver detalle de medalla.
-- [ ] Editar medalla.
-- [ ] Eliminar medalla — confirmación, desaparece de la lista.
-
-## Legacy Code
-
-- [ ] Escanear un QR real de Legacy Code — cámara pide permiso la primera vez, detecta y navega.
-- [ ] Entrada manual de código.
-- [ ] Reclamar un código — animación de éxito, medalla aparece en el Vault.
-- [ ] Código ya reclamado por otro — mensaje de error real, no crash.
+## Tienda y pago
+- [ ] Catálogo: buscador, chips de categoría, "Lo más nuevo", productos agotados marcados.
+- [ ] Producto: galería con puntos, variantes (agotadas tachadas), cantidad, CTA fijo abajo "Agregar al carrito" (toast + haptic) y "Comprar ahora".
+- [ ] Carrito: +/−, la papelera al llegar a 1, deslizar para quitar, cupón válido/inválido con motivo real, totales del servidor.
+- [ ] Checkout → "Pagar $X" → PaymentSheet (tarjeta de prueba `4242 4242 4242 4242`) → "Confirmando…" → "Pago confirmado".
+- [ ] Tarjeta rechazada (`4000 0000 0000 0002`) → "El pago no se completó" → "Intentar de nuevo" (mismo pedido, sin segundo cargo).
+- [ ] 3-D Secure (`4000 0027 6000 3184`) → vuelve a la app y confirma.
+- [ ] Cerrar la hoja → "Pago cancelado" → pagar después desde Mis pedidos.
+- [ ] Doble tap en "Pagar" no crea dos pedidos.
+- [ ] Pedido: línea de tiempo (creado → pagado → preparando → entregado), "Apartado hasta…" para pendientes.
+- [ ] Sin llaves de Stripe: mensaje "no está activo", el pedido queda guardado.
 
 ## Eventos
+- [ ] Lista Próximos/Pasados; detalle con distancias; "Prerregistrarme" (datos prellenados, elegir distancia) → confirmación.
 
-- [ ] Lista de eventos próximos/pasados (segmented control).
-- [ ] Detalle de evento — distancias reales, botón de prerregistro (deshabilitado honestamente, ver `MOBILE_BACKEND_REQUIREMENTS.md` P1 `event_race_id`).
-- [ ] Store teaser visible en la parte superior de la pestaña Eventos, navega a `/store`.
-
-## Mis Eventos / Historia
-
-- [ ] Timeline de participaciones carga con datos reales (o empty state honesto si el atleta no tiene ninguna).
-- [ ] Detalle de una participación — resultado, splits (si existen), medallas, Legacy Plate, gear usado, compras, teaser de soporte.
-- [ ] Sección "Recuerdos" (media) — contador de fotos/videos correcto contra el límite real (5/1).
-- [ ] Subir foto desde cámara — preview antes de confirmar, progreso real durante upload, aparece en la galería.
-- [ ] Subir foto desde galería.
-- [ ] Subir video — warning si es pesado, progreso real.
-- [ ] Alcanzar el límite gratis — mensaje honesto + CTA a "Memory Upgrades" (sin precios, sin compra real).
-- [ ] Cambiar visibilidad de un item (público/sólo yo).
-- [ ] Eliminar un item de media — confirmación.
-- [ ] Abrir el visor a pantalla completa — swipe entre items, video reproduce sólo cuando está activo, se pausa al salir.
-
-## Mi Equipo (Digital Closet)
-
-- [ ] Lista de gear propio (o empty state si no tiene ninguno).
-- [ ] Detalle de un item — historial de uso si existe.
-- [ ] Reclamar gear por QR.
-- [ ] Reclamar gear por código manual.
-- [ ] Código ya reclamado — error honesto, no crash.
-
-## Tienda
-
-- [ ] Catálogo carga con imágenes/precios reales.
-- [ ] Filtro por categoría/tipo si aplica.
-- [ ] Detalle de producto — galería swipeable, variantes, selector de cantidad.
-- [ ] **"Agregar al carrito" debe aparecer deshabilitado con mensaje honesto** (gap real de backend, `product_variant_id` — ver `MOBILE_BACKEND_REQUIREMENTS.md` P0). Si en algún momento el backend resuelve este gap y el botón queda habilitado, retomar el resto de este checklist de Tienda/Carrito/Checkout.
-- [ ] Carrito — si llegó a tener algún item de una sesión anterior, verificar que subtotal/descuento/total vienen del backend (no recalculados).
-- [ ] Cupón — aplicar uno inválido muestra el motivo real de rechazo, no un genérico.
-- [ ] Checkout — sólo si el gap de carrito ya se resolvió; de lo contrario, confirmar que no hay forma de llegar a un estado de checkout roto desde una UI que ya bloqueó el paso anterior.
-- [ ] Mis Pedidos — lista carga (o empty state), detalle de un pedido muestra items/estados reales.
-- [ ] Pago en línea — botón "Pagar" intenta el flujo real; en este entorno (sin llaves Stripe reales) debe mostrar honestamente "pago no disponible todavía", nunca fingir éxito.
-
-## Notificaciones
-
-- [ ] Badge de no leídas visible en Home cuando corresponde.
-- [ ] Lista de notificaciones carga.
-- [ ] Marcar una como leída / marcar todas.
-- [ ] `action_url` de una notificación navega correctamente (interno) o abre el navegador (externo).
-
-## Soporte
-
-- [ ] Crear una sesión de apoyo.
-- [ ] Ver detalle — QR visible, botón compartir funciona (`Share.share` nativo).
-- [ ] Si existen mensajes, reproducir uno de audio — play/pause reales, sin loop, se detiene al salir de la pantalla.
-
-## Ajustes
-
-- [ ] Cuenta — editar datos.
-- [ ] Notificaciones push — el estado mostrado debe ser honesto según si `Notifications.getExpoPushTokenAsync()` realmente puede obtener un token en este dispositivo/build.
-- [ ] Privacidad — enlaces reales abren el navegador a las URLs correctas.
+## Cuenta
+- [ ] Cambiar contraseña → correo enviado.
+- [ ] Eliminar cuenta (contraseña incorrecta → error; correcta → sesión cerrada y login imposible con esa cuenta).
 
 ## Offline
+- [ ] Modo avión con datos cargados: feed, perfil y Legacy siguen visibles; también tras cerrar y reabrir la app.
+- [ ] Seguir, reaccionar, comentar, agregar al carrito, pagar, subir foto sin conexión → "Sin conexión…" inmediato, nada falso.
+- [ ] Reconectar → toast "Conexión restaurada", todo funciona sin reiniciar.
 
-- [ ] Activar modo avión con datos ya cargados — pantallas con cache reciente siguen mostrando datos (lectura), banner discreto de "sin conexión" visible.
-- [ ] Intentar una escritura (subir media, reclamar código, agregar al carrito si aplica) sin conexión — bloqueado con mensaje claro, nunca un fake success.
-- [ ] Reconectar — banner desaparece, un toast/indicador confirma la reconexión, las siguientes acciones funcionan normalmente sin necesidad de reiniciar la app.
-
-## General
-
-- [ ] Rotar el dispositivo — la app está forzada a `portrait`, confirmar que no rota (excepto si se decide soportar landscape en el futuro).
-- [ ] Botón de escaneo central (FAB) — no tapa contenido, respeta la gesture navigation bar de Android y el home indicator de iOS.
-- [ ] Ningún texto se corta/desborda en botones o tarjetas en el dispositivo probado.
+## Accesibilidad
+- [ ] TalkBack / VoiceOver: pestañas, botones de ícono, reacciones y pasos de "Primeros pasos" tienen nombre.
+- [ ] Texto grande del sistema: sin textos cortados en botones ni filas.
+- [ ] Todos los botones de ícono responden en un área cómoda (44×44).

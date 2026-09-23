@@ -85,13 +85,13 @@ export default function LegacyClaimedScreen() {
 
       <Animated.View style={[{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }, contentStyle]}>
         {medalUuid ? (
-          <AppButton label="Ver mi medalla" onPress={() => router.replace(`/medals/${medalUuid}`)} />
-        ) : null}
-        <AppButton
-          label="Ir a mi Legacy Vault"
-          variant={medalUuid ? 'secondary' : 'primary'}
-          onPress={() => router.replace('/medals')}
-        />
+          <>
+            <AppButton label="Compartir como Legacy Moment" onPress={() => router.replace(`/moments/create?medalUuid=${medalUuid}`)} />
+            <AppButton label="Ver mi medalla" variant="secondary" onPress={() => router.replace(`/medals/${medalUuid}`)} />
+          </>
+        ) : (
+          <AppButton label="Ir a mi Legacy" onPress={() => router.replace('/legacy')} />
+        )}
       </Animated.View>
     </View>
   );

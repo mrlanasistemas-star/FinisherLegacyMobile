@@ -15,12 +15,9 @@ import { MascotGuideBubble } from '@/components/brand/mascot-guide-bubble';
 import { FormInput } from '@/components/form-input';
 import { Reveal } from '@/components/motion/reveal';
 import { AppLink } from '@/components/ui/app-link';
-import { GoogleGlyph } from '@/components/ui/google-glyph';
-import { OrDivider } from '@/components/ui/or-divider';
-import { SocialButton } from '@/components/ui/social-button';
+import { SocialSignInButtons } from '@/features/auth/social-sign-in';
 import { loginSchema, type LoginFormValues } from '@/schemas/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function LoginScreen() {
@@ -63,12 +60,8 @@ export default function LoginScreen() {
     }
   }
 
-  function handleGoogle() {
-    showToast('Continuar con Google estará disponible próximamente.', 'default');
-  }
-
   function handleForgotPassword() {
-    showToast('La recuperación de contraseña estará disponible próximamente.', 'default');
+    router.push('/forgot-password');
   }
 
   return (
@@ -107,9 +100,7 @@ export default function LoginScreen() {
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
                   error={errors.email?.message}
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  keyboardType="email-address"
+                  kind="email"
                   returnKeyType="next"
                 />
               )}
@@ -129,8 +120,7 @@ export default function LoginScreen() {
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
                   error={errors.password?.message}
-                  secure
-                  autoComplete="password"
+                  kind="password"
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit(onSubmit)}
                 />
@@ -152,19 +142,11 @@ export default function LoginScreen() {
           <AppButton label="ENTRAR A MI LEGACY" variant="legacy" onPress={handleSubmit(onSubmit)} loading={submitting} />
         </Reveal>
 
-        {/*
-         * Google sign-in has zero backend OAuth support today (verified
-         * against composer.json/config/services.php/routes) — showing it
-         * as a real, tappable production action would fake functionality
-         * that doesn't exist (AGENTS.md §198/§230). Kept visible only in
-         * dev builds so the UI can still be reviewed/iterated on.
-         */}
-        {__DEV__ ? (
-          <Reveal delay={200} style={{ gap: spacing.sm, marginTop: spacing.md }}>
-            <OrDivider label="o continúa con" />
-            <SocialButton label="Continuar con Google" icon={<GoogleGlyph />} onPress={handleGoogle} />
-          </Reveal>
-        ) : null}
+        {/* Only providers actually configured render (Apple on iOS; Google
+            when its client id is set) — see features/auth/social-sign-in. */}
+        <Reveal delay={200} style={{ marginTop: spacing.md }}>
+          <SocialSignInButtons />
+        </Reveal>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xxs, marginTop: spacing.md }}>
           <AppText variant="body" tone="muted">

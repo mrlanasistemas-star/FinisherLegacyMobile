@@ -11,7 +11,7 @@ import { GoldGlow } from '@/components/brand/gold-glow';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function GearClaimedScreen() {
-  const { productName, variantName } = useLocalSearchParams<{ uuid: string; productName: string; variantName?: string }>();
+  const { uuid, productName, variantName } = useLocalSearchParams<{ uuid: string; productName: string; variantName?: string }>();
 
   const glow = useSharedValue(0);
   const badgeScale = useSharedValue(0.4);
@@ -54,8 +54,11 @@ export default function GearClaimedScreen() {
         </Animated.View>
       </View>
 
-      <Animated.View style={[{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }, contentStyle]}>
-        <AppButton label="Ir a mi equipo" onPress={() => router.replace('/gear')} />
+      <Animated.View style={[{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm }, contentStyle]}>
+        {uuid ? (
+          <AppButton label="Compartir: nuevo gear en mi Legacy" onPress={() => router.replace(`/moments/create?type=gear&gearUuid=${uuid}`)} />
+        ) : null}
+        <AppButton label="Ir a mi equipo" variant={uuid ? 'secondary' : 'primary'} onPress={() => router.replace('/gear')} />
       </Animated.View>
     </View>
   );

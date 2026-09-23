@@ -1,3 +1,5 @@
+> **OBSOLETO (2026-09-23).** Todos los huecos de backend listados aquí se cerraron en la pasada "Full Product Completion" (carrito por UUID, paginación de pedidos, reorder de media por UUID, UUID de carrera para prerregistro, borrar cuenta, reset de contraseña, Google/Apple, Stripe PaymentSheet, capa social Legacy Moments). Se conserva sólo como historial — estado actual: `ARCHITECTURE.md`, `COMMERCE_ARCHITECTURE.md`, `SOCIAL_ARCHITECTURE.md`, `RELEASE_CHECKLIST.md`.
+
 > **Histórico/superseded** — todo el contenido de este documento fue fusionado en [`MOBILE_BACKEND_REQUIREMENTS.md`](./MOBILE_BACKEND_REQUIREMENTS.md) (secciones P0/P1). Se conserva aquí sin cambios por su valor histórico; para el estado actual, usar el documento nuevo.
 
 # Mobile Backend Gaps

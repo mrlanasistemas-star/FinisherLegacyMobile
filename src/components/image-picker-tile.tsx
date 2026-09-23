@@ -6,6 +6,7 @@ import { Pressable, View } from 'react-native';
 import { AppText } from './app-text';
 
 import { colors, radius } from '@/theme/tokens';
+import { prepareImageUpload } from '@/utils/media-file';
 
 export type PickedImage = { uri: string; name: string; type: string };
 
@@ -31,12 +32,9 @@ export function ImagePickerTile({ label, value, existingUrl, onChange, aspect = 
     });
     if (result.canceled || !result.assets[0]) return;
 
-    const asset = result.assets[0];
-    onChange({
-      uri: asset.uri,
-      name: asset.fileName ?? `photo-${Date.now()}.jpg`,
-      type: asset.mimeType ?? 'image/jpeg',
-    });
+    // Compressed to JPEG, so the name always ends in .jpg (never
+    // "foto.png" labelled image/jpeg — see src/utils/media-file.ts).
+    onChange(await prepareImageUpload(result.assets[0], 'medalla'));
   }
 
   const previewUri = value?.uri ?? existingUrl ?? null;

@@ -1,6 +1,9 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
+  ArrowLeft,
+  ArrowRight,
+  Share2,
   Camera as CameraIcon,
   Globe,
   Lock,
@@ -13,7 +16,6 @@ import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppError } from '@/api/errors';
-import { EVENT_MEDIA_LIMITS } from '@/api/eventMedia';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
@@ -33,7 +35,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { useAddEventGear, useEventGear, useRemoveEventGear } from '@/hooks/use-event-gear';
-import { useDeleteEventMedia, useEventMedia, useUpdateEventMediaVisibility } from '@/hooks/use-event-media';
+import { useDeleteEventMedia, useEventMedia, useMediaEntitlement, useReorderEventMedia, useUpdateEventMediaVisibility } from '@/hooks/use-event-media';
 import { useMyGear } from '@/hooks/use-gear';
 import { useEventParticipant } from '@/hooks/use-my-events';
 import { PLATE_STATUS_LABEL, SUPPORT_STATUS_LABEL } from '@/components/my-event-row';
@@ -65,11 +67,26 @@ export default function MyEventDetailScreen() {
   const addGear = useAddEventGear(participantId);
   const removeGear = useRemoveEventGear(participantId);
 
-  const mediaItems = useMemo(() => media.data ?? [], [media.data]);
-  const imageCount = useMemo(() => mediaItems.filter((item) => item.type === 'image').length, [mediaItems]);
-  const videoCount = useMemo(() => mediaItems.filter((item) => item.type === 'video').length, [mediaItems]);
-  const imagesFull = imageCount >= EVENT_MEDIA_LIMITS.freeImages;
-  const videosFull = videoCount >= EVENT_MEDIA_LIMITS.freeVideos;
+  const entitlement = useMediaEntitlement(participantId);
+  const reorderMedia = useReorderEventMedia(participantId);
+  const mediaItems = useMemo(() => [...(media.data ?? [])].sort((a, b) => a.sort_order - b.sort_order), [media.data]);
+  const imageCount = entitlement.data?.images.used ?? mediaItems.filter((item) => item.type === 'image').length;
+  const videoCount = entitlement.data?.videos.used ?? mediaItems.filter((item) => item.type === 'video').length;
+  // Limits come from the backend (free tier + any Memory Pack) — never hardcoded here.
+  const imageLimit = entitlement.data?.images.limit ?? null;
+  const videoLimit = entitlement.data?.videos.limit ?? null;
+  const imagesFull = entitlement.data ? entitlement.data.images.remaining <= 0 : false;
+  const videosFull = entitlement.data ? entitlement.data.videos.remaining <= 0 : false;
+
+  /** Moves a media item one slot earlier/later and persists the order by uuid. */
+  function moveMedia(uuid: string, direction: -1 | 1) {
+    const order = mediaItems.map((item) => item.uuid);
+    const from = order.indexOf(uuid);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= order.length) return;
+    [order[from], order[to]] = [order[to], order[from]];
+    reorderMedia.mutate(order, { onError: () => showToast('No pudimos guardar el nuevo orden. Intenta otra vez.', 'destructive') });
+  }
 
   const usedGearUuids = useMemo(
     () => new Set((eventGear.data ?? []).map((selection) => selection.athlete_owned_product_uuid)),
@@ -174,6 +191,15 @@ export default function MyEventDetailScreen() {
             {participant.bib_number ? <Badge label={`Dorsal ${participant.bib_number}`} /> : null}
           </View>
         </Reveal>
+
+        {/* Suggested, never automatic: the athlete decides what to share. */}
+        <AppButton
+          label="Compartir como Legacy Moment"
+          icon={Share2}
+          variant="secondary"
+          size="md"
+          onPress={() => router.push(`/moments/create?type=race_completed&participantId=${participant.id}`)}
+        />
 
         {result ? (
           <View style={{ gap: spacing.sm }}>
@@ -320,13 +346,13 @@ export default function MyEventDetailScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <CameraIcon color={colors.muted} size={14} />
               <AppText variant="caption" tone={imagesFull ? 'gold' : 'muted'}>
-                Fotos {imageCount}/{EVENT_MEDIA_LIMITS.freeImages}
+                Fotos {imageCount}{imageLimit !== null ? `/${imageLimit}` : ""}
               </AppText>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <VideoIcon color={colors.muted} size={14} />
               <AppText variant="caption" tone={videosFull ? 'gold' : 'muted'}>
-                Videos {videoCount}/{EVENT_MEDIA_LIMITS.freeVideos}
+                Videos {videoCount}{videoLimit !== null ? `/${videoLimit}` : ""}
               </AppText>
             </View>
           </View>
@@ -463,8 +489,7 @@ export default function MyEventDetailScreen() {
         visible={uploadOpen}
         onClose={() => setUploadOpen(false)}
         participantId={participantId}
-        remainingImages={EVENT_MEDIA_LIMITS.freeImages - imageCount}
-        remainingVideos={EVENT_MEDIA_LIMITS.freeVideos - videoCount}
+        entitlement={entitlement.data}
         onLimitReached={() => router.push('/my-events/memory-upgrades')}
       />
 
@@ -475,6 +500,35 @@ export default function MyEventDetailScreen() {
               icon={actionsFor.is_public ? Lock : Globe}
               label={actionsFor.is_public ? 'Hacer sólo mío' : 'Hacer público'}
               onPress={() => handleToggleVisibility(actionsFor)}
+            />
+            {mediaItems.length > 1 && mediaItems[0]?.uuid !== actionsFor.uuid ? (
+              <SheetActionRow
+                icon={ArrowLeft}
+                label="Mover antes"
+                onPress={() => {
+                  moveMedia(actionsFor.uuid, -1);
+                  setActionsFor(null);
+                }}
+              />
+            ) : null}
+            {mediaItems.length > 1 && mediaItems[mediaItems.length - 1]?.uuid !== actionsFor.uuid ? (
+              <SheetActionRow
+                icon={ArrowRight}
+                label="Mover después"
+                onPress={() => {
+                  moveMedia(actionsFor.uuid, 1);
+                  setActionsFor(null);
+                }}
+              />
+            ) : null}
+            <SheetActionRow
+              icon={Share2}
+              label="Compartir como Legacy Moment"
+              onPress={() => {
+                const uuid = actionsFor.uuid;
+                setActionsFor(null);
+                router.push(`/moments/create?type=race_completed&participantId=${participantId}&mediaUuids=${uuid}`);
+              }}
             />
             <SheetActionRow icon={Trash2} label="Eliminar" destructive onPress={() => setConfirmingDeleteMedia(true)} />
           </>

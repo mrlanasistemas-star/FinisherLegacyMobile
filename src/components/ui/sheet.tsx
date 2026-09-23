@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react';
 import { useEffect } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -70,7 +70,9 @@ export function Sheet({ visible, onClose, children }: SheetProps) {
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={close} statusBarTranslucent>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+      {/* Keyboard-aware so sheets with inputs (location, report details)
+          lift above the keyboard instead of hiding under it. */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.7)' }, backdropStyle]}>
           <Pressable style={{ flex: 1 }} onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar" />
         </Animated.View>
@@ -95,7 +97,7 @@ export function Sheet({ visible, onClose, children }: SheetProps) {
             <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>{children}</View>
           </Animated.View>
         </GestureDetector>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

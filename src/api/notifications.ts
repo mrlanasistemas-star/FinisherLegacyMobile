@@ -6,12 +6,12 @@ import type { AppNotification } from '@/types/models';
 /**
  * `GET /me/notifications` passes a raw paginator into the shared
  * `respond()` helper — same non-standard nesting as `/me/events`, see
- * `NestedPaginatorEnvelope`. There is no unread-count endpoint; the badge
- * is derived client-side from `read_at === null` on fetched pages.
+ * `NestedPaginatorEnvelope`. `meta.unread_count` is the real unread total
+ * (not just the loaded page) — the badge reads it.
  */
 export async function fetchNotifications(
   page = 1,
-): Promise<{ rows: AppNotification[]; page: number; lastPage: number; total: number }> {
+): Promise<{ rows: AppNotification[]; page: number; lastPage: number; total: number; unreadCount: number | null }> {
   try {
     const { data } = await apiClient.get<NestedPaginatorEnvelope<AppNotification>>('me/notifications', {
       params: { page },
@@ -21,6 +21,7 @@ export async function fetchNotifications(
       page: data.data.current_page,
       lastPage: data.data.last_page,
       total: data.data.total,
+      unreadCount: data.meta?.unread_count ?? null,
     };
   } catch (error) {
     throw toAppError(error);

@@ -1,10 +1,13 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Share2 } from 'lucide-react-native';
+import { useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
+import { PreregistrationSheet } from '@/components/events/preregistration-sheet';
 import { GlassSurface } from '@/components/brand/glass-surface';
 import { GradientOverlay } from '@/components/brand/gradient-overlay';
 import { Card } from '@/components/card';
@@ -20,6 +23,7 @@ export default function EventDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: event, isPending, isError, refetch } = useEvent(slug);
   const insets = useSafeAreaInsets();
+  const [preregistering, setPreregistering] = useState(false);
 
   return (
     <Screen scroll edges={['left', 'right']} padded={false}>
@@ -98,7 +102,7 @@ export default function EventDetailScreen() {
                     </AppText>
                     <View style={{ gap: spacing.sm }}>
                       {event.edition.races.map((race) => (
-                        <Card key={race.name}>
+                        <Card key={race.uuid}>
                           <AppText variant="bodyStrong">{race.name}</AppText>
                           <AppText variant="caption" tone="muted">
                             {race.distance_value} {race.distance_unit}
@@ -110,13 +114,28 @@ export default function EventDetailScreen() {
                   </View>
                 ) : null}
 
-                <Card>
-                  <AppText variant="bodyStrong">Prerregistro</AppText>
-                  <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
-                    El prerregistro estará disponible próximamente desde la app. Mientras tanto, visita
-                    finisherlegacy.com para prerregistrarte.
+                {event.edition.preregistration_open && event.edition.races.length > 0 ? (
+                  <View style={{ gap: spacing.xs }}>
+                    <AppButton label="Prerregistrarme" onPress={() => setPreregistering(true)} />
+                    <AppText variant="caption" tone="muted" align="center">
+                      Aparta tu lugar en segundos con los datos de tu cuenta.
+                    </AppText>
+                  </View>
+                ) : (
+                  <AppText variant="caption" tone="muted">
+                    El prerregistro para esta edición no está abierto en este momento.
                   </AppText>
-                </Card>
+                )}
+
+                {preregistering ? (
+                  <PreregistrationSheet
+                    visible
+                    onClose={() => setPreregistering(false)}
+                    editionId={event.edition.id}
+                    eventName={event.name}
+                    races={event.edition.races}
+                  />
+                ) : null}
               </>
             ) : (
               <AppText variant="body" tone="muted">

@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRight, type LucideIcon } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -11,7 +11,7 @@ import { GlassSurface } from './brand/glass-surface';
 import { colors, fontFamily, fontSize, radius, spacing, tracking } from '@/theme/tokens';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'glass' | 'legacy';
-type Size = 'md' | 'lg';
+type Size = 'sm' | 'md' | 'lg';
 
 interface AppButtonProps {
   label: string;
@@ -22,11 +22,16 @@ interface AppButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   style?: ViewStyle;
+  /** Optional leading icon (non-legacy variants). */
+  icon?: LucideIcon;
+  accessibilityLabel?: string;
+  /** Light haptic on press — on by default; turn off for high-frequency buttons. */
+  haptic?: boolean;
 }
 
 /** Solid-color variants get a faint top highlight so they read as lit metal, not a flat fill (AGENTS.md §109/§196). */
 const HIGHLIGHT_VARIANTS: Variant[] = ['destructive'];
-const BUTTON_RADIUS = radius.lg;
+const BUTTON_RADIUS = 14;
 /** True capsule/pill (AGENTS.md §220): `radius.pill` always clamps to exactly
  * half the button's rendered height, so it stays a perfect stadium shape at
  * any size instead of a rounded rectangle. */
@@ -41,6 +46,9 @@ export function AppButton({
   disabled = false,
   fullWidth = true,
   style,
+  icon: Icon,
+  accessibilityLabel,
+  haptic = true,
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
   const [hovered, setHovered] = useState(false);
@@ -56,7 +64,7 @@ export function AppButton({
 
   function handlePress() {
     if (isDisabled) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    if (haptic) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onPress();
   }
 
@@ -96,12 +104,18 @@ export function AppButton({
       </Animated.View>
     </>
   ) : (
-    <AppText variant="bodyStrong" style={{ fontFamily: fontFamily.semibold, fontSize: fontSize.md, color: textColor }}>
-      {label}
-    </AppText>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+      {Icon ? <Icon size={size === 'sm' ? 16 : 18} color={textColor} strokeWidth={2.2} /> : null}
+      <AppText
+        variant="bodyStrong"
+        numberOfLines={1}
+        style={{ fontFamily: fontFamily.semibold, fontSize: size === 'sm' ? fontSize.sm : fontSize.md, color: textColor }}>
+        {label}
+      </AppText>
+    </View>
   );
 
-  const sizeStyle = isLegacy ? styles.legacy : size === 'lg' ? styles.lg : styles.md;
+  const sizeStyle = isLegacy ? styles.legacy : size === 'lg' ? styles.lg : size === 'sm' ? styles.sm : styles.md;
   // Pointer devices only (tablet trackpad, Expo Web) — onHoverIn/Out never
   // fire from a touch press, so this is purely additive (AGENTS.md §110/§202).
   const hoverHandlers = {
@@ -121,6 +135,7 @@ export function AppButton({
     return (
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         disabled={isDisabled}
         onPress={handlePress}
@@ -160,6 +175,7 @@ export function AppButton({
     return (
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel ?? label}
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         disabled={isDisabled}
         onPress={handlePress}
@@ -176,6 +192,7 @@ export function AppButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       onPress={handlePress}
@@ -212,20 +229,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
+  sm: {
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    minHeight: 36,
+  },
   md: {
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
     paddingHorizontal: spacing.lg,
-    minHeight: 46,
+    minHeight: 44,
   },
   lg: {
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
     paddingHorizontal: spacing.xl,
-    minHeight: 56,
+    minHeight: 52,
   },
   legacy: {
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
     paddingHorizontal: spacing.lg,
-    minHeight: 60,
+    minHeight: 54,
   },
   legacyContent: {
     // Grouped as one centered unit (label + arrow together), not spread to
@@ -240,9 +262,9 @@ const styles = StyleSheet.create({
   },
   goldGlow: {
     shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
     // 0, not a small positive value: Android's elevation shadow ignores
     // shadowColor and always renders as a flat grey/black halo — against
     // the pure-black app background that halo read as a dirty smudge around

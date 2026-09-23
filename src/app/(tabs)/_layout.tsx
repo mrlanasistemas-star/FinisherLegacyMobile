@@ -1,94 +1,105 @@
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, Tabs } from 'expo-router';
-import { CalendarDays, Home, Medal, ScanLine, User } from 'lucide-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Gem, Home, ScanLine, ShoppingBag, User } from 'lucide-react-native';
 import { View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressScale } from '@/components/motion/press-scale';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { useCartCount } from '@/hooks/use-cart';
+import { colors, fontFamily } from '@/theme/tokens';
+import { haptics } from '@/utils/haptics';
 
-const TAB_ICON_SIZE = 22;
+const TAB_ICON_SIZE = 23;
+const BAR_HEIGHT = 58;
+const FAB_SIZE = 58;
 
 function TabIcon(Icon: typeof Home) {
   return function renderIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
-    return (
-      <View style={{ alignItems: 'center', gap: 4 }}>
-        {/* tabBarActiveTintColor/tabBarInactiveTintColor are always set to
-            plain hex strings above, never a dynamic OpaqueColorValue. */}
-        <Icon color={color as string} size={TAB_ICON_SIZE} strokeWidth={focused ? 2.4 : 1.8} />
-        <View
-          style={{
-            width: 4,
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: focused ? colors.gold : 'transparent',
-          }}
-        />
-      </View>
-    );
+    // tabBarActiveTintColor/InactiveTintColor are plain hex strings.
+    return <Icon color={color as string} size={TAB_ICON_SIZE} strokeWidth={focused ? 2.3 : 1.8} />;
   };
 }
 
+/**
+ * Inicio · Legacy · [SCAN] · Tienda · Perfil. The scanner is the centered
+ * gold action — it occupies a real tab slot (so spacing stays even on every
+ * width) but never navigates to a tab; it opens the full-screen scanner.
+ */
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const cartCount = useCartCount();
 
   return (
-    <View style={{ flex: 1 }}>
-      <Tabs
-        screenListeners={{
-          tabPress: () => {
-            Haptics.selectionAsync().catch(() => {});
-          },
+    <Tabs
+      screenListeners={{ tabPress: () => haptics.selection() }}
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.gold,
+        tabBarInactiveTintColor: colors.subtle,
+        tabBarLabelStyle: { fontFamily: fontFamily.medium, fontSize: 11, marginTop: 1 },
+        tabBarStyle: {
+          backgroundColor: 'rgba(10,10,12,0.96)',
+          borderTopColor: colors.hairline,
+          borderTopWidth: 1,
+          height: BAR_HEIGHT + insets.bottom,
+          paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 6),
+        },
+        tabBarItemStyle: { minHeight: 44 },
+      }}>
+      <Tabs.Screen name="index" options={{ title: 'Inicio', tabBarIcon: TabIcon(Home), tabBarAccessibilityLabel: 'Inicio' }} />
+      <Tabs.Screen name="legacy" options={{ title: 'Legacy', tabBarIcon: TabIcon(Gem), tabBarAccessibilityLabel: 'Tu Legacy: medallas, carreras y recuerdos' }} />
+      <Tabs.Screen
+        name="scan"
+        options={{
+          title: 'Escanear',
+          tabBarButton: () => <ScanButton />,
         }}
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: colors.gold,
-          tabBarInactiveTintColor: colors.muted,
-          tabBarShowLabel: false,
-          tabBarStyle: {
-            backgroundColor: 'rgba(10,10,12,0.92)',
-            borderTopColor: colors.border,
-            borderTopWidth: 1,
-            height: 56 + insets.bottom,
-            paddingTop: spacing.sm,
-          },
-        }}>
-        <Tabs.Screen name="index" options={{ title: 'Inicio', tabBarIcon: TabIcon(Home) }} />
-        <Tabs.Screen name="medals" options={{ title: 'Medallas', tabBarIcon: TabIcon(Medal) }} />
-        <Tabs.Screen name="events" options={{ title: 'Eventos', tabBarIcon: TabIcon(CalendarDays) }} />
-        <Tabs.Screen name="profile" options={{ title: 'Perfil', tabBarIcon: TabIcon(User) }} />
-      </Tabs>
+      />
+      <Tabs.Screen
+        name="store"
+        options={{
+          title: 'Tienda',
+          tabBarIcon: TabIcon(ShoppingBag),
+          tabBarBadge: cartCount > 0 ? (cartCount > 99 ? '99+' : cartCount) : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.gold, color: colors.black, fontFamily: fontFamily.bold, fontSize: 10 },
+          tabBarAccessibilityLabel: cartCount > 0 ? `Tienda, ${cartCount} en el carrito` : 'Tienda',
+        }}
+      />
+      <Tabs.Screen name="profile" options={{ title: 'Perfil', tabBarIcon: TabIcon(User), tabBarAccessibilityLabel: 'Perfil' }} />
+    </Tabs>
+  );
+}
 
+function ScanButton() {
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
       <PressScale
         haptic
         onPress={() => router.push('/legacy/scan')}
         accessibilityRole="button"
         accessibilityLabel="Escanear Legacy Code"
         style={{
-          position: 'absolute',
-          bottom: 56 + insets.bottom - 26,
-          alignSelf: 'center',
-          width: 56,
-          height: 56,
-          borderRadius: radius.pill,
+          marginTop: -(FAB_SIZE / 2) + 4,
+          width: FAB_SIZE,
+          height: FAB_SIZE,
+          borderRadius: FAB_SIZE / 2,
+          borderWidth: 4,
+          borderColor: colors.black,
           shadowColor: colors.gold,
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.45,
+          shadowOpacity: 0.35,
           shadowRadius: 10,
-          // 0, not shadows.gold's default: Android elevation ignores
-          // shadowColor and paints a flat grey halo over pure black, which
-          // read as a dirty smudge around the gold circle.
+          // Android elevation ignores shadowColor and paints a grey halo on
+          // pure black — keep it at 0 there.
           elevation: 0,
         }}>
-        {/* Gradient fill, not a flat color, so the gold never renders as a
-            flat gray/dark disc against the black tab bar. */}
         <LinearGradient
           colors={[colors.goldSoft, colors.gold]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{ width: 56, height: 56, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' }}>
-          <ScanLine color={colors.black} size={26} strokeWidth={2.2} />
+          style={{ flex: 1, borderRadius: FAB_SIZE / 2, alignItems: 'center', justifyContent: 'center' }}>
+          <ScanLine color={colors.black} size={24} strokeWidth={2.2} />
         </LinearGradient>
       </PressScale>
     </View>

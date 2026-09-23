@@ -3,16 +3,60 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   deleteEventMedia,
   fetchEventMedia,
+  fetchMediaEntitlement,
+  reorderEventMedia,
   updateEventMediaVisibility,
   uploadEventMedia,
   type UploadEventMediaFile,
 } from '@/api/eventMedia';
+import type { AthleteEventMedia } from '@/types/models';
+import { ensureOnline } from '@/utils/network';
 
 export function useEventMedia(participantId: number | null) {
   return useQuery({
     queryKey: ['me', 'events', participantId, 'media'],
     queryFn: () => fetchEventMedia(participantId as number),
     enabled: participantId !== null,
+  });
+}
+
+/** Limits/used/remaining from the backend — refetched after every upload/delete (same `['me','events']` subtree). */
+export function useMediaEntitlement(participantId: number | null) {
+  return useQuery({
+    queryKey: ['me', 'events', participantId, 'media-entitlement'],
+    queryFn: () => fetchMediaEntitlement(participantId as number),
+    enabled: participantId !== null,
+  });
+}
+
+/** Optimistic reorder by uuid; rolls back if the server rejects it. */
+export function useReorderEventMedia(participantId: number | null) {
+  const queryClient = useQueryClient();
+  const key = ['me', 'events', participantId, 'media'];
+
+  return useMutation({
+    mutationFn: async (orderedUuids: string[]) => {
+      await ensureOnline();
+      return reorderEventMedia(participantId as number, orderedUuids);
+    },
+    onMutate: (orderedUuids) => {
+      const previous = queryClient.getQueryData<AthleteEventMedia[]>(key);
+      if (previous) {
+        const byUuid = new Map(previous.map((m) => [m.uuid, m]));
+        queryClient.setQueryData(
+          key,
+          orderedUuids.map((uuid, index) => ({ ...(byUuid.get(uuid) as AthleteEventMedia), sort_order: index })).filter((m) => m.uuid),
+        );
+      }
+      return { previous };
+    },
+    onError: (_error, _uuids, context) => {
+      if (context?.previous) queryClient.setQueryData(key, context.previous);
+    },
+    onSuccess: (media) => {
+      queryClient.setQueryData(key, media);
+      queryClient.invalidateQueries({ queryKey: ['me', 'events', participantId], exact: true });
+    },
   });
 }
 

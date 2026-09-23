@@ -1,256 +1,228 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react-native';
+import { ShoppingBag, ShoppingCart, Tag, Trash2, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { FormInput } from '@/components/form-input';
-import { Screen } from '@/components/screen';
-import { ScreenHeader } from '@/components/screen-header';
 import { Skeleton } from '@/components/skeleton';
-import { AppError } from '@/api/errors';
-import { useApplyCartCoupon, useCart, useRemoveCartCoupon, useRemoveCartItem, useUpdateCartItem } from '@/hooks/use-cart';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { InlineError } from '@/components/ui/inline-error';
+import { QuantityStepper } from '@/components/ui/quantity-stepper';
+import { StickyFooter } from '@/components/ui/sticky-footer';
+import { TopBar } from '@/components/ui/top-bar';
+import { cartItemCount, useApplyCartCoupon, useCart, useRemoveCartCoupon, useRemoveCartItem, useUpdateCartItem } from '@/hooks/use-cart';
+import { showToast } from '@/stores/toastStore';
+import { colors, fontFamily, spacing } from '@/theme/tokens';
+import type { CartItem } from '@/types/models';
 import { describeCommerceError } from '@/utils/commerce-errors';
 import { formatMoney } from '@/utils/money';
-import type { CartItem } from '@/types/models';
 
-function CartItemRow({ item }: { item: CartItem }) {
-  const updateItem = useUpdateCartItem();
-  const removeItem = useRemoveCartItem();
-
-  return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, paddingVertical: spacing.sm }}>
-      <View style={{ width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.graphiteLight, overflow: 'hidden' }}>
-        {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
-        ) : null}
-      </View>
-
-      <View style={{ flex: 1, gap: 2 }}>
-        <AppText variant="bodyStrong" numberOfLines={2}>
-          {item.product_name}
-        </AppText>
-        {item.variant_name ? (
-          <AppText variant="caption" tone="muted">
-            {item.variant_name}
-          </AppText>
-        ) : null}
-        {!item.in_stock ? (
-          <AppText variant="caption" tone="destructive">
-            Ya no hay existencias de este producto.
-          </AppText>
-        ) : !item.price_available ? (
-          <AppText variant="caption" tone="destructive">
-            El precio de este producto cambió.
-          </AppText>
-        ) : null}
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-            <Pressable
-              onPress={() => updateItem.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
-              disabled={updateItem.isPending || item.quantity <= 1}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: radius.sm,
-                borderWidth: 1,
-                borderColor: colors.border,
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: item.quantity <= 1 ? 0.35 : 1,
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Disminuir cantidad">
-              <Minus color={colors.foreground} size={14} />
-            </Pressable>
-            <AppText variant="bodyStrong">{item.quantity}</AppText>
-            <Pressable
-              onPress={() => updateItem.mutate({ itemId: item.id, quantity: Math.min(20, item.quantity + 1) })}
-              disabled={updateItem.isPending}
-              style={{ width: 28, height: 28, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}
-              accessibilityRole="button"
-              accessibilityLabel="Aumentar cantidad">
-              <Plus color={colors.foreground} size={14} />
-            </Pressable>
-          </View>
-
-          <AppText variant="bodyStrong" tone="gold">
-            {formatMoney(item.line_total_minor, item.currency)}
-          </AppText>
-        </View>
-      </View>
-
-      <Pressable
-        onPress={() => removeItem.mutate(item.id)}
-        disabled={removeItem.isPending}
-        hitSlop={8}
-        style={{ padding: spacing.xxs }}
-        accessibilityRole="button"
-        accessibilityLabel="Eliminar del carrito">
-        <Trash2 color={colors.muted} size={18} />
-      </Pressable>
-    </View>
-  );
-}
-
+/**
+ * The cart shows what the server computed — prices, discount, totals are
+ * never recalculated here. Quantity at 1 turns the minus into a trash;
+ * rows can also be swiped away.
+ */
 export default function CartScreen() {
-  const { data: cart, isPending, isError, refetch } = useCart();
+  const { data: cart, isPending, isError, error, refetch } = useCart();
   const applyCoupon = useApplyCartCoupon();
   const removeCoupon = useRemoveCartCoupon();
   const [couponCode, setCouponCode] = useState('');
   const [couponError, setCouponError] = useState<string | null>(null);
 
   async function handleApplyCoupon() {
-    if (!couponCode.trim()) return;
+    const code = couponCode.trim();
+    if (!code) return;
     setCouponError(null);
     try {
-      await applyCoupon.mutateAsync(couponCode.trim());
+      await applyCoupon.mutateAsync(code);
       setCouponCode('');
-    } catch (error) {
-      setCouponError(error instanceof AppError ? describeCommerceError(error) : 'No pudimos aplicar el cupón.');
+      showToast('Cupón aplicado.', 'success');
+    } catch (caught) {
+      setCouponError(caught instanceof AppError ? describeCommerceError(caught) : 'No pudimos aplicar el cupón.');
     }
   }
 
-  const hasBlockingItem = cart?.items.some((item) => !item.in_stock || !item.price_available) ?? false;
-  const canCheckout = !!cart && cart.items.length > 0 && !hasBlockingItem;
-
-  if (isPending) {
-    return (
-      <Screen edges={['top', 'left', 'right']}>
-        <ScreenHeader title="Carrito" />
-        <View style={{ gap: spacing.md, marginTop: spacing.md }}>
-          <Skeleton height={72} />
-          <Skeleton height={72} />
-        </View>
-      </Screen>
-    );
-  }
-
-  if (isError || !cart) {
-    return (
-      <Screen edges={['top', 'left', 'right']}>
-        <ScreenHeader title="Carrito" />
-        <ErrorState message="No pudimos cargar tu carrito." onRetry={refetch} />
-      </Screen>
-    );
-  }
+  const blockingItem = cart?.items.some((item) => !item.in_stock || !item.price_available) ?? false;
+  const count = cartItemCount(cart);
 
   return (
-    <Screen edges={['top', 'left', 'right']}>
-      <ScreenHeader title="Carrito" />
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+      <View style={{ paddingHorizontal: spacing.lg }}>
+        <TopBar title={count > 0 ? `Carrito (${count})` : 'Carrito'} />
+      </View>
 
-      {cart.items.length === 0 ? (
+      {isPending ? (
+        <View style={{ gap: spacing.md, padding: spacing.lg }}>
+          <Skeleton height={80} />
+          <Skeleton height={80} />
+        </View>
+      ) : isError || !cart ? (
+        <ErrorState error={error} message="No pudimos cargar tu carrito." onRetry={refetch} />
+      ) : cart.items.length === 0 ? (
         <EmptyState
           icon={ShoppingCart}
           title="Tu carrito está vacío"
-          message="Agrega productos desde la tienda para verlos aquí."
+          message="Equipo, gear y productos que se suman a tu historia."
           actionLabel="Ir a la tienda"
-          onAction={() => router.push('/store')}
+          onAction={() => router.replace('/store')}
         />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View>
-            {cart.items.map((item) => (
-              <CartItemRow key={item.id} item={item} />
-            ))}
-          </View>
-
-          <View style={{ marginTop: spacing.lg, gap: spacing.xs }}>
-            {cart.coupon ? (
-              <AppText variant="label" tone="muted">
-                CUPÓN
-              </AppText>
-            ) : null}
-            {cart.coupon ? (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: spacing.sm,
-                  borderRadius: radius.md,
-                  borderWidth: 1,
-                  borderColor: colors.goldDim,
-                  backgroundColor: 'rgba(201,161,89,0.08)',
-                }}>
-                <View>
-                  <AppText variant="bodyStrong" tone="gold">
-                    {cart.coupon.code}
-                  </AppText>
-                  <AppText variant="caption" tone="muted">
-                    {cart.coupon.name}
-                  </AppText>
-                </View>
-                <Pressable onPress={() => removeCoupon.mutate()} disabled={removeCoupon.isPending} hitSlop={8} accessibilityRole="button" accessibilityLabel="Quitar cupón">
-                  <X color={colors.muted} size={18} />
-                </Pressable>
-              </View>
-            ) : (
-              <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-end' }}>
-                <View style={{ flex: 1 }}>
-                  <FormInput
-                    label="Cupón"
-                    placeholder="Código de cupón"
-                    autoCapitalize="characters"
-                    value={couponCode}
-                    onChangeText={setCouponCode}
-                    onSubmitEditing={handleApplyCoupon}
-                    returnKeyType="done"
-                  />
-                </View>
-                <AppButton label="Aplicar" variant="secondary" fullWidth={false} loading={applyCoupon.isPending} onPress={handleApplyCoupon} style={{ paddingHorizontal: spacing.lg, minHeight: 50 }} />
-              </View>
-            )}
-            {couponError ? (
-              <AppText variant="caption" tone="destructive">
-                {couponError}
-              </AppText>
-            ) : null}
-          </View>
-
-          <View style={{ marginTop: spacing.lg, gap: spacing.xs, paddingBottom: spacing.md }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <AppText variant="body" tone="muted">
-                Subtotal
-              </AppText>
-              <AppText variant="body">{formatMoney(cart.subtotal_minor, cart.currency)}</AppText>
+        <>
+          <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            <View style={{ paddingHorizontal: spacing.lg }}>
+              {cart.items.map((item) => (
+                <CartRow key={item.id} item={item} />
+              ))}
             </View>
-            {cart.discount_minor > 0 ? (
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <AppText variant="body" tone="muted">
-                  Descuento
-                </AppText>
-                <AppText variant="body" tone="gold">
-                  -{formatMoney(cart.discount_minor, cart.currency)}
-                </AppText>
-              </View>
-            ) : null}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xxs }}>
-              <AppText variant="subtitle">Total</AppText>
-              <AppText variant="subtitle" tone="gold">
-                {formatMoney(cart.total_minor, cart.currency)}
+
+            <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.xs }}>
+              {cart.coupon ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
+                  <Tag size={18} color={colors.gold} />
+                  <View style={{ flex: 1 }}>
+                    <AppText style={{ fontFamily: fontFamily.semibold, color: colors.gold }}>{cart.coupon.code}</AppText>
+                    <AppText variant="caption" tone="muted">
+                      {cart.coupon.name}
+                    </AppText>
+                  </View>
+                  <Pressable
+                    onPress={() => removeCoupon.mutate()}
+                    disabled={removeCoupon.isPending}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Quitar cupón"
+                    style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+                    <X color={colors.muted} size={18} />
+                  </Pressable>
+                </View>
+              ) : (
+                <FormInput
+                  placeholder="Código de descuento"
+                  icon={Tag}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  value={couponCode}
+                  onChangeText={(value) => {
+                    setCouponCode(value);
+                    setCouponError(null);
+                  }}
+                  onSubmitEditing={handleApplyCoupon}
+                  returnKeyType="done"
+                  error={couponError ?? undefined}
+                  trailing={
+                    couponCode.trim() ? (
+                      <AppButton label="Aplicar" size="sm" variant="ghost" fullWidth={false} loading={applyCoupon.isPending} onPress={handleApplyCoupon} />
+                    ) : null
+                  }
+                />
+              )}
+            </View>
+
+            <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.xs }}>
+              <TotalRow label="Subtotal" value={formatMoney(cart.subtotal_minor, cart.currency)} />
+              {cart.discount_minor > 0 ? <TotalRow label="Descuento" value={`−${formatMoney(cart.discount_minor, cart.currency)}`} gold /> : null}
+              <View style={{ height: 1, backgroundColor: colors.hairline, marginVertical: spacing.xs }} />
+              <TotalRow label="Total" value={formatMoney(cart.total_minor, cart.currency)} strong />
+              <AppText variant="caption" style={{ color: colors.subtle }}>
+                El total final se confirma al crear tu pedido.
               </AppText>
             </View>
-          </View>
-        </ScrollView>
+          </ScrollView>
+
+          <StickyFooter>
+            {blockingItem ? <InlineError message="Quita o actualiza los productos marcados para continuar." /> : null}
+            <AppButton label={`Continuar al pago · ${formatMoney(cart.total_minor, cart.currency)}`} onPress={() => router.push('/checkout')} disabled={blockingItem} />
+          </StickyFooter>
+        </>
       )}
+    </SafeAreaView>
+  );
+}
 
-      {cart.items.length > 0 ? (
-        <View style={{ paddingVertical: spacing.md }}>
-          {hasBlockingItem ? (
-            <AppText variant="caption" tone="destructive" align="center" style={{ marginBottom: spacing.xs }}>
-              Quita o actualiza los productos marcados antes de continuar.
+function CartRow({ item }: { item: CartItem }) {
+  const updateItem = useUpdateCartItem();
+  const removeItem = useRemoveCartItem();
+  const busy = updateItem.isPending || removeItem.isPending;
+
+  function onError(error: unknown) {
+    showToast(error instanceof AppError ? describeCommerceError(error) : 'No pudimos actualizar tu carrito.', 'destructive');
+  }
+
+  const remove = () => removeItem.mutate(item.id, { onError, onSuccess: () => showToast(`Quitamos ${item.product_name}.`, 'default') });
+
+  return (
+    <ReanimatedSwipeable
+      friction={2}
+      rightThreshold={60}
+      overshootRight={false}
+      renderRightActions={() => (
+        <Pressable
+          onPress={remove}
+          accessibilityRole="button"
+          accessibilityLabel={`Quitar ${item.product_name}`}
+          style={{ width: 88, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.destructive }}>
+          <Trash2 size={20} color={colors.white} />
+          <AppText variant="caption" style={{ color: colors.white, marginTop: 2 }}>
+            Quitar
+          </AppText>
+        </Pressable>
+      )}>
+      <View style={{ flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.hairline, backgroundColor: colors.black, opacity: busy ? 0.6 : 1 }}>
+        <Pressable onPress={() => router.push(`/store/${item.product_slug}`)} accessibilityRole="imagebutton" accessibilityLabel={`Ver ${item.product_name}`}>
+          <View style={{ width: 76, height: 92, borderRadius: 12, backgroundColor: colors.graphite, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+            {item.image_url ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <ShoppingBag size={24} color={colors.goldDim} />}
+          </View>
+        </Pressable>
+
+        <View style={{ flex: 1, justifyContent: 'space-between' }}>
+          <View style={{ gap: 2 }}>
+            <AppText style={{ fontFamily: fontFamily.medium, fontSize: 15 }} numberOfLines={2}>
+              {item.product_name}
             </AppText>
-          ) : null}
-          <AppButton label="Ir a pagar" onPress={() => router.push('/checkout')} disabled={!canCheckout} />
+            {item.variant_name || item.event_edition_name ? (
+              <AppText variant="caption" tone="muted" numberOfLines={1}>
+                {[item.variant_name, item.event_edition_name].filter(Boolean).join(' · ')}
+              </AppText>
+            ) : null}
+            {!item.in_stock ? (
+              <AppText variant="caption" tone="destructive">
+                Ya no hay existencias.
+              </AppText>
+            ) : !item.price_available ? (
+              <AppText variant="caption" tone="destructive">
+                El precio cambió o ya no está disponible.
+              </AppText>
+            ) : null}
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.xs }}>
+            <QuantityStepper
+              compact
+              value={item.quantity}
+              disabled={busy}
+              onChange={(quantity) => updateItem.mutate({ itemId: item.id, quantity }, { onError })}
+              onRemove={remove}
+            />
+            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{formatMoney(item.line_total_minor, item.currency)}</AppText>
+          </View>
         </View>
-      ) : null}
-    </Screen>
+      </View>
+    </ReanimatedSwipeable>
+  );
+}
+
+function TotalRow({ label, value, strong = false, gold = false }: { label: string; value: string; strong?: boolean; gold?: boolean }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+      <AppText style={{ fontFamily: strong ? fontFamily.semibold : fontFamily.regular, fontSize: strong ? 18 : 15, color: strong ? colors.foreground : colors.muted }}>{label}</AppText>
+      <AppText style={{ fontFamily: strong ? fontFamily.bold : fontFamily.medium, fontSize: strong ? 20 : 15, color: gold ? colors.gold : colors.foreground }}>{value}</AppText>
+    </View>
   );
 }

@@ -58,7 +58,7 @@ export interface NestedPaginatorEnvelope<T> {
     total: number;
   };
   message: string | null;
-  meta?: { request_id?: string };
+  meta?: { request_id?: string; unread_count?: number };
 }
 
 /**

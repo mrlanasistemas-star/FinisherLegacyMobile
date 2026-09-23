@@ -2,6 +2,7 @@ import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
 import { useEffect } from 'react';
 
+import { mapIncomingPath } from '@/features/links/map-incoming-path';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 
@@ -11,7 +12,7 @@ function toInAppPath(url: string): string | null {
     if (!path) return null;
     const entries = Object.entries(queryParams ?? {}).filter((entry): entry is [string, string] => typeof entry[1] === 'string');
     const query = entries.length > 0 ? `?${new URLSearchParams(entries).toString()}` : '';
-    return `/${path}${query}`;
+    return mapIncomingPath(`/${path}${query}`);
   } catch {
     return null;
   }

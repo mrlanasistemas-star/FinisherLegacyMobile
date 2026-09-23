@@ -1,281 +1,210 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Bell, ChevronRight, ScanLine } from 'lucide-react-native';
+import { Bell, ChevronRight, ScanLine, Search, Share2, Users } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { CinematicHero } from '@/components/brand/cinematic-hero';
-import { GearIconBadge } from '@/components/brand/gear-icon-badge';
 import { HeroFallback } from '@/components/brand/hero-fallback';
 import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
-import { MascotTip } from '@/components/brand/mascot-tip';
 import { MedalHeroTile } from '@/components/brand/medal-hero-tile';
-import { MetricNumber } from '@/components/brand/metric-number';
-import { SectionTitle } from '@/components/brand/section-title';
 import { EventCard } from '@/components/event-card';
-import { MyEventRow } from '@/components/my-event-row';
-import { ProductCard } from '@/components/product-card';
+import { GettingStarted } from '@/components/guide/getting-started';
 import { Reveal } from '@/components/motion/reveal';
+import { MyEventRow } from '@/components/my-event-row';
 import { Skeleton } from '@/components/skeleton';
+import { MomentCard } from '@/components/social/moment-card';
+import { IconButton } from '@/components/ui/icon-button';
+import { SectionHeader } from '@/components/ui/section-header';
 import { useEvents } from '@/hooks/use-events';
-import { useMyGear } from '@/hooks/use-gear';
 import { useMedals } from '@/hooks/use-medals';
 import { useMyEvents } from '@/hooks/use-my-events';
-import { useNotifications } from '@/hooks/use-notifications';
-import { useProducts } from '@/hooks/use-store-products';
+import { useUnreadNotificationsCount } from '@/hooks/use-notifications';
+import { useProfile } from '@/hooks/use-profile';
+import { useFeed } from '@/hooks/use-social';
 import { useAuthStore } from '@/stores/authStore';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, fontFamily, spacing } from '@/theme/tokens';
 import { timeOfDayGreeting } from '@/utils/greeting';
 
-// Confirmed live (200 OK, ~17MB, Range-request capable) — same URL Welcome
-// already uses. No mobile-optimized cut exists yet (no ffmpeg in this
-// environment), so `CinematicHero`/`useCanAutoplayVideo` only autoplay it
-// on Wi-Fi; every other case falls back to `HeroFallback` gracefully.
+// Confirmed live (~17MB, Range-capable). `CinematicHero` only autoplays it
+// on Wi-Fi; every other case falls back to `HeroFallback`.
 const HERO_VIDEO_URL = 'https://finisherlegacy.com/media/home/hero/finisher-hero-desktop.mp4';
 
+/**
+ * Home is a launchpad, not a catalogue: who you are, what's next, your last
+ * race, a peek at your Legacy, and a taste of the community. The store,
+ * gear and events each live in their own place.
+ */
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((state) => state.user);
+  const profile = useProfile();
   const medals = useMedals();
   const events = useEvents();
   const myEvents = useMyEvents();
-  const gear = useMyGear();
-  const products = useProducts();
-  const notifications = useNotifications();
+  const feed = useFeed('following');
+  const unread = useUnreadNotificationsCount();
 
-  const latestMedals = useMemo(() => medals.data?.pages[0]?.data.slice(0, 6) ?? [], [medals.data]);
-  const totalMedals = medals.data?.pages[0]?.meta.total ?? null;
+  const latestMedals = useMemo(() => medals.data?.pages[0]?.data.slice(0, 5) ?? [], [medals.data]);
+  const totalMedals = medals.data?.pages[0]?.meta.total ?? 0;
   const nextEdition = events.data?.pages[0]?.data[0] ?? null;
   const latestParticipation = myEvents.data?.pages[0]?.rows[0] ?? null;
-  const gearPreview = useMemo(() => gear.data?.slice(0, 4) ?? [], [gear.data]);
-  const featuredProducts = useMemo(() => products.data?.pages[0]?.rows.slice(0, 4) ?? [], [products.data]);
-  const hasUnreadNotifications = useMemo(
-    () => notifications.data?.pages[0]?.rows.some((row) => row.read_at === null) ?? false,
-    [notifications.data],
-  );
+  const recentMoments = useMemo(() => feed.data?.pages[0]?.data.slice(0, 2) ?? [], [feed.data]);
+
+  const refreshing = profile.isRefetching || medals.isRefetching || feed.isRefetching;
+  const refresh = () => {
+    profile.refetch();
+    medals.refetch();
+    events.refetch();
+    myEvents.refetch();
+    feed.refetch();
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.black }}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={340} gradient="full">
-          <View style={{ flex: 1, paddingTop: insets.top + spacing.sm, paddingHorizontal: spacing.lg, justifyContent: 'space-between' }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: spacing.xxl }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold} progressViewOffset={insets.top} />}>
+        <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={300} gradient="full">
+          <View style={{ flex: 1, paddingTop: insets.top + spacing.xs, paddingHorizontal: spacing.lg, justifyContent: 'space-between', paddingBottom: spacing.lg }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
                 FINISHER LEGACY
               </AppText>
-              <Pressable
-                onPress={() => router.push('/notifications')}
-                hitSlop={12}
-                accessibilityRole="button"
-                accessibilityLabel="Notificaciones"
-                style={{ padding: spacing.xxs }}>
-                <Bell color={colors.foreground} size={22} />
-                {hasUnreadNotifications ? (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: 4,
-                      right: 4,
-                      width: 8,
-                      height: 8,
-                      borderRadius: 4,
-                      backgroundColor: colors.gold,
-                    }}
-                  />
-                ) : null}
-              </Pressable>
+              <View style={{ flexDirection: 'row', marginRight: -10 }}>
+                <IconButton icon={Search} label="Buscar atletas, eventos y productos" onPress={() => router.push('/explore')} />
+                <IconButton icon={Bell} label="Notificaciones" badge={unread} onPress={() => router.push('/notifications')} />
+              </View>
             </View>
 
-            <Reveal style={{ gap: spacing.sm }}>
-              <View>
-                <AppText variant="hero" style={{ fontSize: 34, lineHeight: 36 }}>
-                  TU HISTORIA
-                </AppText>
-                <AppText variant="hero" tone="gold" style={{ fontSize: 34, lineHeight: 36 }}>
-                  SIGUE CORRIENDO.
-                </AppText>
-              </View>
-
+            <Reveal style={{ gap: spacing.xs }}>
               <AppText variant="body" tone="muted">
                 {timeOfDayGreeting()}, {user?.first_name ?? 'atleta'}
               </AppText>
-
+              <View>
+                <AppText variant="hero" style={{ fontSize: 32, lineHeight: 34 }}>
+                  TU HISTORIA
+                </AppText>
+                <AppText variant="hero" tone="gold" style={{ fontSize: 32, lineHeight: 34 }}>
+                  SIGUE CORRIENDO.
+                </AppText>
+              </View>
               {user?.legacy_id ? <LegacyIdTag legacyId={user.legacy_id} /> : null}
             </Reveal>
           </View>
         </CinematicHero>
 
-        <MascotTip
-          id="home-intro"
-          message="Toca el botón dorado para escanear tu Legacy Code, o desliza para ver tus medallas y tu próxima meta."
-          style={{ marginHorizontal: spacing.lg, marginTop: spacing.lg }}
-        />
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl, marginTop: spacing.lg }}>
+          {profile.data ? <GettingStarted profile={profile.data} /> : null}
 
-        <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
-          {medals.isPending ? (
-            <Skeleton width={100} height={64} />
-          ) : (
-            <MetricNumber value={totalMedals ?? 0} size={64} tone="gold" />
-          )}
-          <AppText variant="caption" tone="muted" align="center" style={{ marginTop: spacing.xxs, letterSpacing: 1.5 }}>
-            {(totalMedals ?? 0) === 1 ? 'MEDALLA QUE CUENTA TU HISTORIA' : 'MEDALLAS QUE CUENTAN TU HISTORIA'}
-          </AppText>
-        </View>
-
-        <View style={{ marginTop: spacing.xxl }}>
-          <SectionTitle title="Últimas medallas" style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }} />
-
-          {medals.isPending ? (
-            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg }}>
-              <Skeleton width={168} height={168} radius={22} />
-              <Skeleton width={168} height={168} radius={22} />
+          {nextEdition ? (
+            <View>
+              <SectionHeader title="Tu próxima meta" actionLabel="Eventos" onAction={() => router.push('/events')} />
+              <EventCard edition={nextEdition} onPress={() => router.push(`/events/${nextEdition.event.slug}`)} />
             </View>
-          ) : latestMedals.length === 0 ? (
-            <View style={{ paddingHorizontal: spacing.lg }}>
+          ) : null}
+
+          {latestParticipation ? (
+            <View>
+              <SectionHeader title="Tu última carrera" actionLabel="Todas" onAction={() => router.push('/my-events')} />
+              <MyEventRow row={latestParticipation} onPress={() => router.push(`/my-events/${latestParticipation.id}`)} />
+              <Pressable
+                onPress={() => router.push(`/moments/create?type=race_completed&participantId=${latestParticipation.id}`)}
+                accessibilityRole="button"
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+                <Share2 size={16} color={colors.gold} />
+                <AppText variant="caption" tone="gold">
+                  Compartir como Legacy Moment
+                </AppText>
+              </Pressable>
+            </View>
+          ) : null}
+
+          <View>
+            <SectionHeader
+              title="Tu Legacy"
+              actionLabel={totalMedals > 0 ? `Ver ${totalMedals}` : undefined}
+              onAction={() => router.push('/legacy')}
+            />
+            {medals.isPending ? (
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                <Skeleton width={140} height={140} radius={20} />
+                <Skeleton width={140} height={140} radius={20} />
+              </View>
+            ) : latestMedals.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginHorizontal: -spacing.lg }}
+                contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
+                {latestMedals.map((medal) => (
+                  <MedalHeroTile key={medal.id} medal={medal} width={140} onPress={() => router.push(`/medals/${medal.id}`)} />
+                ))}
+              </ScrollView>
+            ) : (
               <AppText variant="body" tone="muted">
                 Tu Legacy Vault está listo para tu primera medalla.
               </AppText>
-            </View>
-          ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={168 + spacing.sm}
-              decelerationRate="fast"
-              contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
-              {latestMedals.map((medal) => (
-                <MedalHeroTile key={medal.id} medal={medal} onPress={() => router.push(`/medals/${medal.id}`)} />
-              ))}
-            </ScrollView>
-          )}
-        </View>
+            )}
+          </View>
 
-        <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.lg }}>
-          <Reveal>
-            <View
-              style={{
-                borderRadius: 24,
-                borderWidth: 1,
-                borderColor: colors.goldDim,
-                backgroundColor: colors.graphite,
-                padding: spacing.lg,
-                alignItems: 'center',
-                gap: spacing.sm,
-              }}>
-              <AppText variant="label" tone="gold" style={{ letterSpacing: 2 }}>
-                ENCUENTRA TU LEGACY
+          <Pressable
+            onPress={() => router.push('/legacy/scan')}
+            accessibilityRole="button"
+            accessibilityLabel="Escanear un Legacy Code"
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: spacing.md,
+              paddingVertical: spacing.md,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: colors.hairline,
+              opacity: pressed ? 0.7 : 1,
+            })}>
+            <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
+              <ScanLine size={22} color={colors.gold} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>¿Tienes un Legacy Code?</AppText>
+              <AppText variant="caption" tone="muted">
+                Escanéalo y agrégalo a tu historia.
               </AppText>
-              <View
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: 20,
-                  backgroundColor: colors.gold,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                <ScanLine color={colors.black} size={30} />
-              </View>
-              <AppButton label="Escanear Legacy Code" onPress={() => router.push('/legacy/scan')} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.xs }} />
             </View>
-          </Reveal>
-        </View>
+            <ChevronRight size={18} color={colors.subtle} />
+          </Pressable>
 
-        {nextEdition ? (
-          <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.lg }}>
-            <SectionTitle title="Tu próxima meta" style={{ marginBottom: spacing.md }} />
-            <EventCard edition={nextEdition} onPress={() => router.push(`/events/${nextEdition.event.slug}`)} />
-          </View>
-        ) : null}
-
-        {latestParticipation ? (
-          <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.lg }}>
-            <SectionTitle title="Tu última participación" style={{ marginBottom: spacing.md }} />
-            <MyEventRow row={latestParticipation} onPress={() => router.push(`/my-events/${latestParticipation.id}`)} />
-          </View>
-        ) : null}
-
-        {gearPreview.length > 0 ? (
-          <View style={{ marginTop: spacing.xxl }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: spacing.lg,
-                marginBottom: spacing.md,
-              }}>
-              <SectionTitle title="Mi equipo" />
-              <Pressable onPress={() => router.push('/gear')} style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="button">
-                <AppText variant="caption" tone="gold">
-                  Ver todo
-                </AppText>
-                <ChevronRight color={colors.gold} size={16} />
-              </Pressable>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
-              {gearPreview.map((item) => (
-                <Pressable
-                  key={item.uuid}
-                  onPress={() => router.push(`/gear/${item.uuid}`)}
-                  style={{
-                    width: 108,
-                    alignItems: 'center',
-                    gap: spacing.xs,
-                    borderRadius: radius.lg,
-                    borderWidth: 1,
-                    borderColor: colors.border,
-                    backgroundColor: colors.graphite,
-                    padding: spacing.sm,
-                  }}>
-                  <GearIconBadge productName={item.product_name} size={48} />
-                  <AppText variant="caption" numberOfLines={2} align="center">
-                    {item.product_name}
+          <View>
+            <SectionHeader title="Comunidad" actionLabel="Ver todo" onAction={() => router.push('/feed')} />
+            {feed.isPending ? (
+              <Skeleton height={220} radius={16} />
+            ) : recentMoments.length === 0 ? (
+              <Pressable
+                onPress={() => router.push('/explore')}
+                accessibilityRole="button"
+                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, opacity: pressed ? 0.7 : 1 })}>
+                <Users size={22} color={colors.gold} />
+                <View style={{ flex: 1 }}>
+                  <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>Encuentra a tu comunidad</AppText>
+                  <AppText variant="caption" tone="muted">
+                    Sigue a otros atletas para ver sus carreras y logros aquí.
                   </AppText>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-
-        {featuredProducts.length > 0 ? (
-          <View style={{ marginTop: spacing.xxl }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: spacing.lg,
-                marginBottom: spacing.md,
-              }}>
-              <SectionTitle title="Finisher Legacy Store" />
-              <Pressable onPress={() => router.push('/store')} style={{ flexDirection: 'row', alignItems: 'center' }} accessibilityRole="button">
-                <AppText variant="caption" tone="gold">
-                  Ver tienda
-                </AppText>
-                <ChevronRight color={colors.gold} size={16} />
-              </Pressable>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
-              {featuredProducts.map((product) => (
-                <View key={product.uuid} style={{ width: 150 }}>
-                  <ProductCard product={product} onPress={() => router.push(`/store/${product.slug}`)} />
                 </View>
-              ))}
-            </ScrollView>
+                <ChevronRight size={18} color={colors.subtle} />
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        {recentMoments.length > 0 ? (
+          <View style={{ marginTop: -spacing.sm }}>
+            {recentMoments.map((moment) => (
+              <MomentCard key={moment.uuid} moment={moment} />
+            ))}
           </View>
         ) : null}
-
-        <View style={{ alignItems: 'center', marginTop: spacing.xxl, marginBottom: spacing.xxl, opacity: 0.85 }}>
-          <Image
-            source={require('@/assets/images/brand/logo-mark-gold.png')}
-            style={{ width: 40, height: 20 }}
-            contentFit="contain"
-          />
-        </View>
       </ScrollView>
     </View>
   );

@@ -29,6 +29,13 @@ jobs:
       - name: Test
         run: npm test
 
+      # Proves the whole app bundles for Android (every route, native module
+      # import and config plugin resolves) without needing EAS.
+      - name: Export Android bundle
+        run: npx expo export --platform android --output-dir dist-ci
+        env:
+          EXPO_PUBLIC_API_URL: https://finisherlegacy.com/api/v1
+
       # Non-blocking: today this only surfaces the same SDK-patch-drift
       # noise already triaged in docs/RELEASE_CHECKLIST.md, never a real
       # config error. Flip this to blocking once the project's dependency

@@ -32,6 +32,12 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Protected guard={status === 'authenticated'}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="feed" />
+        <Stack.Screen name="explore" />
+        <Stack.Screen name="moments/[uuid]" />
+        <Stack.Screen name="moments/create" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="events/index" />
+        <Stack.Screen name="medals/index" />
         <Stack.Screen name="medals/[uuid]" />
         <Stack.Screen name="medals/create" options={{ presentation: 'modal' }} />
         <Stack.Screen name="medals/edit/[uuid]" options={{ presentation: 'modal' }} />
@@ -46,7 +52,6 @@ function RootNavigator() {
         <Stack.Screen name="gear/[uuid]" />
         <Stack.Screen name="gear/claim" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="gear/claimed" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
-        <Stack.Screen name="store/index" />
         <Stack.Screen name="store/[slug]" />
         <Stack.Screen name="cart/index" />
         <Stack.Screen name="checkout/index" options={{ gestureEnabled: false }} />
@@ -55,7 +60,8 @@ function RootNavigator() {
         <Stack.Screen name="notifications/index" />
         <Stack.Screen name="support/index" />
         <Stack.Screen name="support/[id]" />
-        <Stack.Screen name="athlete/[username]" />
+        <Stack.Screen name="athlete/[username]/index" />
+        <Stack.Screen name="athlete/[username]/connections" />
         <Stack.Screen name="settings" />
       </Stack.Protected>
       <Stack.Protected guard={status !== 'authenticated'}>

@@ -1,59 +1,52 @@
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { Camera, ImagePlus, Video } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { Camera, CircleCheck, ImagePlus, Share2, Video } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
-import { EVENT_MEDIA_LIMITS } from '@/api/eventMedia';
-import { AppError } from '@/api/errors';
-import { useUploadEventMedia } from '@/hooks/use-event-media';
+import { InlineError } from '@/components/ui/inline-error';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
-import { colors, radius, spacing } from '@/theme/tokens';
-import { compressImage } from '@/utils/image-compress';
+import { useUploadEventMedia } from '@/hooks/use-event-media';
 import { showToast } from '@/stores/toastStore';
+import { colors, radius, spacing } from '@/theme/tokens';
+import type { MediaEntitlement } from '@/types/models';
+import { prepareImageUpload, prepareVideoUpload, type UploadDescriptor } from '@/utils/media-file';
+import { ensureOnline } from '@/utils/network';
 
-interface PickedAsset {
+interface PickedAsset extends UploadDescriptor {
   kind: 'image' | 'video';
-  uri: string;
-  name: string;
-  type: string;
   width: number;
   height: number;
-  fileSize: number | null;
 }
 
 interface MediaUploadSheetProps {
   visible: boolean;
   onClose: () => void;
   participantId: number | null;
-  remainingImages: number;
-  remainingVideos: number;
+  /** Limits, max bytes and allowed MIME types — straight from the backend. */
+  entitlement: MediaEntitlement | undefined;
   onLimitReached: () => void;
 }
 
-const SUCCESS_MESSAGE: Record<'image' | 'video', string> = {
-  image: 'Ese momento ya forma parte de tu Legacy.',
-  video: 'Ahora puedes volver a vivir esa meta.',
-};
+function megabytes(bytes: number): string {
+  return `${Math.round(bytes / (1024 * 1024))} MB`;
+}
 
-export function MediaUploadSheet({
-  visible,
-  onClose,
-  participantId,
-  remainingImages,
-  remainingVideos,
-  onLimitReached,
-}: MediaUploadSheetProps) {
+export function MediaUploadSheet({ visible, onClose, participantId, entitlement, onLimitReached }: MediaUploadSheetProps) {
   const [asset, setAsset] = useState<PickedAsset | null>(null);
+  const [uploadedUuid, setUploadedUuid] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const upload = useUploadEventMedia(participantId);
 
   function reset() {
     setAsset(null);
+    setUploadedUuid(null);
     setProgress(0);
     setError(null);
   }
@@ -65,20 +58,16 @@ export function MediaUploadSheet({
 
   async function pick(source: 'camera' | 'library-image' | 'library-video') {
     setError(null);
+    const isVideo = source === 'library-video';
+    const bucket = isVideo ? entitlement?.videos : entitlement?.images;
 
-    if (source !== 'library-video' && remainingImages <= 0) {
-      close();
-      onLimitReached();
-      return;
-    }
-    if (source === 'library-video' && remainingVideos <= 0) {
+    if (bucket && bucket.remaining <= 0) {
       close();
       onLimitReached();
       return;
     }
 
-    const permission =
-      source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permission = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       setError('Necesitamos tu permiso para continuar.');
       return;
@@ -87,90 +76,88 @@ export function MediaUploadSheet({
     const result =
       source === 'camera'
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
-        : await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: source === 'library-video' ? ['videos'] : ['images'],
-            quality: 1,
-          });
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: isVideo ? ['videos'] : ['images'], quality: 1 });
 
     if (result.canceled || !result.assets[0]) return;
-
     const picked = result.assets[0];
-    const kind: 'image' | 'video' = source === 'library-video' ? 'video' : 'image';
 
-    if (kind === 'image') {
-      if (picked.fileSize && picked.fileSize > EVENT_MEDIA_LIMITS.maxImageBytes * 3) {
-        // Only warn before compression on truly oversized originals — most
-        // camera photos compress well under the limit anyway.
-        setError('Esta imagen es muy pesada. Intenta con otra.');
-        return;
-      }
-      const compressed = await compressImage(picked.uri, picked.width, picked.height);
-      setAsset({
-        kind,
-        uri: compressed.uri,
-        name: picked.fileName ?? `event-photo-${Date.now()}.jpg`,
-        type: 'image/jpeg',
-        width: compressed.width,
-        height: compressed.height,
-        fileSize: picked.fileSize ?? null,
-      });
+    if (!isVideo) {
+      const prepared = await prepareImageUpload(picked, 'recuerdo');
+      setAsset({ ...prepared, kind: 'image', width: picked.width, height: picked.height });
       return;
     }
 
-    if (picked.fileSize && picked.fileSize > EVENT_MEDIA_LIMITS.maxVideoBytes) {
-      setError('Este video supera el límite de 100 MB. Elige uno más ligero.');
+    const prepared = prepareVideoUpload(picked, 'recuerdo');
+    if (bucket && bucket.allowed_mimes.length > 0 && !bucket.allowed_mimes.includes(prepared.type)) {
+      setError('Ese formato de video no es compatible. Usa MP4 o MOV.');
       return;
     }
-
-    setAsset({
-      kind,
-      uri: picked.uri,
-      name: picked.fileName ?? `event-video-${Date.now()}.mp4`,
-      type: picked.mimeType ?? 'video/mp4',
-      width: picked.width,
-      height: picked.height,
-      fileSize: picked.fileSize ?? null,
-    });
+    if (bucket && picked.fileSize && picked.fileSize > bucket.max_bytes) {
+      setError(`Este video pesa más de ${megabytes(bucket.max_bytes)}. Elige uno más corto o recórtalo.`);
+      return;
+    }
+    setAsset({ ...prepared, kind: 'video', width: picked.width, height: picked.height });
   }
 
   async function confirmUpload() {
     if (!asset) return;
     setError(null);
     setProgress(0);
-
     try {
-      await upload.mutateAsync({
-        file: { uri: asset.uri, name: asset.name, type: asset.type },
-        isPublic: true,
-        onProgress: setProgress,
-      });
-      showToast(SUCCESS_MESSAGE[asset.kind], 'success');
-      close();
+      await ensureOnline();
+      const media = await upload.mutateAsync({ file: { uri: asset.uri, name: asset.name, type: asset.type }, isPublic: true, onProgress: setProgress });
+      setUploadedUuid(media.uuid);
+      showToast(asset.kind === 'image' ? 'Ese momento ya forma parte de tu Legacy.' : 'Ahora puedes volver a vivir esa meta.', 'success');
     } catch (caught) {
       if (caught instanceof AppError && caught.code === 'MEDIA_LIMIT_REACHED') {
         close();
         onLimitReached();
         return;
       }
-      setError(caught instanceof AppError ? caught.message : 'No pudimos subir tu archivo.');
+      if (caught instanceof AppError && caught.code === 'MEDIA_TOO_LARGE') {
+        setError('El archivo es demasiado grande. Elige uno más ligero.');
+        return;
+      }
+      setError(caught instanceof AppError ? caught.message : 'No pudimos subir tu archivo. Intenta otra vez.');
     }
   }
 
   return (
     <Sheet visible={visible} onClose={close}>
-      {!asset ? (
+      {uploadedUuid ? (
+        <View style={{ paddingBottom: spacing.lg, gap: spacing.md, alignItems: 'center' }}>
+          <CircleCheck size={40} color={colors.gold} />
+          <AppText variant="subtitle" align="center">
+            Guardado en tu Legacy
+          </AppText>
+          <AppText variant="body" tone="muted" align="center">
+            ¿Quieres compartirlo con tu comunidad?
+          </AppText>
+          <AppButton
+            label="Compartir como Legacy Moment"
+            icon={Share2}
+            onPress={() => {
+              const target = `/moments/create?type=race_completed&participantId=${participantId}&mediaUuids=${uploadedUuid}` as const;
+              close();
+              router.push(target);
+            }}
+          />
+          <AppButton label="Ahora no" variant="ghost" onPress={close} />
+        </View>
+      ) : !asset ? (
         <View style={{ paddingBottom: spacing.sm }}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
             Agregar recuerdo
           </AppText>
+          {entitlement ? (
+            <AppText variant="caption" tone="muted" style={{ marginBottom: spacing.xs }}>
+              Fotos {entitlement.images.used}/{entitlement.images.limit} · Videos {entitlement.videos.used}/{entitlement.videos.limit}
+            </AppText>
+          ) : null}
           <SheetActionRow icon={Camera} label="Tomar foto" onPress={() => pick('camera')} />
           <SheetActionRow icon={ImagePlus} label="Elegir foto" onPress={() => pick('library-image')} />
           <SheetActionRow icon={Video} label="Elegir video" onPress={() => pick('library-video')} />
-          {error ? (
-            <AppText variant="caption" tone="destructive" style={{ marginTop: spacing.xs }}>
-              {error}
-            </AppText>
-          ) : null}
+          <InlineError message={error} />
         </View>
       ) : (
         <View style={{ paddingBottom: spacing.lg, gap: spacing.md }}>
@@ -179,19 +166,11 @@ export function MediaUploadSheet({
           {asset.kind === 'image' ? (
             <Image
               source={{ uri: asset.uri }}
-              style={{ width: '100%', aspectRatio: asset.width / asset.height, borderRadius: radius.md, backgroundColor: colors.graphiteLight }}
+              style={{ width: '100%', aspectRatio: asset.width && asset.height ? asset.width / asset.height : 1, maxHeight: 360, borderRadius: radius.md, backgroundColor: colors.graphiteLight }}
               contentFit="cover"
             />
           ) : (
-            <View
-              style={{
-                width: '100%',
-                height: 180,
-                borderRadius: radius.md,
-                backgroundColor: colors.graphiteLight,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
+            <View style={{ width: '100%', height: 180, borderRadius: radius.md, backgroundColor: colors.graphiteLight, alignItems: 'center', justifyContent: 'center' }}>
               <Video color={colors.gold} size={32} />
               <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xs }}>
                 Video listo para subir
@@ -200,7 +179,7 @@ export function MediaUploadSheet({
           )}
 
           {upload.isPending ? (
-            <View style={{ gap: spacing.xxs }}>
+            <View style={{ gap: spacing.xxs }} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: progress }}>
               <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.graphiteLight, overflow: 'hidden' }}>
                 <View style={{ height: '100%', width: `${progress}%`, backgroundColor: colors.gold }} />
               </View>
@@ -210,11 +189,7 @@ export function MediaUploadSheet({
             </View>
           ) : null}
 
-          {error ? (
-            <AppText variant="caption" tone="destructive">
-              {error}
-            </AppText>
-          ) : null}
+          <InlineError message={error} onRetry={error && !upload.isPending ? confirmUpload : undefined} />
 
           <View style={{ gap: spacing.sm }}>
             <AppButton label="Subir" onPress={confirmUpload} loading={upload.isPending} />

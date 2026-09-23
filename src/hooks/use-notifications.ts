@@ -32,3 +32,11 @@ export function useMarkAllNotificationsRead() {
     },
   });
 }
+
+/** Real unread total from the server (first page's `meta.unread_count`). */
+export function useUnreadNotificationsCount(): number {
+  const { data } = useNotifications();
+  const first = data?.pages[0];
+  if (!first) return 0;
+  return first.unreadCount ?? first.rows.filter((row) => row.read_at === null).length;
+}

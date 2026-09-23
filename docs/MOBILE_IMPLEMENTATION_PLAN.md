@@ -1,3 +1,5 @@
+> **OBSOLETO (2026-09-23).** Todos los huecos de backend listados aquí se cerraron en la pasada "Full Product Completion" (carrito por UUID, paginación de pedidos, reorder de media por UUID, UUID de carrera para prerregistro, borrar cuenta, reset de contraseña, Google/Apple, Stripe PaymentSheet, capa social Legacy Moments). Se conserva sólo como historial — estado actual: `ARCHITECTURE.md`, `COMMERCE_ARCHITECTURE.md`, `SOCIAL_ARCHITECTURE.md`, `RELEASE_CHECKLIST.md`.
+
 > **Histórico/superseded** — este documento cubre sólo FASE 0-15 (auth/profile/medals/legacy/events, previo a la sincronización completa con el ecosistema de tienda/media/comunidad). Para el estado actual del proyecto ver [`ARCHITECTURE.md`](./ARCHITECTURE.md); para deuda de backend ver [`MOBILE_BACKEND_REQUIREMENTS.md`](./MOBILE_BACKEND_REQUIREMENTS.md); para checklist de publicación ver [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md). Se conserva sin cambios por su valor histórico (contrato de API confirmado en su momento, identidad de marca, estado por fase original).
 
 # Mobile Implementation Plan
