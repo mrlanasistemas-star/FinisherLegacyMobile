@@ -1,71 +1,44 @@
-import { CameraView, useCameraPermissions, type BarcodeScanningResult } from 'expo-camera';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Flashlight, FlashlightOff, KeyRound, X } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, View } from 'react-native';
+import { KeyRound, Nfc, X } from 'lucide-react-native';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 
 import { AppError } from '@/api/errors';
 import { extractGearCode, normalizeGearCode } from '@/api/gear';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GearIconBadge } from '@/components/brand/gear-icon-badge';
-import { GlassSurface } from '@/components/brand/glass-surface';
 import { FormInput } from '@/components/form-input';
 import { Skeleton } from '@/components/skeleton';
 import { useClaimGear, usePublicGear } from '@/hooks/use-gear';
 import { colors, radius, spacing } from '@/theme/tokens';
 
-const FRAME_SIZE = 250;
-const CORNER = 32;
-
+/**
+ * Claim a product by its printed code (historical products). New products
+ * connect by NFC tap (/nfc/[token]) — there is no camera scanner any more.
+ * `?code=` (from "Tengo un código impreso") jumps straight to the preview.
+ */
 export default function GearClaimScreen() {
-  const [permission, requestPermission] = useCameraPermissions();
-  const [torchOn, setTorchOn] = useState(false);
-  const [manualMode, setManualMode] = useState(false);
+  const params = useLocalSearchParams<{ code?: string }>();
   const [manualCode, setManualCode] = useState('');
-  const [detectedCode, setDetectedCode] = useState<string | null>(null);
+  const [detectedCode, setDetectedCode] = useState<string | null>(() => (params.code ? normalizeGearCode(params.code) : null));
   const [claimError, setClaimError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
-  const locked = useRef(false);
-  const scanLine = useSharedValue(0);
 
   const preview = usePublicGear(detectedCode);
   const claim = useClaimGear();
 
-  useEffect(() => {
-    scanLine.value = withRepeat(withSequence(withTiming(1, { duration: 1800 }), withTiming(0, { duration: 1800 })), -1);
-  }, [scanLine]);
-
-  const scanLineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scanLine.value * (FRAME_SIZE - 2) }],
-    opacity: 0.7,
-  }));
-
-  function handleDetected(code: string) {
-    if (locked.current) return;
-    locked.current = true;
+  function submitManualCode() {
+    const normalized = extractGearCode(manualCode) ?? normalizeGearCode(manualCode);
+    if (normalized.length < 4) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setClaimError(null);
-    setDetectedCode(code);
-  }
-
-  function handleBarcodeScanned(result: BarcodeScanningResult) {
-    const code = extractGearCode(result.data);
-    if (!code) return;
-    handleDetected(code);
-  }
-
-  function submitManualCode() {
-    const normalized = normalizeGearCode(manualCode);
-    if (normalized.length < 4) return;
-    handleDetected(normalized);
+    setDetectedCode(normalized);
   }
 
   function reset() {
-    locked.current = false;
     setDetectedCode(null);
     setClaimError(null);
   }
@@ -107,7 +80,7 @@ export default function GearClaimScreen() {
               <AppText variant="body" tone="muted" align="center">
                 Verifica el código e inténtalo de nuevo.
               </AppText>
-              <AppButton label="Escanear otro código" variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
+              <AppButton label="Probar otro código" variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
             </View>
           ) : !preview.data.claimable ? (
             <View style={{ alignItems: 'center', gap: spacing.sm }}>
@@ -118,7 +91,7 @@ export default function GearClaimScreen() {
               <AppText variant="body" tone="muted" align="center">
                 Este equipo ya fue reclamado por otro Legacy.
               </AppText>
-              <AppButton label="Escanear otro código" variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
+              <AppButton label="Probar otro código" variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
             </View>
           ) : (
             <View style={{ alignItems: 'center', gap: spacing.sm }}>
@@ -139,7 +112,7 @@ export default function GearClaimScreen() {
               ) : null}
 
               <AppButton label="Reclamar este equipo" onPress={handleClaim} loading={claim.isPending} style={{ marginTop: spacing.md }} />
-              <AppButton label="Escanear otro código" variant="ghost" onPress={reset} disabled={claim.isPending} />
+              <AppButton label="Probar otro código" variant="ghost" onPress={reset} disabled={claim.isPending} />
             </View>
           )}
         </View>
@@ -148,104 +121,48 @@ export default function GearClaimScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black }}>
-      {!permission ? null : !permission.granted ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, paddingTop: insets.top }}>
-          <AppText variant="subtitle" align="center">
-            Necesitamos tu cámara
-          </AppText>
-          <AppText variant="body" tone="muted" align="center" style={{ marginTop: spacing.xs }}>
-            Finisher Legacy necesita acceso a tu cámara para escanear el código de tu equipo.
-          </AppText>
-          {permission.canAskAgain ? (
-            <AppButton label="Permitir acceso" onPress={requestPermission} style={{ marginTop: spacing.lg }} />
-          ) : (
-            <AppButton label="Abrir Configuración" onPress={() => Linking.openSettings()} style={{ marginTop: spacing.lg }} />
-          )}
-          <AppButton label="Cerrar" variant="ghost" onPress={() => router.back()} style={{ marginTop: spacing.sm }} />
-        </View>
-      ) : (
-        <>
-          <CameraView
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            facing="back"
-            enableTorch={torchOn}
-            barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={handleBarcodeScanned}
-          />
-
-          <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '38%', backgroundColor: 'rgba(10,10,12,0.55)' }} />
-          <View pointerEvents="none" style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '30%', backgroundColor: 'rgba(10,10,12,0.7)' }} />
-
-          <View style={{ position: 'absolute', top: insets.top + spacing.sm, left: spacing.md, right: spacing.md, flexDirection: 'row', justifyContent: 'space-between' }}>
-            <GlassSurface style={{ width: 40, height: 40 }}>
-              <Pressable onPress={() => router.back()} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Cerrar">
-                <X color={colors.foreground} size={20} />
-              </Pressable>
-            </GlassSurface>
-            <GlassSurface style={{ width: 40, height: 40 }}>
-              <Pressable
-                onPress={() => setTorchOn((prev) => !prev)}
-                style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-                accessibilityRole="button"
-                accessibilityLabel={torchOn ? 'Apagar linterna' : 'Encender linterna'}>
-                {torchOn ? <FlashlightOff color={colors.gold} size={18} /> : <Flashlight color={colors.foreground} size={18} />}
-              </Pressable>
-            </GlassSurface>
-          </View>
-
-          <View pointerEvents="none" style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <AppText variant="label" tone="gold" style={{ letterSpacing: 3, marginBottom: spacing.xxl + spacing.sm }}>
-              ESCANEA TU EQUIPO
+    <View style={{ flex: 1, backgroundColor: colors.black, paddingTop: insets.top }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
+          <X color={colors.foreground} size={26} />
+        </Pressable>
+      </View>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: spacing.lg, gap: spacing.xl, paddingBottom: insets.bottom + spacing.xl }}>
+          <View style={{ gap: spacing.xs }}>
+            <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
+              MI EQUIPO
             </AppText>
-
-            <View style={{ width: FRAME_SIZE, height: FRAME_SIZE, overflow: 'hidden' }}>
-              <Corner style={{ top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3 }} />
-              <Corner style={{ top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3 }} />
-              <Corner style={{ bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3 }} />
-              <Corner style={{ bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3 }} />
-              <Animated.View style={[{ position: 'absolute', left: 8, right: 8, height: 2, backgroundColor: colors.gold, borderRadius: 1 }, scanLineStyle]} />
-            </View>
-
-            <AppText variant="caption" tone="muted" style={{ marginTop: spacing.lg }}>
-              Apunta al código de tu placa, prenda o accesorio
+            <AppText variant="title" accessibilityRole="header">
+              Conecta tu producto
+            </AppText>
+            <AppText variant="body" tone="muted">
+              Escribe el código impreso en la etiqueta de tu prenda o accesorio.
             </AppText>
           </View>
-
-          <View style={{ position: 'absolute', bottom: insets.bottom + spacing.lg, left: spacing.lg, right: spacing.lg }}>
-            {manualMode ? (
-              <GlassSurface rounded={false} style={{ borderRadius: radius.lg, padding: spacing.md }}>
-                <View style={{ gap: spacing.sm }}>
-                  <FormInput
-                    label="Código de equipo"
-                    value={manualCode}
-                    onChangeText={(text) => setManualCode(text.toUpperCase())}
-                    autoCapitalize="characters"
-                    placeholder="Ej. ASTXXXXXXXXXXXX"
-                    returnKeyType="done"
-                    onSubmitEditing={submitManualCode}
-                  />
-                  <AppButton label="Buscar" onPress={submitManualCode} />
-                </View>
-              </GlassSurface>
-            ) : (
-              <GlassSurface style={{ alignSelf: 'center' }}>
-                <Pressable
-                  onPress={() => setManualMode(true)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}
-                  accessibilityRole="button">
-                  <KeyRound color={colors.foreground} size={16} />
-                  <AppText variant="bodyStrong">Ingresar código manualmente</AppText>
-                </Pressable>
-              </GlassSurface>
-            )}
+          <View style={{ gap: spacing.sm }}>
+            <FormInput
+              label="Código del producto"
+              icon={KeyRound}
+              value={manualCode}
+              onChangeText={(text) => setManualCode(text.toUpperCase())}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              autoFocus
+              placeholder="Ej. ASTXXXXXXXXXXXX"
+              returnKeyType="go"
+              onSubmitEditing={submitManualCode}
+            />
+            <AppButton label="Buscar" onPress={submitManualCode} disabled={manualCode.trim().length < 4} />
           </View>
-        </>
-      )}
+          <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite }}>
+            <Nfc size={22} color={colors.gold} />
+            <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
+              ¿Tu producto tiene NFC? Acerca tu teléfono a la etiqueta y se conectará solo.
+            </AppText>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
-}
-
-function Corner({ style }: { style: object }) {
-  return <View style={[{ position: 'absolute', width: CORNER, height: CORNER, borderColor: colors.white, borderRadius: radius.sm }, style]} />;
 }

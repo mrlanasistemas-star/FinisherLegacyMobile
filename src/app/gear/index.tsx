@@ -23,15 +23,15 @@ export default function GearScreen() {
         MI EQUIPO
       </AppText>
       <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs, marginBottom: spacing.md }}>
-        Tu Digital Closet — todo lo que has reclamado
+        Mi equipo — tus productos conectados a tu historia
       </AppText>
       <MascotTip
         id="gear-intro"
-        message="Cada placa, prenda o accesorio con QR que reclames vive aquí, listo para acompañarte en tu próxima carrera."
+        message="Acerca tu teléfono a la etiqueta NFC de tu placa, prenda o accesorio y quedará aquí, listo para acompañarte en tu próxima carrera."
         style={{ marginBottom: spacing.md }}
       />
       <AppButton
-        label="Escanear o ingresar código"
+        label="Tengo un código impreso"
         variant="secondary"
         onPress={() => router.push('/gear/claim')}
         fullWidth={false}
@@ -55,9 +55,9 @@ export default function GearScreen() {
           {header}
           <EmptyState
             icon={Shirt}
-            title="Tu Digital Closet está vacío"
-            message="Escanea el código de tu placa, prenda o accesorio Finisher Legacy para agregarlo aquí."
-            actionLabel="Escanear código"
+            title="Aún no conectas tu equipo"
+            message="Acerca tu teléfono a la etiqueta de tu placa, prenda o accesorio Finisher Legacy y aparecerá aquí."
+            actionLabel="Tengo un código impreso"
             onAction={() => router.push('/gear/claim')}
           />
         </View>
