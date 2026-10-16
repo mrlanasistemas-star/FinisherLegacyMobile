@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { Award, Flag, Lock, MoreHorizontal, Trash2, Trophy, Users } from 'lucide-react-native';
 import { memo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Share, View } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
 import { MomentMediaPager } from '@/components/social/moment-media';
+import { CommentsSheet } from '@/components/social/comments-sheet';
 import { ReactionBar } from '@/components/social/reaction-bar';
 import { ReportSheet } from '@/components/social/report-sheet';
 import { Avatar } from '@/components/ui/avatar';
@@ -18,6 +19,7 @@ import { useDeleteMoment } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { LegacyMoment } from '@/types/social';
+import { webLinks } from '@/utils/links';
 import { relativeTime } from '@/utils/relative-time';
 
 interface MomentCardProps {
@@ -35,6 +37,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
   const [menuOpen, setMenuOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const deleteMoment = useDeleteMoment();
 
   const metrics = momentMetricLine(moment);
@@ -112,7 +115,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
       ) : null}
 
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xxs }}>
-        <ReactionBar moment={moment} onComment={() => router.push(`/moments/${moment.uuid}?focus=comment`)} />
+        <ReactionBar moment={moment} onComment={detail ? undefined : () => setCommentsOpen(true)} onShare={detail ? undefined : () => shareMoment(moment)} />
       </View>
 
       {menuOpen ? (
@@ -140,6 +143,8 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
       </Sheet>
       ) : null}
 
+      {commentsOpen ? <CommentsSheet momentUuid={moment.uuid} commentsCount={moment.comments_count} onClose={() => setCommentsOpen(false)} /> : null}
+
       {!moment.is_owner && reporting ? <ReportSheet visible onClose={() => setReporting(false)} targetType="moment" target={moment.uuid} /> : null}
 
       <ConfirmDialog
@@ -164,3 +169,9 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
     </View>
   );
 });
+
+function shareMoment(moment: LegacyMoment) {
+  const url = webLinks.moment(moment.uuid);
+  const title = moment.activity?.event ?? moment.metrics?.title ?? 'Un momento en Finisher Legacy';
+  Share.share({ message: `${title} — ${url}`, url }).catch(() => {});
+}
