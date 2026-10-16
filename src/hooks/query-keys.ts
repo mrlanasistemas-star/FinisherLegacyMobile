@@ -20,6 +20,12 @@ export const queryKeys = {
 
   profile: ['profile'] as const,
   notifications: ['me', 'notifications'] as const,
+  myGear: ['me', 'gear'] as const,
+  myEventsAll: ['me', 'events'] as const,
+  supportSessions: ['me', 'support-sessions'] as const,
+
+  /** Not persisted (root `nfc`): a tap must always reflect the tag's current owner. */
+  nfc: (token: string, authenticated: boolean) => ['nfc', token, authenticated ? 'auth' : 'guest'] as const,
 
   products: (filters: object) => ['store', 'products', filters] as const,
   product: (slug: string) => ['store', 'product', slug] as const,

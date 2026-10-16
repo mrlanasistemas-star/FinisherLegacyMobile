@@ -22,6 +22,13 @@ describe('mapIncomingPath', () => {
     );
   });
 
+  it('routes NFC taps (universal link and app scheme) to the NFC screen', () => {
+    expect(mapIncomingPath('https://finisherlegacy.com/n/Zx9_aB-12cd')).toBe('/nfc/Zx9_aB-12cd');
+    expect(mapIncomingPath('https://staging.finisherlegacy.com/n/abc123/')).toBe('/nfc/abc123');
+    expect(mapIncomingPath('finisherlegacy://nfc/abc123')).toBe('/nfc/abc123');
+    expect(mapIncomingPath('/n/abc123?utm=tag')).toBe('/nfc/abc123');
+  });
+
   it('passes unknown paths through untouched', () => {
     expect(mapIncomingPath('/legacy/ABC123')).toBe('/legacy/ABC123');
     expect(mapIncomingPath('/something-else')).toBe('/something-else');
