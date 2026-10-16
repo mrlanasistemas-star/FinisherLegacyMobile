@@ -21,12 +21,16 @@ import { useAuthStore } from '@/stores/authStore';
 import { useDeepLinks } from '@/hooks/use-deep-links';
 import { useSessionBootstrap } from '@/hooks/use-session-bootstrap';
 import { colors } from '@/theme/tokens';
+// Live tracking: the background location task must be defined at module scope.
+import '@/features/tracking/tracking-task';
+import { useLiveTrackingBootstrap } from '@/features/tracking/tracking-controller';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigator() {
   const status = useAuthStore((state) => state.status);
   useDeepLinks();
+  useLiveTrackingBootstrap(status === 'authenticated');
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
@@ -60,6 +64,7 @@ function RootNavigator() {
         <Stack.Screen name="notifications/index" />
         <Stack.Screen name="support/index" />
         <Stack.Screen name="support/[id]" />
+        <Stack.Screen name="tracking/[participantId]" />
         <Stack.Screen name="athlete/[username]/index" />
         <Stack.Screen name="athlete/[username]/connections" />
         <Stack.Screen name="settings" />
