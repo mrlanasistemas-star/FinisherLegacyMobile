@@ -18,6 +18,9 @@ interface UiState {
   pushDeviceUuid: string | null;
   /** The Home "Primeros pasos" guide was dismissed (it also hides itself once every step is done). */
   dismissedGettingStarted: boolean;
+  /** The contextual "Activar avisos" card was dismissed — never nag again; Settings still offers it. */
+  pushPrimerDismissed: boolean;
+  setPushPrimerDismissed: (dismissed: boolean) => void;
   setDismissedGettingStarted: (dismissed: boolean) => void;
   setHasSeenOnboarding: (seen: boolean) => void;
   setPendingDeepLink: (href: string | null) => void;
@@ -39,6 +42,8 @@ export const useUiStore = create<UiState>()(
       seenTips: [],
       pushDeviceUuid: null,
       dismissedGettingStarted: false,
+      pushPrimerDismissed: false,
+      setPushPrimerDismissed: (dismissed) => set({ pushPrimerDismissed: dismissed }),
       setDismissedGettingStarted: (dismissed) => set({ dismissedGettingStarted: dismissed }),
       setHasSeenOnboarding: (seen) => set({ hasSeenOnboarding: seen }),
       setPendingDeepLink: (href) => set({ pendingDeepLink: href }),
@@ -53,6 +58,7 @@ export const useUiStore = create<UiState>()(
         seenTips: state.seenTips,
         pushDeviceUuid: state.pushDeviceUuid,
         dismissedGettingStarted: state.dismissedGettingStarted,
+        pushPrimerDismissed: state.pushPrimerDismissed,
       }),
     },
   ),

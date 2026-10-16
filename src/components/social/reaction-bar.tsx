@@ -1,4 +1,4 @@
-import { HandHeart, Heart, MessageCircle } from 'lucide-react-native';
+import { HandHeart, Heart, MessageCircle, Share2 } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
@@ -11,13 +11,14 @@ import { AppError } from '@/api/errors';
 interface ReactionBarProps {
   moment: LegacyMoment;
   onComment?: () => void;
+  onShare?: () => void;
 }
 
 /**
  * ❤️ Me gusta · 👏 ¡Vamos! · 💬 Mensajes — two reactions on purpose, not an
  * emoji picker. Optimistic, idempotent on the server.
  */
-export function ReactionBar({ moment, onComment }: ReactionBarProps) {
+export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
   const reaction = useReaction();
 
   function toggle(type: ReactionType) {
@@ -57,6 +58,15 @@ export function ReactionBar({ moment, onComment }: ReactionBarProps) {
           onPress={onComment}
           icon={<MessageCircle size={21} color={colors.foreground} strokeWidth={1.8} />}
         />
+      ) : null}
+      {onShare ? (
+        <Pressable
+          onPress={onShare}
+          accessibilityRole="button"
+          accessibilityLabel="Compartir momento"
+          style={({ pressed }) => ({ marginLeft: 'auto', minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+          <Share2 size={20} color={colors.foreground} strokeWidth={1.8} />
+        </Pressable>
       ) : null}
     </View>
   );

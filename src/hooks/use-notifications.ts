@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient, type InfiniteData } from '@tanstack/react-query';
 
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from '@/api/notifications';
 
@@ -16,11 +16,29 @@ export function useMarkNotificationRead() {
 
   return useMutation({
     mutationFn: (id: string) => markNotificationRead(id),
-    onSuccess: () => {
+    // Optimistic: the row and the bell badge update on tap, not after a round trip.
+    onMutate: (id: string) => {
+      const now = new Date().toISOString();
+      queryClient.setQueryData<InfiniteData<NotificationsPage>>(['me', 'notifications'], (data) =>
+        data
+          ? {
+              ...data,
+              pages: data.pages.map((page, index) => ({
+                ...page,
+                rows: page.rows.map((row) => (row.id === id && row.read_at === null ? { ...row, read_at: now } : row)),
+                unreadCount: index === 0 && page.unreadCount ? Math.max(0, page.unreadCount - 1) : page.unreadCount,
+              })),
+            }
+          : data,
+      );
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['me', 'notifications'] });
     },
   });
 }
+
+type NotificationsPage = Awaited<ReturnType<typeof fetchNotifications>>;
 
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();

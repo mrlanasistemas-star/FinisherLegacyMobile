@@ -547,7 +547,7 @@ export default function MyEventDetailScreen() {
 
       <Sheet visible={addGearOpen} onClose={() => setAddGearOpen(false)}>
         <AppText variant="subtitle" style={{ marginBottom: spacing.sm }}>
-          Elige equipo de tu Digital Closet
+          Elige de Mi equipo
         </AppText>
         {myGear.isPending ? (
           <Skeleton height={80} />

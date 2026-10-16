@@ -136,8 +136,8 @@ export default function MedalsScreen() {
             Cada carrera merece un lugar en tu historia.
           </AppText>
           <AppButton
-            label="Escanear Legacy Code"
-            onPress={() => router.push('/legacy/scan')}
+            label="Agregar medalla"
+            onPress={() => router.push('/medals/create')}
             fullWidth={false}
             style={{ paddingHorizontal: spacing.xl, marginTop: spacing.md }}
           />

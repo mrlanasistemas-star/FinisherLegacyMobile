@@ -46,15 +46,10 @@
       "expo-secure-store",
       "expo-font",
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Finisher Legacy necesita acceso a tu cámara para escanear el código QR de tu Legacy."
-        }
-      ],
-      [
         "expo-image-picker",
         {
-          "photosPermission": "Finisher Legacy necesita acceso a tus fotos para elegir la imagen de tu medalla o tu foto de perfil."
+          "photosPermission": "Finisher Legacy necesita acceso a tus fotos para elegir la imagen de tu medalla o tu foto de perfil.",
+          "cameraPermission": "Finisher Legacy usa tu cámara para tomar fotos de tus carreras, tu medalla o tu perfil."
         }
       ],
       "expo-video",

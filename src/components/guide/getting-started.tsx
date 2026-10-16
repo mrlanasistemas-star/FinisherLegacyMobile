@@ -29,16 +29,16 @@ export function gettingStartedSteps(profile: MyProfileResponse): Step[] {
     {
       id: 'medal',
       label: 'Reclama tu primera medalla',
-      hint: 'Escanea el Legacy Code de tu placa o medalla.',
+      hint: 'Acerca tu Legacy Plate al teléfono o agrégala a mano.',
       done: profile.stats.medal_count > 0,
-      href: '/legacy/scan',
+      href: '/medals/create',
     },
     {
       id: 'follow',
       label: 'Sigue a otros atletas',
       hint: 'Su actividad aparecerá en tu comunidad.',
       done: profile.social.following_count > 0,
-      href: '/explore',
+      href: '/search',
     },
     {
       id: 'moment',

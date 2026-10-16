@@ -1,6 +1,6 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { Flag, MessageCircleHeart, SendHorizontal, Share2, Trash2 } from 'lucide-react-native';
-import { memo, useMemo, useRef, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { MessageCircleHeart, SendHorizontal, Share2 } from 'lucide-react-native';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, Pressable, Share, TextInput, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -8,16 +8,16 @@ import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
 import { ErrorState } from '@/components/error-state';
 import { Skeleton } from '@/components/skeleton';
+import { CommentRow } from '@/components/social/comment-row';
 import { MomentCard } from '@/components/social/moment-card';
 import { ReportSheet } from '@/components/social/report-sheet';
-import { Avatar } from '@/components/ui/avatar';
 import { IconButton } from '@/components/ui/icon-button';
 import { TopBar } from '@/components/ui/top-bar';
 import { useComments, useDeleteComment, useMoment, usePostComment } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
 import { colors, control, fontFamily, spacing } from '@/theme/tokens';
 import type { MomentComment } from '@/types/social';
-import { relativeTime } from '@/utils/relative-time';
+import { webLinks } from '@/utils/links';
 
 const MAX_COMMENT = 500;
 
@@ -54,7 +54,7 @@ export default function MomentDetailScreen() {
     }
   }
 
-  const shareUrl = `https://finisherlegacy.com/moments/${uuid}`;
+  const shareUrl = webLinks.moment(uuid);
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
@@ -187,44 +187,3 @@ export default function MomentDetailScreen() {
     </SafeAreaView>
   );
 }
-
-const CommentRow = memo(function CommentRow({
-  comment,
-  onDelete,
-  onReport,
-  deleting,
-}: {
-  comment: MomentComment;
-  onDelete: () => void;
-  onReport: () => void;
-  deleting: boolean;
-}) {
-  return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, opacity: deleting ? 0.4 : 1 }}>
-      <Pressable
-        onPress={() => comment.author.username && router.push(`/athlete/${comment.author.username}`)}
-        accessibilityRole="button"
-        accessibilityLabel={`Ver perfil de ${comment.author.name}`}>
-        <Avatar uri={comment.author.photo_url} name={comment.author.name} size={34} />
-      </Pressable>
-      <View style={{ flex: 1, gap: 2 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14, flexShrink: 1 }} numberOfLines={1}>
-            {comment.author.username ? `@${comment.author.username}` : comment.author.name}
-          </AppText>
-          <AppText variant="caption" style={{ color: colors.subtle, fontSize: 12 }}>
-            {relativeTime(comment.created_at)}
-          </AppText>
-        </View>
-        <AppText variant="body" style={{ fontSize: 15 }}>
-          {comment.body}
-        </AppText>
-      </View>
-      {comment.can_delete ? (
-        <IconButton icon={Trash2} label="Borrar mensaje" onPress={onDelete} size={16} color={colors.subtle} disabled={deleting} />
-      ) : (
-        <IconButton icon={Flag} label="Reportar mensaje" onPress={onReport} size={16} color={colors.subtle} />
-      )}
-    </View>
-  );
-});
