@@ -1,8 +1,9 @@
 import { router } from 'expo-router';
-import { CircleAlert, Clock, Lock, PartyPopper, ShieldCheck, X } from 'lucide-react-native';
-import { useEffect } from 'react';
+import { CircleAlert, Clock, CreditCard, Lock, PartyPopper, ShieldCheck, Truck, UserRound, X } from 'lucide-react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
@@ -14,18 +15,38 @@ import { IconButton } from '@/components/ui/icon-button';
 import { InlineError } from '@/components/ui/inline-error';
 import { StickyFooter } from '@/components/ui/sticky-footer';
 import { useCart } from '@/hooks/use-cart';
+import { useOrder } from '@/hooks/use-orders';
 import { usePaymentFlow } from '@/hooks/use-payment-flow';
-import { PAYMENT_PHASE_COPY, type PaymentPhase } from '@/payments/payment-flow';
-import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { PAYMENT_PHASE_COPY, phaseFromOrder, type PaymentPhase } from '@/payments/payment-flow';
+import { useAuthStore } from '@/stores/authStore';
+import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
+import { haptics } from '@/utils/haptics';
 import { formatMoney } from '@/utils/money';
 
 const BUSY_PHASES: PaymentPhase[] = ['creating_order', 'preparing', 'in_sheet', 'confirming'];
 
+/**
+ * One calm checkout: datos → entrega → pago → resumen, then very clear
+ * states (creando, pagando, confirmando, en proceso, confirmado, error).
+ * "Pago confirmado" only ever comes from the server; a `processing`
+ * payment keeps being watched until the webhook settles it.
+ */
 export default function CheckoutScreen() {
   const { data: cart, isPending: cartPending } = useCart();
+  const user = useAuthStore((s) => s.user);
   const flow = usePaymentFlow();
-  const { phase, order, message } = flow;
+  const { order, message } = flow;
+
+  // Webhook-driven settlement: keep reading the order while it's processing.
+  const watching = flow.phase === 'processing' && !!order;
+  const settlement = useOrder(order?.uuid ?? '', { enabled: watching, watchSettlement: true });
+  const settled = watching && settlement.data ? phaseFromOrder(settlement.data, true) : null;
+  const phase: PaymentPhase = settled ? (settled === 'confirming' ? 'processing' : settled) : flow.phase;
   const busy = BUSY_PHASES.includes(phase);
+  useEffect(() => {
+    if (settled === 'paid') haptics.success();
+  }, [settled]);
+  const shownOrder = (watching && settlement.data) || order;
 
   function close() {
     if (order) router.replace(`/orders/${order.uuid}`);
@@ -53,10 +74,31 @@ export default function CheckoutScreen() {
           </View>
         ) : (
           <>
-            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
-              <View style={{ gap: spacing.sm }}>
+            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+              <Section icon={UserRound} title="Tus datos">
+                <AppText variant="body">{user?.name ?? 'Tu cuenta'}</AppText>
+                {user?.email ? (
+                  <AppText variant="caption" tone="muted">
+                    {user.email} · aquí te enviaremos la confirmación
+                  </AppText>
+                ) : null}
+              </Section>
+
+              <Section icon={Truck} title="Entrega">
+                <AppText variant="caption" tone="muted">
+                  Preparamos tu pedido al confirmar el pago y te avisamos cuando esté listo para entregarse o enviarse. Si tu compra es de un evento, la recibes en la entrega de kits.
+                </AppText>
+              </Section>
+
+              <Section icon={CreditCard} title="Pago">
+                <AppText variant="caption" tone="muted">
+                  Tarjeta de crédito o débito con Stripe. Si tu banco pide verificarte (3-D Secure), lo harás en la misma pantalla.
+                </AppText>
+              </Section>
+
+              <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
                 <AppText variant="label" tone="muted">
-                  TU PEDIDO
+                  RESUMEN
                 </AppText>
                 {cart.items.map((item) => (
                   <View key={item.id} style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -122,26 +164,34 @@ export default function CheckoutScreen() {
 
   // ----- Outcomes -----
   const copy = PAYMENT_PHASE_COPY[phase];
-  const total = order ? formatMoney(order.total_minor, order.currency) : null;
+  const total = shownOrder ? formatMoney(shownOrder.total_minor, shownOrder.currency) : null;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.black }}>
       <Header onClose={close} />
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md }}>
-        <OutcomeBadge phase={phase} />
+      <Animated.View entering={FadeIn.duration(240)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md }}>
+        <OutcomeBadge key={phase} phase={phase} />
         <AppText variant="title" align="center" accessibilityRole="header" accessibilityLiveRegion="polite">
           {copy.title}
         </AppText>
-        {order ? (
+        {shownOrder ? (
           <AppText variant="body" tone="muted" align="center">
-            Pedido #{order.order_number}
+            Pedido #{shownOrder.order_number}
             {total ? ` · ${total}` : ''}
           </AppText>
         ) : null}
         <AppText variant="body" tone="muted" align="center">
           {phase === 'failed' && message ? message : copy.message}
         </AppText>
-      </View>
+        {phase === 'processing' && settlement.isFetching ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+            <ActivityIndicator size="small" color={colors.goldDim} />
+            <AppText variant="caption" tone="muted">
+              Esperando la confirmación…
+            </AppText>
+          </View>
+        ) : null}
+      </Animated.View>
 
       <StickyFooter>
         {phase === 'paid' || phase === 'processing' || phase === 'unavailable' ? (
@@ -167,6 +217,22 @@ function Header({ onClose, title }: { onClose: () => void; title?: string }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: spacing.sm }}>
       <IconButton icon={X} label="Cerrar" onPress={onClose} />
       <AppText style={{ flex: 1, textAlign: 'center', fontFamily: fontFamily.semibold, fontSize: 16, marginRight: 44 }}>{title ?? ''}</AppText>
+    </View>
+  );
+}
+
+function Section({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.hairline }}>
+      <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
+        <Icon size={16} color={colors.gold} />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <AppText accessibilityRole="header" style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>
+          {title}
+        </AppText>
+        {children}
+      </View>
     </View>
   );
 }

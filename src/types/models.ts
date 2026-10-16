@@ -564,7 +564,18 @@ export interface ProductSummary {
   from_price_minor: number | null;
   currency: string;
   image_url: string | null;
+  /** Additive (newer servers): product carries an NFC tag ("Producto conectado"). */
+  nfc_enabled?: boolean;
+  is_featured?: boolean;
+  is_new?: boolean;
+  /** Additive: second-angle image for cards. */
+  secondary_image_url?: string | null;
+  /** Additive: coarse stock signal across active variants. */
+  stock_status?: StockStatus;
 }
+
+/** Coarse stock signal — never an exact count. */
+export type StockStatus = 'in_stock' | 'low' | 'sold_out';
 
 export interface ProductCategoryOption {
   name: string;
@@ -572,7 +583,8 @@ export interface ProductCategoryOption {
 }
 
 export interface ProductGalleryItem {
-  type: 'image' | 'video';
+  /** `model_3d` (GLB/GLTF) is additive — older servers only send image/video. */
+  type: 'image' | 'video' | 'model_3d' | (string & {});
   url: string;
   poster_url: string | null;
   alt_text: string | null;
@@ -589,6 +601,20 @@ export interface ProductVariant {
   active: boolean;
   /** Never an exact stock count by design — boolean only. */
   in_stock: boolean;
+  /** Additive: how many may be added right now (server-capped). Absent → app cap. */
+  max_quantity?: number | null;
+  /** Additive: coarse stock signal for "Últimas piezas". */
+  stock_status?: StockStatus;
+  /** Additive explicit axes; otherwise read from `attributes` (size/talla, color). */
+  size?: string | null;
+  color?: string | null;
+  color_hex?: string | null;
+}
+
+export interface ProductContentSection {
+  key: string;
+  title: string;
+  body: string;
 }
 
 export interface ProductDetail {
@@ -600,8 +626,14 @@ export interface ProductDetail {
   brand: string | null;
   category: string | null;
   qr_capable: boolean;
+  /** Additive: product carries an NFC tag. Older servers → fall back to `qr_capable`. */
+  nfc_enabled?: boolean;
   requires_shipping: boolean;
   image_url: string | null;
+  /** Additive: short editorial line under the name. */
+  short_description?: string | null;
+  /** Additive: Qué es, Cómo lo usas, Materiales, Cuidados, FAQ… */
+  content_sections?: ProductContentSection[];
   /** Omitted by the API when the `media` relation wasn't eager-loaded — default to []. */
   gallery?: ProductGalleryItem[];
   variants: ProductVariant[];
@@ -625,6 +657,11 @@ export interface CartItem {
   in_stock: boolean;
   image_url: string | null;
   event_edition_name: string | null;
+  /** Additive: server cap for the stepper (stock/limits). Absent → app cap. */
+  max_quantity?: number | null;
+  size?: string | null;
+  color?: string | null;
+  nfc_enabled?: boolean;
 }
 
 export interface CartCoupon {
@@ -667,6 +704,9 @@ export interface OrderItem {
   line_total_minor: number;
   currency: string;
   fulfilled: boolean;
+  /** Additive — rendered when present. */
+  variant_name?: string | null;
+  image_url?: string | null;
 }
 
 /**
@@ -722,6 +762,9 @@ export interface Order {
 export interface OnlinePaymentResult {
   order_uuid: string;
   provider_reference: string;
+  /** Additive top-level copies (consolidation contract); `client_payload` keeps the original shape. */
+  client_secret?: string;
+  publishable_key?: string | null;
   client_payload: {
     provider?: string;
     client_secret?: string;
