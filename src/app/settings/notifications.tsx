@@ -1,9 +1,7 @@
-import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { Bell, BellOff, CircleAlert } from 'lucide-react-native';
 import { useState } from 'react';
-import { Platform, View } from 'react-native';
+import { Linking, View } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
@@ -11,67 +9,27 @@ import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
 import { Screen } from '@/components/screen';
 import { ScreenHeader } from '@/components/screen-header';
-import { useRegisterPushDevice, useUnregisterPushDevice } from '@/hooks/use-push-devices';
+import { useUnregisterPushDevice } from '@/hooks/use-push-devices';
+import { usePushPermission } from '@/hooks/use-push';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, spacing } from '@/theme/tokens';
 
 /**
- * `Constants.expoConfig.extra.eas.projectId` is what
- * `Notifications.getExpoPushTokenAsync` needs to attribute a token to this
- * app — confirmed against the SDK 57 docs. `app.json` has no
- * `extra.eas.projectId` yet (no `eas init` has been run against a real
- * Expo account in this environment), so this reliably returns undefined
- * today — that's the honest, expected state, not a bug to work around.
+ * Push on this phone. Registration logic lives in
+ * `features/push/push-registration.ts` (shared with the contextual prompt
+ * on Inicio/Notificaciones); this screen is the explicit on/off switch.
  */
-function getEasProjectId(): string | null {
-  return Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? null;
-}
-
 export default function NotificationSettingsScreen() {
-  const projectId = getEasProjectId();
-  const isPhysicalDevice = Device.isDevice;
+  const { available, permission, pending, enable } = usePushPermission();
   const registeredUuid = useUiStore((state) => state.pushDeviceUuid);
   const setPushDeviceUuid = useUiStore((state) => state.setPushDeviceUuid);
-  const registerDevice = useRegisterPushDevice();
   const unregisterDevice = useUnregisterPushDevice();
   const [error, setError] = useState<string | null>(null);
 
-  const available = isPhysicalDevice && !!projectId;
-
   async function handleEnable() {
     setError(null);
-    try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      if (finalStatus !== 'granted') {
-        setError('No podemos activar notificaciones sin tu permiso. Actívalo desde los ajustes del sistema.');
-        return;
-      }
-
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'Finisher Legacy',
-          importance: Notifications.AndroidImportance.DEFAULT,
-        });
-      }
-
-      const tokenResponse = await Notifications.getExpoPushTokenAsync({ projectId: projectId as string });
-      const platform: 'ios' | 'android' | 'web' = Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web';
-
-      const device = await registerDevice.mutateAsync({
-        platform,
-        provider: 'expo',
-        token: tokenResponse.data,
-        device_name: Device.deviceName ?? undefined,
-      });
-      setPushDeviceUuid(device.uuid);
-    } catch (caught) {
-      setError(caught instanceof AppError ? caught.message : 'No pudimos activar las notificaciones. Intenta de nuevo.');
-    }
+    const result = await enable();
+    if (!result.ok) setError(result.message);
   }
 
   async function handleDisable() {
@@ -85,40 +43,36 @@ export default function NotificationSettingsScreen() {
     }
   }
 
+  const enabledHere = !!registeredUuid && permission === 'granted';
+
   return (
     <Screen scroll>
       <ScreenHeader title="Notificaciones push" />
 
       <View style={{ gap: spacing.md, marginTop: spacing.sm, paddingBottom: spacing.xl }}>
         <AppText variant="body" tone="muted">
-          Recibe un aviso cuando alguien de tu equipo de apoyo te escriba, cuando tu pedido cambie de estado, o cuando
-          haya novedades sobre tus eventos.
+          Recibe un aviso cuando alguien de tu equipo de apoyo te escriba, cuando tu pedido cambie de estado, o cuando haya novedades sobre tus eventos.
         </AppText>
 
         {!available ? (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               <CircleAlert size={18} color={colors.gold} />
-              <AppText variant="bodyStrong">No disponible en este entorno todavía</AppText>
+              <AppText variant="bodyStrong">No disponible en este teléfono</AppText>
             </View>
             <AppText variant="caption" tone="muted">
-              {!isPhysicalDevice
-                ? 'Las notificaciones push sólo funcionan en un dispositivo físico, no en un simulador.'
-                : 'Este build de la app todavía no tiene un proyecto EAS configurado, así que no podemos generar un token de notificaciones real todavía. Esto se resuelve del lado de configuración del proyecto, no es algo que puedas activar desde aquí.'}
+              {!Device.isDevice
+                ? 'Las notificaciones push sólo funcionan en un teléfono físico, no en un simulador.'
+                : 'Esta versión de la app todavía no puede recibir avisos. Llegarán con la próxima actualización.'}
             </AppText>
           </Card>
-        ) : registeredUuid ? (
+        ) : enabledHere ? (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               <Bell size={18} color={colors.gold} />
-              <AppText variant="bodyStrong">Notificaciones activadas en este dispositivo</AppText>
+              <AppText variant="bodyStrong">Notificaciones activadas en este teléfono</AppText>
             </View>
-            <AppButton
-              label="Desactivar en este dispositivo"
-              variant="secondary"
-              onPress={handleDisable}
-              loading={unregisterDevice.isPending}
-            />
+            <AppButton label="Desactivar en este teléfono" variant="secondary" onPress={handleDisable} loading={unregisterDevice.isPending} />
           </Card>
         ) : (
           <Card style={{ gap: spacing.sm }}>
@@ -126,7 +80,16 @@ export default function NotificationSettingsScreen() {
               <BellOff size={18} color={colors.muted} />
               <AppText variant="bodyStrong">Notificaciones desactivadas</AppText>
             </View>
-            <AppButton label="Activar notificaciones" onPress={handleEnable} loading={registerDevice.isPending} />
+            {permission === 'denied' ? (
+              <>
+                <AppText variant="caption" tone="muted">
+                  Las bloqueaste en los ajustes del teléfono. Actívalas ahí y vuelve aquí.
+                </AppText>
+                <AppButton label="Abrir ajustes del teléfono" variant="secondary" onPress={() => Linking.openSettings()} />
+              </>
+            ) : (
+              <AppButton label="Activar notificaciones" onPress={handleEnable} loading={pending} />
+            )}
           </Card>
         )}
 
@@ -135,12 +98,6 @@ export default function NotificationSettingsScreen() {
             {error}
           </AppText>
         ) : null}
-
-        <AppText variant="caption" tone="muted">
-          Nota: aunque actives las notificaciones aquí, la entrega real todavía depende de que el servidor tenga
-          configurado un proveedor de envío — por ahora tu dispositivo queda registrado, pero el envío puede no
-          estar disponible en todos los entornos.
-        </AppText>
       </View>
     </Screen>
   );

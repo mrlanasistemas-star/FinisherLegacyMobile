@@ -462,6 +462,8 @@ export interface NotificationTarget {
   username?: string;
   moment_uuid?: string;
   order_uuid?: string;
+  /** Additive: event notifications may carry the public slug. */
+  event_slug?: string;
 }
 
 export interface AppNotification {

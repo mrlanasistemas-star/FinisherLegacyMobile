@@ -1,5 +1,5 @@
-import * as Linking from 'expo-linking';
 import { router, type Href } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Award, Bell, CheckCheck, Flag, Heart, MessageCircle, Package, UserPlus } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { Pressable, RefreshControl, SectionList, View } from 'react-native';
@@ -11,7 +11,8 @@ import { ErrorState } from '@/components/error-state';
 import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { TopBar } from '@/components/ui/top-bar';
-import { mapIncomingPath } from '@/features/links/map-incoming-path';
+import { PushPrimerCard } from '@/components/home/push-primer-card';
+import { notificationDestination } from '@/features/notifications/notification-href';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '@/hooks/use-notifications';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { AppNotification } from '@/types/models';
@@ -28,25 +29,11 @@ const TYPE_ICON: Record<string, typeof Bell> = {
   legacy_plate_ready: Award,
 };
 
-/** Structured target first (social notifications), then the action URL. */
+/** Same destination rule as a push tap — see features/notifications/notification-href.ts. */
 function openNotification(notification: AppNotification) {
-  const target = notification.target;
-  if (target?.kind === 'athlete' && target.username) return router.push(`/athlete/${target.username}`);
-  if (target?.kind === 'moment' && target.moment_uuid) return router.push(`/moments/${target.moment_uuid}`);
-  if (target?.kind === 'order' && target.order_uuid) return router.push(`/orders/${target.order_uuid}`);
-
-  if (!notification.action_url) return;
-  const mapped = mapIncomingPath(notification.action_url);
-  if (mapped && mapped.startsWith('/')) {
-    router.push(mapped as Href);
-    return;
-  }
-  const { path } = Linking.parse(notification.action_url);
-  if (path && !/^https?:/i.test(notification.action_url)) {
-    router.push(`/${path}` as Href);
-    return;
-  }
-  Linking.openURL(notification.action_url).catch(() => {});
+  const destination = notificationDestination(notification);
+  if (destination?.kind === 'app') router.push(destination.href as Href);
+  else if (destination?.kind === 'external') WebBrowser.openBrowserAsync(destination.url).catch(() => {});
 }
 
 export default function NotificationsScreen() {
@@ -100,6 +87,11 @@ export default function NotificationsScreen() {
             </AppText>
           )}
           renderItem={({ item }) => <NotificationRow notification={item} onPress={() => handlePress(item)} />}
+          ListHeaderComponent={
+            <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
+              <PushPrimerCard message="Recibe estos avisos aunque no tengas la app abierta." />
+            </View>
+          }
           ListFooterComponent={isFetchingNextPage ? <Skeleton height={56} style={{ margin: spacing.lg }} /> : null}
           ListEmptyComponent={
             <EmptyState
@@ -107,7 +99,7 @@ export default function NotificationsScreen() {
               title="Todo al día"
               message="Aquí verás cuando alguien te siga o apoye tus momentos, y novedades de tus pedidos y eventos."
               actionLabel="Explorar la comunidad"
-              onAction={() => router.push('/explore')}
+              onAction={() => router.navigate('/explore')}
             />
           }
         />
