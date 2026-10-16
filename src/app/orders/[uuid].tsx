@@ -22,7 +22,7 @@ import { formatMoney } from '@/utils/money';
 
 export default function OrderDetailScreen() {
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
-  const { data: order, isPending, isError, error, refetch, isRefetching } = useOrder(uuid);
+  const { data: order, isPending, isError, error, refetch, isRefetching } = useOrder(uuid, { watchSettlement: true });
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
@@ -77,6 +77,11 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
           <AppText variant="caption" tone="muted">
             {formatDateTime(current.created_at)}
           </AppText>
+          {current.payment_state === 'processing' ? (
+            <AppText variant="caption" tone="gold" accessibilityLiveRegion="polite">
+              Tu banco está confirmando el pago. Esta pantalla se actualiza sola.
+            </AppText>
+          ) : null}
           {current.payable && current.expires_at && current.payment_state !== 'processing' ? (
             <AppText variant="caption" tone="gold">
               Apartado hasta {formatDateTime(current.expires_at)}
@@ -103,6 +108,11 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
                 <AppText variant="body" numberOfLines={2}>
                   {item.name}
                 </AppText>
+                {item.variant_name ? (
+                  <AppText variant="caption" tone="muted">
+                    {item.variant_name}
+                  </AppText>
+                ) : null}
                 {item.fulfilled ? (
                   <AppText variant="caption" style={{ color: colors.success }}>
                     Entregado

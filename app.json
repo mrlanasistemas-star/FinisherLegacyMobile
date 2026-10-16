@@ -61,7 +61,18 @@
           "enableGooglePay": false
         }
       ],
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Finisher Legacy usa tu ubicación solo cuando inicias el seguimiento en vivo, para que las personas con las que compartes tu enlace vean tu avance en la carrera.",
+          "locationAlwaysAndWhenInUsePermission": "Permite “Siempre” para que tu seguimiento en vivo continúe aunque bloquees el teléfono durante la carrera. Solo se usa mientras el seguimiento está activo y puedes detenerlo cuando quieras.",
+          "locationAlwaysPermission": "Permite “Siempre” para que tu seguimiento en vivo continúe aunque bloquees el teléfono durante la carrera. Solo se usa mientras el seguimiento está activo.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": false,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

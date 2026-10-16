@@ -1,7 +1,7 @@
 import { initPaymentSheet, initStripe, presentPaymentSheet, PaymentSheetError } from '@stripe/stripe-react-native';
 
 import { AppError } from '@/api/errors';
-import type { SheetOutcome } from '@/payments/payment-flow';
+import { extractStripeParams, type SheetOutcome } from '@/payments/payment-flow';
 import { colors } from '@/theme/tokens';
 import type { OnlinePaymentResult } from '@/types/models';
 
@@ -19,12 +19,11 @@ export async function presentStripePaymentSheet(
   payment: OnlinePaymentResult,
   customer: { name?: string; email?: string },
 ): Promise<SheetOutcome> {
-  const clientSecret = payment.client_payload.client_secret;
-  const publishableKey = payment.client_payload.publishable_key;
-
-  if (typeof clientSecret !== 'string' || !clientSecret || typeof publishableKey !== 'string' || !publishableKey) {
+  const params = extractStripeParams(payment);
+  if (!params) {
     throw new AppError({ kind: 'server', status: 501, message: 'El pago con tarjeta todavía no está activo.' });
   }
+  const { clientSecret, publishableKey } = params;
 
   if (initializedKey !== publishableKey) {
     await initStripe({ publishableKey, urlScheme: 'finisherlegacy' });

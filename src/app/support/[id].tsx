@@ -12,6 +12,7 @@ import { Screen } from '@/components/screen';
 import { ScreenHeader } from '@/components/screen-header';
 import { Skeleton } from '@/components/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { LiveTrackingCard } from '@/features/tracking/components/live-tracking-card';
 import { useSupportSession } from '@/hooks/use-support';
 import { colors, radius, spacing } from '@/theme/tokens';
 import { formatDateTime } from '@/utils/dates';
@@ -140,6 +141,8 @@ export default function SupportSessionDetailScreen() {
       <ScreenHeader title={session.title} />
 
       <View style={{ gap: spacing.lg, marginTop: spacing.sm, paddingBottom: spacing.xl }}>
+        {/* While you're being tracked, triggered messages appear on the live screen. */}
+        <LiveTrackingCard />
         <Card style={{ alignItems: 'center', gap: spacing.sm }}>
           <Badge label={describeSupportStatus(session.status).label} variant={describeSupportStatus(session.status).variant} />
           <Image source={{ uri: session.qr_url }} style={{ width: 180, height: 180 }} contentFit="contain" />

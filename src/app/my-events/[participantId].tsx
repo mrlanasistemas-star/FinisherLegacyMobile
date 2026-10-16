@@ -38,6 +38,8 @@ import { useAddEventGear, useEventGear, useRemoveEventGear } from '@/hooks/use-e
 import { useDeleteEventMedia, useEventMedia, useMediaEntitlement, useReorderEventMedia, useUpdateEventMediaVisibility } from '@/hooks/use-event-media';
 import { useMyGear } from '@/hooks/use-gear';
 import { useEventParticipant } from '@/hooks/use-my-events';
+import { canOfferLiveTracking } from '@/features/tracking/eligibility';
+import { LiveTrackingCard } from '@/features/tracking/components/live-tracking-card';
 import { PLATE_STATUS_LABEL, SUPPORT_STATUS_LABEL } from '@/components/my-event-row';
 import { showToast } from '@/stores/toastStore';
 import { colors, radius, spacing } from '@/theme/tokens';
@@ -457,6 +459,13 @@ export default function MyEventDetailScreen() {
                 </Card>
               ))}
             </View>
+          </View>
+        ) : null}
+
+        {canOfferLiveTracking(participant.event_date) ? (
+          <View style={{ gap: spacing.sm }}>
+            <SectionTitle title="Seguimiento en vivo" />
+            <LiveTrackingCard participantId={participant.id} />
           </View>
         ) : null}
 

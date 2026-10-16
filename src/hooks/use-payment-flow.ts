@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { checkout } from '@/api/checkout';
 import { AppError } from '@/api/errors';
+import { fetchOrder } from '@/api/orders';
 import { createOnlinePayment, syncOnlinePayment } from '@/api/payments';
 import { queryKeys } from '@/hooks/query-keys';
 import { CONFIRM_POLL_DELAYS_MS, phaseFromOrder, phaseFromSheet, type PaymentPhase } from '@/payments/payment-flow';
@@ -49,7 +50,9 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
       setPhase('confirming');
       for (const delay of CONFIRM_POLL_DELAYS_MS) {
         try {
-          const synced = await syncOnlinePayment(target.uuid);
+          // `/payments/sync` asks Stripe server-to-server; if it fails, the
+          // plain order read (settled by the webhook) is the same truth.
+          const synced = await syncOnlinePayment(target.uuid).catch(() => fetchOrder(target.uuid));
           setOrder(synced);
           refreshOrderCaches(synced);
           const next = phaseFromOrder(synced, true);

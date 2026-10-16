@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { ShoppingBag, ShoppingCart, Tag, Trash2, X } from 'lucide-react-native';
+import { Lock, Nfc, ShoppingBag, ShoppingCart, Tag, Trash2, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -17,6 +17,7 @@ import { InlineError } from '@/components/ui/inline-error';
 import { QuantityStepper } from '@/components/ui/quantity-stepper';
 import { StickyFooter } from '@/components/ui/sticky-footer';
 import { TopBar } from '@/components/ui/top-bar';
+import { DEFAULT_MAX_QUANTITY, maxQuantityFor } from '@/features/commerce/variant-options';
 import { cartItemCount, useApplyCartCoupon, useCart, useRemoveCartCoupon, useRemoveCartItem, useUpdateCartItem } from '@/hooks/use-cart';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
@@ -125,20 +126,20 @@ export default function CartScreen() {
               )}
             </View>
 
-            <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.xs }}>
-              <TotalRow label="Subtotal" value={formatMoney(cart.subtotal_minor, cart.currency)} />
-              {cart.discount_minor > 0 ? <TotalRow label="Descuento" value={`−${formatMoney(cart.discount_minor, cart.currency)}`} gold /> : null}
-              <View style={{ height: 1, backgroundColor: colors.hairline, marginVertical: spacing.xs }} />
-              <TotalRow label="Total" value={formatMoney(cart.total_minor, cart.currency)} strong />
-              <AppText variant="caption" style={{ color: colors.subtle }}>
-                El total final se confirma al crear tu pedido.
-              </AppText>
-            </View>
+            <AppText variant="caption" style={{ color: colors.subtle, paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
+              Los precios y el total los calcula nuestro sistema y se confirman al crear tu pedido.
+            </AppText>
           </ScrollView>
 
+          {/* Sticky summary — always visible while the list scrolls. Server-computed values only. */}
           <StickyFooter>
+            <View style={{ gap: 4, paddingBottom: spacing.xs }} accessible accessibilityLabel={`Resumen. Subtotal ${formatMoney(cart.subtotal_minor, cart.currency)}${cart.discount_minor > 0 ? `, descuento ${formatMoney(cart.discount_minor, cart.currency)}` : ''}, total ${formatMoney(cart.total_minor, cart.currency)}`}>
+              <TotalRow label="Subtotal" value={formatMoney(cart.subtotal_minor, cart.currency)} />
+              {cart.discount_minor > 0 ? <TotalRow label={`Descuento${cart.coupon ? ` · ${cart.coupon.code}` : ''}`} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} gold /> : null}
+              <TotalRow label="Total" value={formatMoney(cart.total_minor, cart.currency)} strong />
+            </View>
             {blockingItem ? <InlineError message="Quita o actualiza los productos marcados para continuar." /> : null}
-            <AppButton label={`Continuar al pago · ${formatMoney(cart.total_minor, cart.currency)}`} onPress={() => router.push('/checkout')} disabled={blockingItem} />
+            <AppButton label="Continuar al pago" icon={Lock} onPress={() => router.push('/checkout')} disabled={blockingItem} />
           </StickyFooter>
         </>
       )}
@@ -154,6 +155,13 @@ function CartRow({ item }: { item: CartItem }) {
   function onError(error: unknown) {
     showToast(error instanceof AppError ? describeCommerceError(error) : 'No pudimos actualizar tu carrito.', 'destructive');
   }
+
+  // Stock-limited: the server's cap when it sends one; the server
+  // revalidates every change anyway (422 → toast).
+  const maxQuantity = maxQuantityFor(item);
+  const atMax = item.quantity >= maxQuantity;
+  const sizeColor = [item.color, item.size ? `Talla ${item.size}` : null].filter(Boolean) as string[];
+  const details = [...(sizeColor.length > 0 ? sizeColor : item.variant_name ? [item.variant_name] : []), item.event_edition_name].filter(Boolean) as string[];
 
   const remove = () => removeItem.mutate(item.id, { onError, onSuccess: () => showToast(`Quitamos ${item.product_name}.`, 'default') });
 
@@ -186,9 +194,22 @@ function CartRow({ item }: { item: CartItem }) {
             <AppText style={{ fontFamily: fontFamily.medium, fontSize: 15 }} numberOfLines={2}>
               {item.product_name}
             </AppText>
-            {item.variant_name || item.event_edition_name ? (
-              <AppText variant="caption" tone="muted" numberOfLines={1}>
-                {[item.variant_name, item.event_edition_name].filter(Boolean).join(' · ')}
+            {details.length > 0 ? (
+              <AppText variant="caption" tone="muted" numberOfLines={2}>
+                {details.join(' · ')}
+              </AppText>
+            ) : null}
+            {item.nfc_enabled ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Nfc size={12} color={colors.gold} />
+                <AppText variant="caption" tone="gold">
+                  Producto conectado
+                </AppText>
+              </View>
+            ) : null}
+            {item.in_stock && atMax && maxQuantity < DEFAULT_MAX_QUANTITY ? (
+              <AppText variant="caption" tone="gold">
+                Máximo disponible: {maxQuantity}
               </AppText>
             ) : null}
             {!item.in_stock ? (
@@ -206,6 +227,7 @@ function CartRow({ item }: { item: CartItem }) {
             <QuantityStepper
               compact
               value={item.quantity}
+              max={Math.max(item.quantity, maxQuantity)}
               disabled={busy}
               onChange={(quantity) => updateItem.mutate({ itemId: item.id, quantity }, { onError })}
               onRemove={remove}

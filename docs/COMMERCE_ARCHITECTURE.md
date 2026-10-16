@@ -64,3 +64,12 @@ Apple Pay / Google Pay: desactivados (`merchantIdentifier: []`, `enableGooglePay
 ## Legacy Plates
 
 Una Legacy Plate se graba con el resultado de un evento, así que no se agrega desde la ficha genérica del producto: la ficha lo explica y lleva a Eventos (el backend exige evento + modelo).
+
+## Consolidación final (rama feature/final-consolidation-store)
+
+- **Tienda**: `src/features/commerce/store-home-screen.tsx` (la pestaña `(tabs)/store.tsx` solo la re-exporta): hero, Lo más nuevo, Productos conectados (NFC), Colección Legacy y catálogo. Los rieles se ocultan si están vacíos.
+- **Ficha**: galería con zoom (pellizcar / doble toque, pantalla completa), video bajo demanda (`expo-video`), **3D** con `@google/model-viewer@4.0.0` dentro de `react-native-webview` (13.16.1, incluido en el bundle de SDK 57 → sin código nativo propio, funciona en Expo Go y dev builds). El modelo solo se descarga al tocar "Ver en 3D"; si falla, botón "Ver en 3D en la web". Medios `type: "model_3d"` (GLB/GLTF, https) son aditivos.
+- **Variantes**: tallas/colores leídos de `size`/`color` o de `attributes` (`talla`, `color`, `color_hex`), con agotados tachados. Cantidad limitada por `max_quantity` del servidor (si lo envía) o 20.
+- **Carrito**: resumen fijo (subtotal, cupón, descuento, total) siempre del servidor.
+- **Checkout**: secciones Tus datos / Entrega / Pago / Resumen. Tras la hoja de Stripe: `payments/sync` (o lectura del pedido) con backoff y, si queda `processing`, la pantalla sigue leyendo el pedido (4 s → 10 s, hasta ~4 min) hasta que el webhook lo resuelva. El detalle del pedido también se actualiza solo mientras está `processing`.
+- **Stripe**: `extractStripeParams` acepta `client_secret`/`publishable_key` en el nivel superior (contrato nuevo) o en `client_payload` (anterior) y **rechaza cualquier llave que no empiece con `pk_`**. `returnURL = finisherlegacy://stripe-redirect` (3-D Secure), entregado al SDK en `+native-intent.tsx` con `handleURLCallback`. Requiere **development build** (no Expo Go).

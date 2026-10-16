@@ -1,9 +1,8 @@
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { ChevronLeft, Info, Play, Share2, ShoppingBag, ShoppingCart } from 'lucide-react-native';
+import { ChevronLeft, Info, Share2, ShoppingCart } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, Share, View, useWindowDimensions } from 'react-native';
+import { ScrollView, Share, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
@@ -15,15 +14,20 @@ import { IconButton } from '@/components/ui/icon-button';
 import { InlineError } from '@/components/ui/inline-error';
 import { QuantityStepper } from '@/components/ui/quantity-stepper';
 import { StickyFooter } from '@/components/ui/sticky-footer';
+import { ProductGallery } from '@/features/commerce/components/product-gallery';
+import { GearPromise, NfcBadge, ProductSections } from '@/features/commerce/components/product-story';
+import { VariantPicker } from '@/features/commerce/components/variant-picker';
+import { productWebUrl } from '@/features/commerce/links';
+import { defaultVariant, isConnectedProduct, isVariantAvailable, maxQuantityFor, stockState } from '@/features/commerce/variant-options';
 import { useAddCartItem, useCartCount } from '@/hooks/use-cart';
 import { useProduct } from '@/hooks/use-store-products';
 import { showToast } from '@/stores/toastStore';
-import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { colors, fontFamily, motion, spacing } from '@/theme/tokens';
 import type { ProductGalleryItem, ProductVariant } from '@/types/models';
 import { describeCommerceError } from '@/utils/commerce-errors';
 import { formatMoney } from '@/utils/money';
 
-const MAX_QUANTITY = 20;
+const STOCK_DOT = { available: colors.success, low: colors.goldSoft, sold_out: colors.destructive } as const;
 
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -33,7 +37,6 @@ export default function ProductDetailScreen() {
   const addItem = useAddCartItem();
   const cartCount = useCartCount();
 
-  const [galleryIndex, setGalleryIndex] = useState(0);
   const [selectedVariantUuid, setSelectedVariantUuid] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -46,10 +49,13 @@ export default function ProductDetailScreen() {
   }, [product]);
 
   const variants = product?.variants ?? [];
-  const variant: ProductVariant | null =
-    variants.find((v) => v.uuid === selectedVariantUuid) ?? variants.find((v) => v.active && v.in_stock) ?? variants[0] ?? null;
-  const soldOut = !variant || !variant.in_stock || !variant.active;
+  const variant: ProductVariant | null = variants.find((v) => v.uuid === selectedVariantUuid) ?? defaultVariant(variants);
+  const soldOut = !variant || !isVariantAvailable(variant);
+  const stock = stockState(variant);
+  const maxQuantity = Math.max(1, maxQuantityFor(variant));
+  const qty = Math.min(quantity, maxQuantity);
   const isLegacyPlate = product?.type === 'legacy_plate';
+  const connected = product ? isConnectedProduct(product) : false;
   const heroHeight = Math.min(Math.round(width * 1.05), 520);
 
   async function add(mode: 'add' | 'buy') {
@@ -57,11 +63,11 @@ export default function ProductDetailScreen() {
     setError(null);
     setIntent(mode);
     try {
-      await addItem.mutateAsync({ product_variant_uuid: variant.uuid, quantity });
+      await addItem.mutateAsync({ product_variant_uuid: variant.uuid, quantity: qty });
       if (mode === 'buy') {
         router.push('/checkout');
       } else {
-        showToast(`Agregado al carrito${quantity > 1 ? ` (${quantity})` : ''}`, 'success');
+        showToast(`Agregado al carrito${qty > 1 ? ` (${qty})` : ''}`, 'success');
       }
     } catch (caught) {
       setError(caught instanceof AppError ? describeCommerceError(caught) : 'No pudimos agregarlo al carrito. Intenta otra vez.');
@@ -92,125 +98,76 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const shareUrl = `https://finisherlegacy.com/store/${product.slug}`;
+  const webUrl = productWebUrl(product.slug);
+  const price = variant ? formatMoney(variant.base_price_minor, variant.currency) : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.black }}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.lg }}>
-        {/* Hero gallery — full bleed, swipe, dots */}
-        <View style={{ height: heroHeight, backgroundColor: colors.graphite }}>
-          {gallery.length > 0 ? (
-            <FlatList
-              data={gallery}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item, index) => `${item.url}-${index}`}
-              onMomentumScrollEnd={(event) => setGalleryIndex(Math.round(event.nativeEvent.contentOffset.x / width))}
-              renderItem={({ item }) => (
-                <View style={{ width, height: heroHeight }}>
-                  {item.type === 'video' ? (
-                    <GalleryVideo item={item} />
-                  ) : (
-                    <Image source={{ uri: item.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} accessibilityLabel={item.alt_text ?? product.name} />
-                  )}
-                </View>
-              )}
-            />
-          ) : (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ShoppingBag size={48} color={colors.goldDim} />
-            </View>
-          )}
-
-          {gallery.length > 1 ? (
-            <View style={{ position: 'absolute', bottom: 14, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center', gap: 6 }} pointerEvents="none">
-              {gallery.map((item, index) => (
-                <View key={`${item.url}-dot`} style={{ width: index === galleryIndex ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: index === galleryIndex ? colors.gold : 'rgba(255,255,255,0.5)' }} />
-              ))}
-            </View>
-          ) : null}
-
+        <View>
+          <ProductGallery items={gallery} productName={product.name} width={width} height={heroHeight} webUrl={webUrl} />
           <View style={{ position: 'absolute', top: insets.top + 4, left: spacing.sm, right: spacing.sm, flexDirection: 'row', justifyContent: 'space-between' }}>
             <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled size={24} />
             <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-              <IconButton icon={Share2} label="Compartir producto" onPress={() => Share.share({ message: shareUrl, url: shareUrl })} filled size={20} />
+              <IconButton icon={Share2} label="Compartir producto" onPress={() => Share.share({ message: webUrl, url: webUrl }).catch(() => {})} filled size={20} />
               <IconButton icon={ShoppingCart} label="Carrito" badge={cartCount} onPress={() => router.push('/cart')} filled size={20} />
             </View>
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg }}>
-          <View style={{ gap: 4 }}>
-            {product.brand ? (
-              <AppText variant="label" tone="gold">
-                {product.brand.toUpperCase()}
-              </AppText>
-            ) : null}
+        <Animated.View entering={FadeInDown.duration(motion.base)} style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg }}>
+          <View style={{ gap: 6 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              {product.category || product.brand ? (
+                <AppText variant="label" tone="gold" style={{ flexShrink: 1 }} numberOfLines={1}>
+                  {(product.category ?? product.brand ?? '').toUpperCase()}
+                </AppText>
+              ) : null}
+              {connected ? <NfcBadge /> : null}
+            </View>
             <AppText variant="title" style={{ fontSize: 26 }} accessibilityRole="header">
               {product.name}
             </AppText>
+            {product.short_description ? (
+              <AppText variant="body" tone="muted">
+                {product.short_description}
+              </AppText>
+            ) : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 }}>
-              {variant ? (
-                <AppText style={{ fontFamily: fontFamily.bold, fontSize: 22, color: colors.goldSoft }}>{formatMoney(variant.base_price_minor, variant.currency)}</AppText>
-              ) : null}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: soldOut ? colors.destructive : colors.success }} />
+              {price ? <AppText style={{ fontFamily: fontFamily.bold, fontSize: 22, color: colors.goldSoft }}>{price}</AppText> : null}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }} accessible accessibilityLabel={stock.label}>
+                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: STOCK_DOT[stock.tone] }} />
                 <AppText variant="caption" tone="muted">
-                  {soldOut ? 'Agotado' : 'Disponible'}
+                  {stock.label}
                 </AppText>
               </View>
             </View>
           </View>
 
-          {variants.length > 1 ? (
-            <View style={{ gap: spacing.xs }}>
-              <AppText variant="caption" tone="muted">
-                {variant ? `Opción: ${variant.name}` : 'Elige una opción'}
-              </AppText>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
-                {variants.map((v) => {
-                  const unavailable = !v.active || !v.in_stock;
-                  const active = variant?.uuid === v.uuid;
-                  return (
-                    <Pressable
-                      key={v.uuid}
-                      disabled={unavailable}
-                      onPress={() => {
-                        setSelectedVariantUuid(v.uuid);
-                        setQuantity(1);
-                      }}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: active, disabled: unavailable }}
-                      accessibilityLabel={`${v.name}${unavailable ? ', agotado' : ''}`}
-                      style={{
-                        minWidth: 52,
-                        minHeight: 44,
-                        paddingHorizontal: spacing.md,
-                        borderRadius: 12,
-                        borderWidth: 1,
-                        borderColor: active ? colors.gold : colors.inputBorder,
-                        backgroundColor: active ? colors.goldWash : 'transparent',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        opacity: unavailable ? 0.35 : 1,
-                      }}>
-                      <AppText style={{ fontFamily: fontFamily.medium, fontSize: 15, color: active ? colors.gold : colors.foreground, textDecorationLine: unavailable ? 'line-through' : 'none' }}>
-                        {v.name}
-                      </AppText>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
+          {!isLegacyPlate ? (
+            <VariantPicker
+              variants={variants}
+              selected={variant}
+              onSelect={(next) => {
+                setSelectedVariantUuid(next.uuid);
+                setError(null);
+              }}
+            />
           ) : null}
 
           {!soldOut && !isLegacyPlate ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <AppText variant="caption" tone="muted">
-                Cantidad
-              </AppText>
-              <QuantityStepper value={quantity} onChange={setQuantity} max={MAX_QUANTITY} />
+              <View>
+                <AppText variant="caption" tone="muted">
+                  Cantidad
+                </AppText>
+                {maxQuantity <= 3 ? (
+                  <AppText variant="caption" tone="gold">
+                    Máximo {maxQuantity} por ahora
+                  </AppText>
+                ) : null}
+              </View>
+              <QuantityStepper value={qty} onChange={setQuantity} max={maxQuantity} />
             </View>
           ) : null}
 
@@ -223,6 +180,8 @@ export default function ProductDetailScreen() {
             </View>
           ) : null}
 
+          <GearPromise connected={connected} isLegacyPlate={isLegacyPlate} />
+
           {product.description ? (
             <View style={{ gap: spacing.xs }}>
               <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Descripción</AppText>
@@ -232,12 +191,14 @@ export default function ProductDetailScreen() {
             </View>
           ) : null}
 
+          <ProductSections sections={product.content_sections ?? []} />
+
           {product.requires_shipping ? (
             <AppText variant="caption" style={{ color: colors.subtle }}>
               Producto físico · se entrega o envía después de confirmar tu pago.
             </AppText>
           ) : null}
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <StickyFooter>
@@ -271,27 +232,4 @@ export default function ProductDetailScreen() {
       </StickyFooter>
     </View>
   );
-}
-
-function GalleryVideo({ item }: { item: ProductGalleryItem }) {
-  const [playing, setPlaying] = useState(false);
-  const player = useVideoPlayer(playing ? item.url : null, (instance) => {
-    instance.loop = true;
-    instance.play();
-  });
-
-  if (!playing) {
-    return (
-      <Pressable onPress={() => setPlaying(true)} style={{ width: '100%', height: '100%' }} accessibilityRole="button" accessibilityLabel="Reproducir video">
-        {item.poster_url ? <Image source={{ uri: item.poster_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : null}
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(10,10,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
-            <Play color={colors.white} size={26} fill={colors.white} />
-          </View>
-        </View>
-      </Pressable>
-    );
-  }
-
-  return <VideoView player={player} style={{ width: '100%', height: '100%' }} contentFit="cover" nativeControls />;
 }
