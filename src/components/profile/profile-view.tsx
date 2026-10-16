@@ -14,6 +14,7 @@ import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { Skeleton } from '@/components/skeleton';
+import { OwnProfileShortcuts } from '@/components/profile/own-shortcuts';
 import { FollowButton } from '@/components/social/follow-button';
 import { MomentCard } from '@/components/social/moment-card';
 import { RaceRow } from '@/components/social/race-row';
@@ -234,6 +235,8 @@ export function ProfileView({ username, own }: ProfileViewProps) {
           ) : null}
         </View>
 
+        {own ? <OwnProfileShortcuts isPrivate={isPrivate} /> : null}
+
         <View style={{ marginTop: spacing.md, marginBottom: spacing.xs }}>
           <SegmentedControl value={section} onChange={setSection} options={sections} />
         </View>
@@ -287,9 +290,9 @@ export function ProfileView({ username, own }: ProfileViewProps) {
             compact
             icon={Award}
             title="Sin medallas todavía"
-            message={own ? 'Escanea tu Legacy Code para sumar tu primera medalla.' : 'Aún no hay medallas públicas.'}
-            actionLabel={own ? 'Escanear Legacy Code' : undefined}
-            onAction={own ? () => router.push('/legacy/scan') : undefined}
+            message={own ? 'Acerca tu Legacy Plate al teléfono o agrega tu medalla a mano.' : 'Aún no hay medallas públicas.'}
+            actionLabel={own ? 'Agregar medalla' : undefined}
+            onAction={own ? () => router.push('/medals/create') : undefined}
           />
         );
       }

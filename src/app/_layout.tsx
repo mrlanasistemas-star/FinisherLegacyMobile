@@ -19,6 +19,7 @@ import { ToastHost } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { useAuthStore } from '@/stores/authStore';
 import { useDeepLinks } from '@/hooks/use-deep-links';
+import { usePushLifecycle } from '@/hooks/use-push';
 import { useSessionBootstrap } from '@/hooks/use-session-bootstrap';
 import { colors } from '@/theme/tokens';
 
@@ -27,13 +28,14 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 function RootNavigator() {
   const status = useAuthStore((state) => state.status);
   useDeepLinks();
+  usePushLifecycle();
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Protected guard={status === 'authenticated'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="feed" />
-        <Stack.Screen name="explore" />
+        <Stack.Screen name="search" />
         <Stack.Screen name="moments/[uuid]" />
         <Stack.Screen name="moments/create" options={{ presentation: 'modal' }} />
         <Stack.Screen name="events/index" />
@@ -67,6 +69,8 @@ function RootNavigator() {
       <Stack.Protected guard={status !== 'authenticated'}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
+      {/* NFC taps resolve with or without a session (public lookup; login only to claim). */}
+      <Stack.Screen name="nfc/[token]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
     </Stack>
   );
 }

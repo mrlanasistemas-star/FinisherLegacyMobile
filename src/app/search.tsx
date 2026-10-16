@@ -22,7 +22,8 @@ import { colors, spacing } from '@/theme/tokens';
 
 type Tab = 'for_you' | 'athletes' | 'events';
 
-export default function ExploreScreen() {
+/** Search + discovery (athletes, events, products). Reached from the search icon on Inicio and Explorar. */
+export default function SearchScreen() {
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<Tab>('for_you');
   const searching = query.trim().length >= 2;
@@ -30,7 +31,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
       <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}>
-        <TopBar title="Explorar" />
+        <TopBar title="Buscar" />
         <FormInput
           kind="search"
           placeholder="Atletas, eventos o productos"
@@ -38,6 +39,7 @@ export default function ExploreScreen() {
           onChangeText={setQuery}
           onSubmitEditing={() => Keyboard.dismiss()}
           accessibilityLabel="Buscar atletas, eventos o productos"
+          autoFocus
         />
         {!searching ? (
           <SegmentedControl
@@ -129,7 +131,7 @@ function ExploreTabs({ tab }: { tab: Tab }) {
       ListFooterComponent={
         moments.length > 0 ? (
           <View style={{ padding: spacing.lg }}>
-            <AppButton label="Ver más en la comunidad" variant="secondary" size="md" onPress={() => router.push('/feed')} />
+            <AppButton label="Ver más en la comunidad" variant="secondary" size="md" onPress={() => router.navigate('/explore')} />
           </View>
         ) : null
       }
