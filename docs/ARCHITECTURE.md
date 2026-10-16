@@ -2,23 +2,25 @@
 
 ## Stack
 
-Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · Expo Router (file-based, `src/app`, typed routes) · TanStack Query v5 (+ persistencia en AsyncStorage) · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Camera · Expo Image / Image Picker / Image Manipulator · Expo Video · Expo Notifications · Reanimated · Gesture Handler · `@stripe/stripe-react-native` (PaymentSheet) · `expo-apple-authentication` · `expo-auth-session` (Google).
+Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · Expo Router (file-based, `src/app`, typed routes) · TanStack Query v5 (+ persistencia en AsyncStorage) · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Image / Image Picker / Image Manipulator · Expo Video · Expo Notifications · Reanimated · Gesture Handler · `@stripe/stripe-react-native` (PaymentSheet) · `expo-apple-authentication` · `expo-auth-session` (Google).
 
 **Estilos:** StyleSheet + design system en `src/theme/tokens.ts` (colores, `control` para inputs, spacing, radius, tipografía). NativeWind sigue configurado pero no se usa.
 
 ## Navegación
 
 ```
-Inicio · Legacy · [ESCANEAR] · Tienda · Perfil
+Inicio · Explorar · [LEGADO] · Tienda · Perfil
 ```
 
-- **Inicio** — lanzadera: hero, "Primeros pasos" (guía derivada de datos reales que se oculta sola al completarse), próxima meta, última carrera (+ "Compartir como Legacy Moment"), vista previa del Legacy, CTA de escaneo, 2 momentos de la comunidad. Iconos de búsqueda (Explorar) y notificaciones (badge real de no leídas).
-- **Legacy** — colección: medallas, carreras, recuerdos (tus momentos), equipo y Legacy Plates. "+" agrega cualquier cosa.
-- **Escanear** — el FAB dorado central ocupa un slot real de la barra (espaciado parejo en cualquier ancho) y abre el escáner a pantalla completa.
-- **Tienda** — buscador, categorías reales, lo más nuevo, catálogo; carrito con badge en la pestaña.
-- **Perfil** — identidad deportiva (portada, avatar, @usuario, Legacy ID, bio, ubicación, stats tocables, Momentos/Carreras/Medallas/Equipo). Configuración sólo detrás del engrane.
+Consolidación final (spec §89–97, §135). **No hay escáner QR**: los productos físicos (Legacy Plate, prendas, accesorios) abren la app por NFC (`/nfc/[token]`, ver Enlaces). Los códigos impresos de piezas anteriores se siguen aceptando escribiéndolos: `/legacy/scan` conserva su nombre histórico pero ya no usa cámara (Legacy Code → `/legacy/{code}`, código `AST…` → `/gear/claim?code=`). `expo-camera` se retiró; la cámara sólo la usa Image Picker para tomar fotos.
 
-Pantallas apiladas: `feed`, `explore`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*` (cuenta, privacidad, seguridad, notificaciones, acerca de), y en `(auth)`: onboarding, welcome, login, register, forgot-password, reset-password.
+- **Inicio** — página personal, no dashboard: saludo, apoyo en vivo (sesión de apoyo activa/abierta), chip del pedido en curso, "Primeros pasos", tu próxima carrera (cuenta regresiva) o el próximo evento público, tu último capítulo (tarjeta grande), aviso contextual para activar push, 3 momentos de tu comunidad en filas compactas y lo nuevo de la tienda. Búsqueda (`/search`) y campana con badge real.
+- **Explorar** — la comunidad: Siguiendo / Descubrir (feed con cursor `meta.next_cursor`, FlatList afinada para media, pull-to-refresh, reacciones optimistas, mensajes de apoyo en bottom sheet, compartir, atletas para seguir con follow optimista) y Eventos (descubrimiento). `/feed` redirige aquí.
+- **Legado** (centro, medallón dorado elevado) — tu historia: cifras, **Mi equipo** (productos conectados por NFC), medallas y la línea de tiempo por año con tarjetas grandes → historia del evento (`my-events/[participantId]`: resultado, recuerdos, equipo usado, Legacy Plate, apoyo).
+- **Tienda** — catálogo, carrito, checkout, pedidos.
+- **Perfil** — identidad deportiva + atajos "Mis pedidos · Mi equipo · Privacidad"; cuenta, avisos, seguridad y cerrar sesión detrás del engrane.
+
+Pantallas apiladas: `search`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `legacy/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*`; `nfc/[token]` (fuera de los guards: funciona con o sin sesión); y en `(auth)`: onboarding, welcome, login, register, forgot-password, reset-password.
 
 **Toda ruta autenticada debe registrarse en `Stack.Protected` de `src/app/_layout.tsx`.**
 
@@ -66,6 +68,8 @@ Recurso único: `{data, message, meta:{request_id}}`. Listas:
 - **Lectura:** TanStack persiste en AsyncStorage (24 h, versionado por versión de app) sólo datos de lectura — perfil, medallas, feed, atletas, momentos, historia, explorar, eventos. Nunca carrito, pedidos ni pagos.
 - **Escritura:** follow, comentario, reacción, carrito, checkout, pago, subida de archivos y edición de perfil llaman `ensureOnline()` y fallan al instante con "Sin conexión…" — nunca un éxito falso.
 - Al terminar la sesión (logout, token vencido, cuenta eliminada) se borra todo el caché, en memoria y persistido.
+- **Conectividad:** `onlineManager` de TanStack escucha `expo-network` (refetch automático al reconectar) y `focusManager` usa `AppState`. Queries y mutaciones usan `networkMode: 'always'`: sin caché se ve "Sin conexión" al instante (nunca un skeleton infinito) y las escrituras siguen fallando rápido con `ensureOnline()`. Explorar y Legado conservan lo guardado y muestran "Te mostramos lo último que guardamos" si una actualización falla. `OfflineBanner` global.
+- Las respuestas NFC (`['nfc', …]`) nunca se persisten: un tap siempre refleja al dueño actual.
 
 ## Sesión y seguridad
 
@@ -77,7 +81,30 @@ Token sólo en SecureStore. `useSessionBootstrap` valida con `GET /me` antes de 
 
 ## Enlaces
 
-`src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts`: `finisherlegacy://athlete/u`, `finisherlegacy://moments/uuid`, `https://finisherlegacy.com/@u`, `/moments/uuid`, `/events/slug`, `/reset-password/{token}`; el retorno de 3-D Secure de Stripe (`/stripe-redirect`) se entrega al SDK sin navegar. Un enlace abierto sin sesión se guarda y se reproduce al iniciar sesión (`use-deep-links.ts`).
+`src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts`: `finisherlegacy://athlete/u`, `finisherlegacy://moments/uuid`, `https://finisherlegacy.com/@u`, `/moments/uuid`, `/events/slug`, `/reset-password/{token}`; el retorno de 3-D Secure de Stripe (`/stripe-redirect`) se entrega al SDK sin navegar. Un enlace abierto sin sesión se guarda y se reproduce al iniciar sesión (`use-deep-links.ts`). Cualquier host `https` se acepta (el sistema sólo entrega a la app los dominios verificados; staging incluido).
+
+### NFC (spec §32–33, §88)
+
+La etiqueta lleva `https://<dominio>/n/{token}` (token aleatorio, sin datos personales). Con la app instalada abre `/nfc/[token]` (universal link iOS / app link Android); si no, la web. También `finisherlegacy://nfc/{token}`. La pantalla funciona con o sin sesión:
+
+1. `GET /api/v1/nfc/{token}` (público) → `{status: unclaimed|claimed|disabled, owned_by_me, can_claim, target{type,title,subtitle,image_url,web_url,profile_username,event_slug}}`.
+2. **Reclamado** → tarjeta de revelación (~1 s) y navega (`features/nfc/nfc-target.ts`): perfil/Legacy Plate → `/athlete/{u}`, evento → `/events/{slug}`, producto propio → `/gear`; sin destino nativo o sin sesión → "Ver historia" (web) / "Iniciar sesión".
+3. **Sin reclamar** → tarjeta de activación → login/registro (el destino `/nfc/{token}` se guarda y se repite al entrar) → `POST /api/v1/nfc/{token}/claim` → confirmación → **Mi equipo**. 409 `NFC_ALREADY_CLAIMED` → mensaje humano.
+4. **Desactivado / desconocido** → explicación tranquila, nunca códigos técnicos.
+
+Dominio: `app.config.ts` lo toma de `EXPO_PUBLIC_WEB_URL` (default producción) y genera `ios.associatedDomains: ["applinks:<dominio>"]` y un `android.intentFilters` con `autoVerify` y `pathPrefix: "/n/"`.
+
+**INFRA REQUERIDA (no es código de la app):**
+- `https://<dominio>/.well-known/apple-app-site-association` — JSON sin extensión, `Content-Type: application/json`, sin redirecciones: `{"applinks":{"details":[{"appIDs":["<TEAMID>.com.finisherlegacy.app"],"components":[{"/":"/n/*"}]}]}}`.
+- `https://<dominio>/.well-known/assetlinks.json` — `[{"relation":["delegate_permission/common.handle_all_urls"],"target":{"namespace":"android_app","package_name":"com.finisherlegacy.app","sha256_cert_fingerprints":["<SHA-256 del certificado de firma de Play/EAS>"]}}]`.
+- Sin esos archivos el enlace abre la web, que es el fallback correcto.
+
+### Push
+
+- El permiso se pide **sólo** desde una acción contextual (tarjeta "Activa los avisos" en Inicio/Notificaciones, o Ajustes → Notificaciones) — nunca al abrir la app. Lógica en `features/push/push-registration.ts`.
+- Con permiso ya concedido, al iniciar sesión se refresca el token Expo en `POST /me/push-devices` en silencio (`hooks/use-push.ts › usePushLifecycle`).
+- Push en primer plano: banner + refresca la campana. Tocar un push (en caliente o arranque en frío) navega con la misma regla que la lista (`features/notifications/notification-href.ts`): `data.target` → `data.action_url`/`data.url` mapeada → web; marca leída `data.notification_id`. Contrato esperado del proveedor Expo del backend: `data: {notification_id, type, target, action_url}`.
+- Requiere `extra.eas.projectId` y build en teléfono físico (Expo Go no recibe push remoto).
 
 ## Eliminación de cuenta
 
