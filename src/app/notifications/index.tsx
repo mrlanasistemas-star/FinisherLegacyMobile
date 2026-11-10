@@ -1,6 +1,7 @@
+import { Image } from 'expo-image';
 import { router, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { Award, Bell, CheckCheck, Flag, Heart, MessageCircle, Package, UserPlus } from 'lucide-react-native';
+import { Award, Bell, CheckCheck, Flag, Heart, LifeBuoy, Megaphone, MessageCircle, Mic, Nfc, Package, PackageCheck, RotateCcw, Truck, UserPlus } from 'lucide-react-native';
 import { useMemo } from 'react';
 import { SectionList, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +16,8 @@ import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { TopBar } from '@/components/ui/top-bar';
 import { PushPrimerCard } from '@/components/home/push-primer-card';
-import { notificationDestination } from '@/features/notifications/notification-href';
+import { reportNotificationOpened } from '@/api/notifications';
+import { campaignOpenId, notificationDestination } from '@/features/notifications/notification-href';
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '@/hooks/use-notifications';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { AppNotification } from '@/types/models';
@@ -30,6 +32,15 @@ const TYPE_ICON: Record<string, typeof Bell> = {
   result_available: Flag,
   event_updated: Flag,
   legacy_plate_ready: Award,
+  order_paid: Package,
+  order_shipped: Truck,
+  order_delivered: PackageCheck,
+  order_refunded: RotateCcw,
+  tag_activated: Nfc,
+  training_cheer: Mic,
+  support_reply: LifeBuoy,
+  broadcast: Megaphone,
+  custom: Megaphone,
 };
 
 /** Same destination rule as a push tap — see features/notifications/notification-href.ts. */
@@ -37,6 +48,11 @@ function openNotification(notification: AppNotification) {
   const destination = notificationDestination(notification);
   if (destination?.kind === 'app') router.push(destination.href as Href);
   else if (destination?.kind === 'external') WebBrowser.openBrowserAsync(destination.url).catch(() => {});
+}
+
+/** Only absolute https images (rich push / broadcast picture) are shown. */
+function imageUri(url: string | null | undefined): string | null {
+  return url && url.toLowerCase().startsWith('https://') ? url : null;
 }
 
 export default function NotificationsScreen() {
@@ -56,6 +72,9 @@ export default function NotificationsScreen() {
 
   function handlePress(notification: AppNotification) {
     if (notification.read_at === null) markRead.mutate(notification.id);
+    // Push-campaign rows: count the open (fire-and-forget, once per row).
+    const openId = campaignOpenId(notification);
+    if (openId) reportNotificationOpened(openId);
     openNotification(notification);
   }
 
@@ -151,6 +170,14 @@ function NotificationRow({ notification, onPress }: { notification: AppNotificat
           </AppText>
         ) : null}
       </View>
+      {imageUri(notification.image_url) ? (
+        <Image
+          source={{ uri: imageUri(notification.image_url) as string }}
+          style={{ width: 56, height: 56, borderRadius: 10 }}
+          contentFit="cover"
+          accessibilityIgnoresInvertColors
+        />
+      ) : null}
       {unread ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold, marginTop: 6 }} /> : null}
     </PressableScale>
   );

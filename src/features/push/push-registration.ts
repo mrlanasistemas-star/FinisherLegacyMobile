@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { registerPushDevice } from '@/api/pushDevices';
+import { ensureNotificationChannels } from '@/features/push/notification-channels';
 import { useUiStore } from '@/stores/uiStore';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
@@ -12,9 +13,14 @@ export type PushRegistrationResult =
   | { ok: true; deviceUuid: string }
   | { ok: false; reason: 'unavailable' | 'denied' | 'error'; message: string };
 
-/** `extra.eas.projectId` (app.json) is what attributes the Expo push token to this app. */
+/**
+ * `extra.eas.projectId` (app.json, written by `eas init`) is what attributes
+ * the Expo push token to this app — required by `getExpoPushTokenAsync` in
+ * SDK 57. `EXPO_PUBLIC_EAS_PROJECT_ID` is only a fallback for builds whose
+ * config lost it.
+ */
 export function getEasProjectId(): string | null {
-  return Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? null;
+  return Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? null;
 }
 
 /** Remote push needs a physical device and an EAS project — simulators and unconfigured builds can't get a token. */
@@ -29,15 +35,6 @@ export async function getPushPermission(): Promise<PushPermission> {
   } catch {
     return 'undetermined';
   }
-}
-
-async function ensureAndroidChannel() {
-  if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync('default', {
-    name: 'Finisher Legacy',
-    importance: Notifications.AndroidImportance.DEFAULT,
-    lightColor: '#C9AE8B',
-  });
 }
 
 /**
@@ -70,8 +67,20 @@ export async function registerForPush({ prompt }: { prompt: boolean }): Promise<
       return { ok: false, reason: 'denied', message: 'Activa las notificaciones de Finisher Legacy en los ajustes de tu teléfono.' };
     }
 
-    await ensureAndroidChannel();
+    await ensureNotificationChannels();
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: getEasProjectId() as string });
+    return await storeToken(token);
+  } catch {
+    return { ok: false, reason: 'error', message: 'No pudimos activar los avisos. Intenta de nuevo.' };
+  }
+}
+
+/**
+ * Stores an Expo push token on the backend (idempotent per token). Also used
+ * when the OS rotates the token (`addPushTokenListener` in use-push).
+ */
+export async function storeToken(token: string): Promise<PushRegistrationResult> {
+  try {
     const device = await registerPushDevice({
       platform: Platform.OS === 'ios' ? 'ios' : 'android',
       provider: 'expo',

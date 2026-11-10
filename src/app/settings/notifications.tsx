@@ -1,22 +1,27 @@
 import * as Device from 'expo-device';
 import { Bell, BellOff, CircleAlert } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, View } from 'react-native';
+import { ActivityIndicator, Linking, Switch, View } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
+import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { LargeTitleScroll } from '@/components/ui/top-bar';
+import { useNotificationPreferences, useUpdateNotificationPreferences } from '@/hooks/use-notifications';
 import { useUnregisterPushDevice } from '@/hooks/use-push-devices';
 import { usePushPermission } from '@/hooks/use-push';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, spacing } from '@/theme/tokens';
+import type { NotificationPreferenceRow } from '@/types/models';
 
 /**
  * Push on this phone. Registration logic lives in
  * `features/push/push-registration.ts` (shared with the contextual prompt
- * on Inicio/Notificaciones); this screen is the explicit on/off switch.
+ * on Inicio/Notificaciones); this screen is the explicit on/off switch for
+ * this phone, plus "Qué te avisamos": per category, push and/or in the app
+ * (stored server-side, same switches as the web; the server enforces them).
  */
 export default function NotificationSettingsScreen() {
   const { available, permission, pending, enable } = usePushPermission();
@@ -96,7 +101,74 @@ export default function NotificationSettingsScreen() {
             {error}
           </AppText>
         ) : null}
+
+        <CategoryPreferences />
       </View>
     </LargeTitleScroll>
+  );
+}
+
+function CategoryPreferences() {
+  const { data, isPending, isError, refetch } = useNotificationPreferences();
+  const update = useUpdateNotificationPreferences();
+
+  function toggle(row: NotificationPreferenceRow, channel: 'push' | 'in_app', value: boolean) {
+    update.mutate({ [row.key]: { [channel]: value } });
+  }
+
+  if (isPending) return <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} />;
+  if (isError || !data) {
+    return (
+      <View style={{ gap: spacing.xs }}>
+        <AppText variant="caption" tone="destructive">
+          No pudimos cargar tus preferencias.
+        </AppText>
+        <AppButton label="Reintentar" variant="secondary" onPress={() => refetch()} />
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ gap: spacing.md }}>
+      <AppText variant="eyebrow" tone="subtle" style={{ marginLeft: spacing.md }}>
+        Qué te avisamos
+      </AppText>
+      {data.categories.map((row) => (
+        <ListGroup key={row.key} title={row.label} footer={row.description}>
+          <ListRow
+            label="En tu teléfono (push)"
+            trailing={
+              <PreferenceSwitch value={row.push} disabled={update.isPending} label={`${row.label}: push`} onChange={(value) => toggle(row, 'push', value)} />
+            }
+          />
+          <ListRow
+            label="En la app y la web"
+            divider={false}
+            trailing={
+              <PreferenceSwitch value={row.in_app} disabled={update.isPending} label={`${row.label}: en la app`} onChange={(value) => toggle(row, 'in_app', value)} />
+            }
+          />
+        </ListGroup>
+      ))}
+      {update.isError ? (
+        <AppText variant="caption" tone="destructive">
+          No pudimos guardar el cambio. Intenta de nuevo.
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
+
+function PreferenceSwitch({ value, disabled, label, onChange }: { value: boolean; disabled: boolean; label: string; onChange: (value: boolean) => void }) {
+  return (
+    <Switch
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled}
+      trackColor={{ false: colors.surfaceMuted, true: colors.gold }}
+      thumbColor={colors.white}
+      ios_backgroundColor={colors.surfaceMuted}
+      accessibilityLabel={label}
+    />
   );
 }

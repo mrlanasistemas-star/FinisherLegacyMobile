@@ -37,6 +37,36 @@ describe('mapIncomingPath', () => {
     expect(mapIncomingPath('/n/abc123?utm=tag')).toBe('/nfc/abc123');
   });
 
+  it('maps push-campaign deep links to real routes', () => {
+    expect(mapIncomingPath('finisherlegacy://home')).toBe('/');
+    expect(mapIncomingPath('finisherlegacy://store')).toBe('/store');
+    expect(mapIncomingPath('finisherlegacy://collections/edicion-maraton')).toBe('/store/collection/edicion-maraton');
+    expect(mapIncomingPath('finisherlegacy://products/tag-negro')).toBe('/store/tag-negro');
+    expect(mapIncomingPath('finisherlegacy://events/cdmx-2026')).toBe('/events/cdmx-2026');
+    expect(mapIncomingPath('finisherlegacy://training')).toBe('/training');
+    expect(mapIncomingPath('finisherlegacy://my-legacy')).toBe('/legacy');
+  });
+
+  it('maps the same campaign screens from their web paths (inbox action_url, https links)', () => {
+    expect(mapIncomingPath('/')).toBe('/');
+    expect(mapIncomingPath('https://finisherlegacy.com')).toBe('/');
+    expect(mapIncomingPath('https://finisherlegacy.com/?utm_source=push')).toBe('/');
+    expect(mapIncomingPath('/tienda')).toBe('/store');
+    expect(mapIncomingPath('https://finisherlegacy.com/tienda/catalogo')).toBe('/store');
+    expect(mapIncomingPath('/colecciones')).toBe('/store');
+    expect(mapIncomingPath('/colecciones/edicion-maraton')).toBe('/store/collection/edicion-maraton');
+    expect(mapIncomingPath('https://finisherlegacy.com/tienda/tag-negro?utm=push')).toBe('/store/tag-negro');
+    expect(mapIncomingPath('https://finisherlegacy.com/products/tag-negro/')).toBe('/store/tag-negro');
+    expect(mapIncomingPath('/mi-legacy')).toBe('/legacy');
+    expect(mapIncomingPath('/mi-entrenamiento')).toBe('/training');
+  });
+
+  it('leaves web-only store listings and deeper web pages unmapped', () => {
+    expect(mapIncomingPath('https://finisherlegacy.com/tienda/categoria/tags')).toBe('https://finisherlegacy.com/tienda/categoria/tags');
+    expect(mapIncomingPath('https://finisherlegacy.com/mi-legacy/abc/ampliar-fotos')).toBe('https://finisherlegacy.com/mi-legacy/abc/ampliar-fotos');
+    expect(mapIncomingPath('finisherlegacy://collections/a/b')).toBe('finisherlegacy://collections/a/b');
+  });
+
   it('passes unknown paths through untouched', () => {
     expect(mapIncomingPath('/legacy/ABC123')).toBe('/legacy/ABC123');
     expect(mapIncomingPath('/something-else')).toBe('/something-else');

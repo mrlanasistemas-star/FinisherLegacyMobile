@@ -15,6 +15,17 @@
  *                                            +native-intent stays put instead while the checkout screen waits)
  *   …/stripe-redirect                      → null (old Stripe builds' 3-D Secure return; stay put)
  *
+ * Push-campaign destinations (backend `CampaignDestination`: the push carries
+ * the `finisherlegacy://…` deep link, the inbox row the same screen's web path):
+ *
+ *   finisherlegacy://home                | /                     → /        (Inicio tab)
+ *   finisherlegacy://store               | /tienda, /colecciones → /store   (Colecciones tab)
+ *   finisherlegacy://collections/<slug>  | /colecciones/<slug>   → /store/collection/<slug>
+ *   finisherlegacy://products/<slug>     | /tienda/<slug>        → /store/<slug>
+ *   finisherlegacy://events/<slug>       | /events/<slug>        → /events/<slug>
+ *   finisherlegacy://my-legacy           | /mi-legacy            → /legacy  (Recuerdos tab)
+ *   finisherlegacy://training            | /mi-entrenamiento     → /training
+ *
  * Anything unknown passes through unchanged so Expo Router can resolve it.
  */
 export function mapIncomingPath(raw: string): string | null {
@@ -54,7 +65,29 @@ export function mapIncomingPath(raw: string): string | null {
   const nfc = path.match(/^\/(?:n|nfc)\/([A-Za-z0-9_-]+)\/?(?:\?.*)?$/);
   if (nfc) return `/nfc/${nfc[1]}`;
 
+  const campaign = campaignPath(path);
+  if (campaign) return campaign;
+
   if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search|training)(\/|$|\?)/.test(path)) return path;
 
   return raw;
+}
+
+/** Push-campaign destinations → real routes (see the table above). */
+function campaignPath(path: string): string | null {
+  const clean = path.replace(/[?#].*$/, '').replace(/\/+$/, '');
+
+  if (clean === '' || clean === '/home') return '/';
+  if (clean === '/tienda' || clean === '/tienda/catalogo' || clean === '/colecciones' || clean === '/collections') return '/store';
+  if (clean === '/my-legacy' || clean === '/mi-legacy') return '/legacy';
+  if (clean === '/mi-entrenamiento') return '/training';
+
+  const collection = clean.match(/^\/(?:collections|colecciones)\/([^/]+)$/);
+  if (collection) return `/store/collection/${collection[1]}`;
+
+  // `/tienda/catalogo` and `/tienda/categoria/…` are web-only listings, not products.
+  const product = clean.match(/^\/products\/([^/]+)$/) ?? clean.match(/^\/tienda\/(?!catalogo$|categoria$)([^/]+)$/);
+  if (product) return `/store/${product[1]}`;
+
+  return null;
 }
