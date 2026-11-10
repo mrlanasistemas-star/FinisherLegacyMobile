@@ -15,6 +15,7 @@ import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { EventRace } from '@/types/models';
 import { haptics } from '@/utils/haptics';
 import { ensureOnline } from '@/utils/network';
+import { useI18n } from '@/i18n';
 
 interface PreregistrationSheetProps {
   visible: boolean;
@@ -26,6 +27,7 @@ interface PreregistrationSheetProps {
 
 /** Preregister for an edition — prefilled from the account, race picked by its public uuid. */
 export function PreregistrationSheet({ visible, onClose, editionId, eventName, races }: PreregistrationSheetProps) {
+  const { t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const [raceUuid, setRaceUuid] = useState<string | null>(races.length === 1 ? races[0].uuid : null);
   const [firstName, setFirstName] = useState(user?.first_name ?? '');
@@ -41,7 +43,7 @@ export function PreregistrationSheet({ visible, onClose, editionId, eventName, r
     setError(null);
     setFieldErrors({});
     if (!raceUuid) {
-      setError('Elige tu distancia.');
+      setError(t('Elige tu distancia.'));
       return;
     }
     setSaving(true);
@@ -62,9 +64,9 @@ export function PreregistrationSheet({ visible, onClose, editionId, eventName, r
         for (const [field, messages] of Object.entries(caught.fieldErrors)) mapped[field] = messages[0];
         setFieldErrors(mapped);
       } else if (caught instanceof AppError && caught.kind === 'forbidden') {
-        setError('El prerregistro para este evento ya cerró.');
+        setError(t('El prerregistro para este evento ya cerró.'));
       } else {
-        setError(caught instanceof AppError ? caught.message : 'No pudimos completar tu prerregistro. Intenta otra vez.');
+        setError(caught instanceof AppError ? caught.message : t('No pudimos completar tu prerregistro. Intenta otra vez.'));
       }
     } finally {
       setSaving(false);
@@ -77,20 +79,20 @@ export function PreregistrationSheet({ visible, onClose, editionId, eventName, r
         <View style={{ alignItems: 'center', gap: spacing.md, paddingBottom: spacing.lg }}>
           <CircleCheck size={44} color={colors.accent} />
           <AppText variant="subtitle" align="center">
-            ¡Listo! Ya estás prerregistrado
+            {t('¡Listo! Ya estás prerregistrado')}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
-            Te enviaremos la confirmación de {eventName} a {email.trim()}. Nos vemos en la salida.
+            {t('Te enviaremos la confirmación de {event} a {email}. Nos vemos en la salida.', { event: eventName, email: email.trim() })}
           </AppText>
-          <AppButton label="Cerrar" size="md" onPress={onClose} />
+          <AppButton label={t('Cerrar')} size="md" onPress={onClose} />
         </View>
       ) : (
         <ScrollView style={{ maxHeight: 560 }} keyboardShouldPersistTaps="handled">
           <View style={{ gap: spacing.md, paddingBottom: spacing.md }}>
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 18 }}>Prerregistro · {eventName}</AppText>
+            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 18 }}>{t('Prerregistro · {event}', { event: eventName })}</AppText>
             <View style={{ gap: spacing.xs }}>
               <AppText variant="caption" tone="muted">
-                Distancia
+                {t('Distancia')}
               </AppText>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs }}>
                 {races.map((race) => (
@@ -104,13 +106,13 @@ export function PreregistrationSheet({ visible, onClose, editionId, eventName, r
               ) : null}
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-              <FormInput containerStyle={{ flex: 1 }} label="Nombre" kind="name" value={firstName} onChangeText={setFirstName} error={fieldErrors.first_name} />
-              <FormInput containerStyle={{ flex: 1 }} label="Apellido" kind="name" value={lastName} onChangeText={setLastName} error={fieldErrors.last_name} />
+              <FormInput containerStyle={{ flex: 1 }} label={t('Nombre')} kind="name" value={firstName} onChangeText={setFirstName} error={fieldErrors.first_name} />
+              <FormInput containerStyle={{ flex: 1 }} label={t('Apellido')} kind="name" value={lastName} onChangeText={setLastName} error={fieldErrors.last_name} />
             </View>
-            <FormInput label="Correo" kind="email" value={email} onChangeText={setEmail} error={fieldErrors.email} />
-            <FormInput label="Teléfono (opcional)" kind="phone" value={phone} onChangeText={setPhone} error={fieldErrors.phone} />
+            <FormInput label={t('Correo')} kind="email" value={email} onChangeText={setEmail} error={fieldErrors.email} />
+            <FormInput label={t('Teléfono (opcional)')} kind="phone" value={phone} onChangeText={setPhone} error={fieldErrors.phone} />
             <InlineError message={error} />
-            <AppButton label="Confirmar prerregistro" size="md" onPress={submit} loading={saving} />
+            <AppButton label={t('Confirmar prerregistro')} size="md" onPress={submit} loading={saving} />
           </View>
         </ScrollView>
       )}

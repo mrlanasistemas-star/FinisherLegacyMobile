@@ -1,8 +1,12 @@
 import * as Network from 'expo-network';
 
 import { AppError } from '@/api/errors';
+import { t } from '@/i18n';
 
-export const OFFLINE_MESSAGE = 'Sin conexión. Conéctate a Internet e intenta otra vez.';
+/** Resolved when it is thrown, so it follows the app language. */
+export function offlineMessage(): string {
+  return t('Sin conexión. Conéctate a Internet e intenta otra vez.');
+}
 
 /**
  * Writes (follow, comment, reaction, cart, checkout, payment, upload) fail
@@ -13,7 +17,7 @@ export const OFFLINE_MESSAGE = 'Sin conexión. Conéctate a Internet e intenta o
 export async function ensureOnline(): Promise<void> {
   const state = await Network.getNetworkStateAsync().catch(() => null);
   if (state?.isConnected === false || state?.isInternetReachable === false) {
-    throw new AppError({ kind: 'network', message: OFFLINE_MESSAGE });
+    throw new AppError({ kind: 'network', message: offlineMessage() });
   }
 }
 

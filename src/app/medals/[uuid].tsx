@@ -21,6 +21,7 @@ import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { useDeleteMedal } from '@/hooks/use-medal-mutations';
 import { useMedal } from '@/hooks/use-medals';
+import { useI18n } from '@/i18n';
 import { showToast } from '@/stores/toastStore';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
@@ -28,6 +29,7 @@ import { formatLongDate } from '@/utils/dates';
 const HERO_HEIGHT = 340;
 
 export default function MedalDetailScreen() {
+  const { t } = useI18n();
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const { data: medal, isPending, isError, error, refetch } = useMedal(uuid);
   const deleteMedal = useDeleteMedal();
@@ -40,7 +42,7 @@ export default function MedalDetailScreen() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const title = medal?.title ?? medal?.event_name ?? medal?.event_name_manual ?? 'Medalla';
+  const title = medal?.title ?? medal?.event_name ?? medal?.event_name_manual ?? t('Medalla');
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/medals'));
 
   async function handleDelete() {
@@ -49,14 +51,14 @@ export default function MedalDetailScreen() {
       await deleteMedal.mutateAsync(uuid);
       setConfirmingDelete(false);
       router.back();
-      showToast('Medalla eliminada.', 'success');
+      showToast(t('Medalla eliminada.'), 'success');
     } catch (caught) {
       setConfirmingDelete(false);
-      setDeleteError(caught instanceof AppError ? caught.message : 'No pudimos eliminar tu medalla.');
+      setDeleteError(caught instanceof AppError ? caught.message : t('No pudimos eliminar tu medalla.'));
     }
   }
 
-  const backButton = <IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />;
+  const backButton = <IconButton icon={ChevronLeft} label={t('Volver')} onPress={goBack} size={26} />;
 
   if (isPending || isError || !medal) {
     return (
@@ -69,16 +71,16 @@ export default function MedalDetailScreen() {
             <Skeleton height={16} width="40%" />
           </View>
         ) : (
-          <ErrorState error={error} message="No pudimos cargar esta medalla." onRetry={refetch} />
+          <ErrorState error={error} message={t('No pudimos cargar esta medalla.')} onRetry={refetch} />
         )}
       </View>
     );
   }
 
   const stats = [
-    medal.distance_label ? { label: 'Distancia', value: medal.distance_label } : null,
-    medal.official_time ? { label: 'Tiempo oficial', value: medal.official_time } : null,
-    medal.pace ? { label: 'Ritmo', value: medal.pace } : null,
+    medal.distance_label ? { label: t('Distancia'), value: medal.distance_label } : null,
+    medal.official_time ? { label: t('Tiempo oficial'), value: medal.official_time } : null,
+    medal.pace ? { label: t('Ritmo'), value: medal.pace } : null,
   ].filter((s): s is { label: string; value: string } => s !== null);
 
   return (
@@ -92,7 +94,7 @@ export default function MedalDetailScreen() {
                 style={{ width: '72%', height: '78%' }}
                 contentFit="contain"
                 transition={250}
-                accessibilityLabel={`Foto de la medalla ${title}`}
+                accessibilityLabel={t('Foto de la medalla {title}', { title })}
               />
             ) : (
               <MedalIcon size={72} color={colors.accent} strokeWidth={1.2} />
@@ -106,7 +108,7 @@ export default function MedalDetailScreen() {
           <View style={{ gap: spacing.xxs }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               {medal.event_date ? <AppText variant="eyebrow">{formatLongDate(medal.event_date)}</AppText> : null}
-              <Badge label={medal.visibility === 'public' ? 'Pública' : 'Privada'} variant={medal.visibility === 'public' ? 'gold' : 'neutral'} />
+              <Badge label={medal.visibility === 'public' ? t('Pública') : t('Privada')} variant={medal.visibility === 'public' ? 'gold' : 'neutral'} />
             </View>
             <AppText variant="display" accessibilityRole="header">
               {title}
@@ -141,7 +143,7 @@ export default function MedalDetailScreen() {
           {medal.story ? (
             <View style={{ gap: spacing.xs }}>
               <AppText variant="eyebrow" tone="muted">
-                Historia
+                {t('Historia')}
               </AppText>
               <AppText variant="body">{medal.story}</AppText>
             </View>
@@ -150,7 +152,7 @@ export default function MedalDetailScreen() {
           {medal.gallery_images.length > 0 ? (
             <View style={{ gap: spacing.xs }}>
               <AppText variant="eyebrow" tone="muted">
-                Galería
+                {t('Galería')}
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.lg }} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
                 {medal.gallery_images.map((image) =>
@@ -175,13 +177,13 @@ export default function MedalDetailScreen() {
         title={title}
         threshold={HERO_HEIGHT - 60}
         left={backButton}
-        right={<IconButton icon={Ellipsis} label="Más acciones" onPress={() => setActionsOpen(true)} />}
+        right={<IconButton icon={Ellipsis} label={t('Más acciones')} onPress={() => setActionsOpen(true)} />}
       />
 
       <Sheet visible={actionsOpen} onClose={() => setActionsOpen(false)}>
         <SheetActionRow
           icon={Pencil}
-          label="Editar medalla"
+          label={t('Editar medalla')}
           onPress={() => {
             setActionsOpen(false);
             router.push(`/medals/edit/${uuid}`);
@@ -189,7 +191,7 @@ export default function MedalDetailScreen() {
         />
         <SheetActionRow
           icon={Trash2}
-          label="Eliminar medalla"
+          label={t('Eliminar medalla')}
           destructive
           onPress={() => {
             setActionsOpen(false);
@@ -200,9 +202,9 @@ export default function MedalDetailScreen() {
 
       <ConfirmDialog
         visible={confirmingDelete}
-        title="Eliminar medalla"
-        description="Esta medalla se quitará de tus recuerdos. Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        title={t('Eliminar medalla')}
+        description={t('Esta medalla se quitará de tus recuerdos. Esta acción no se puede deshacer.')}
+        confirmLabel={t('Eliminar')}
         loading={deleteMedal.isPending}
         onConfirm={handleDelete}
         onCancel={() => setConfirmingDelete(false)}

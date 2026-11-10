@@ -8,6 +8,7 @@ import { balanceLines, type TagFace } from '@/features/commerce/tag-design';
 import { fontFamily, palette } from '@/theme/tokens';
 
 import { MONOGRAM_RATIO, TAG_WIDTHS, tagGeometry, type TagGeometry, type TagSide, type TagSize } from './tag-geometry';
+import { useI18n } from '@/i18n';
 
 const MONOGRAM = require('@/assets/images/brand/fl-monograma.png');
 export { TAG_WIDTHS, tagGeometry, type TagSide, type TagSize } from './tag-geometry';
@@ -34,11 +35,14 @@ interface TagRenderProps {
  * No QR anywhere — the tag opens your memory by NFC.
  */
 export const TagRender = memo(function TagRender({ face, side = 'front', size = 'md', width, shadow = true, style }: TagRenderProps) {
+  const { t } = useI18n();
   const g = tagGeometry(width ?? TAG_WIDTHS[size]);
   const label =
     side === 'front'
-      ? `Finisher Legacy Tag ${face.nameLine}${face.disciplineLine ? `, ${face.disciplineLine}` : ''}`
-      : `Reverso del Finisher Legacy Tag: ${face.backLine}. Se abre con NFC.`;
+      ? face.disciplineLine
+        ? t('Finisher Legacy Tag {name}, {discipline}', { name: face.nameLine, discipline: face.disciplineLine })
+        : t('Finisher Legacy Tag {name}', { name: face.nameLine })
+      : t('Reverso del Finisher Legacy Tag: {line}. Se abre con NFC.', { line: face.backLine });
 
   return (
     <View accessible accessibilityRole="image" accessibilityLabel={label} style={[{ width: g.width, height: g.height }, style]}>

@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
+import { useI18n } from '@/i18n';
 import { gradients } from '@/theme/gradients';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 
@@ -19,19 +20,20 @@ const TRAINING_HREF = '/training' as Href;
  * count.
  */
 export function TrainingHomeCard() {
+  const { t, tc } = useI18n();
   const messages = useTrainingMessages('all');
   const unheard = messages.data?.pages[0]?.meta.unheard_count ?? 0;
   const line =
     unheard > 0
-      ? `${unheard} ${unheard === 1 ? 'mensaje nuevo' : 'mensajes nuevos'} de tu equipo`
-      : 'Escucha a quienes creen en ti mientras entrenas';
+      ? tc('{count} mensaje nuevo de tu equipo|{count} mensajes nuevos de tu equipo', unheard)
+      : t('Escucha a quienes creen en ti mientras entrenas');
 
   return (
     <PressableScale
       onPress={() => router.push(TRAINING_HREF)}
       scaleTo={0.98}
       accessibilityRole="button"
-      accessibilityLabel={`Entrenamientos. ${line}`}
+      accessibilityLabel={t('Entrenamientos. {line}', { line })}
       style={{
         backgroundColor: colors.card,
         borderRadius: radius.xl,
@@ -52,9 +54,9 @@ export function TrainingHomeCard() {
         <Headphones size={24} color={colors.onGold} strokeWidth={2} />
       </LinearGradient>
       <View style={{ flex: 1, gap: 2 }}>
-        <AppText variant="eyebrow">Envíame ánimo</AppText>
+        <AppText variant="eyebrow">{t('Envíame ánimo')}</AppText>
         <AppText variant="subtitle" style={{ fontSize: 18 }}>
-          Entrenamientos
+          {t('Entrenamientos')}
         </AppText>
         <AppText variant="caption" tone="muted" numberOfLines={2}>
           {line}

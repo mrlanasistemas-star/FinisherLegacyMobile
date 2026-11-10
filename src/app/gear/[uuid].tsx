@@ -5,7 +5,7 @@ import { Pressable, View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { GearIconBadge } from '@/components/brand/gear-icon-badge';
 import { GoldGlow } from '@/components/brand/gold-glow';
-import { GEAR_STATUS_LABEL, GEAR_STATUS_VARIANT } from '@/components/gear-card';
+import { GEAR_STATUS_VARIANT, gearStatusLabel } from '@/components/gear-card';
 import { Card } from '@/components/card';
 import { ErrorState } from '@/components/error-state';
 import { Reveal } from '@/components/motion/reveal';
@@ -13,10 +13,12 @@ import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { useMyGear } from '@/hooks/use-gear';
+import { useI18n } from '@/i18n';
 import { formatDateTime } from '@/utils/dates';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function GearDetailScreen() {
+  const { t } = useI18n();
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   // /me/gear isn't paginated and there's no GET /me/gear/{uuid} endpoint —
   // find the item in the already-fetched list rather than inventing a route.
@@ -26,7 +28,7 @@ export default function GearDetailScreen() {
   return (
     <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Volver">
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Volver')}>
           <ChevronLeft color={colors.foreground} size={26} />
         </Pressable>
       </View>
@@ -37,7 +39,7 @@ export default function GearDetailScreen() {
           <Skeleton height={80} radius={16} />
         </View>
       ) : isError || !gear ? (
-        <ErrorState message="No pudimos cargar este equipo." onRetry={refetch} />
+        <ErrorState message={t('No pudimos cargar este equipo.')} onRetry={refetch} />
       ) : (
         <Reveal style={{ gap: spacing.lg, paddingBottom: spacing.xl }}>
           <View style={{ alignItems: 'center', paddingVertical: spacing.lg, position: 'relative' }}>
@@ -46,7 +48,7 @@ export default function GearDetailScreen() {
           </View>
 
           <View style={{ alignItems: 'center', gap: spacing.xs }}>
-            <Badge label={GEAR_STATUS_LABEL[gear.status]} variant={GEAR_STATUS_VARIANT[gear.status]} />
+            <Badge label={gearStatusLabel(gear.status, t)} variant={GEAR_STATUS_VARIANT[gear.status]} />
             <AppText variant="display" align="center">
               {gear.product_name}
             </AppText>
@@ -59,7 +61,7 @@ export default function GearDetailScreen() {
 
           <Card>
             <AppText variant="label" tone="muted">
-              CÓDIGO
+              {t('CÓDIGO')}
             </AppText>
             <AppText variant="subtitle" style={{ marginTop: spacing.xxs, letterSpacing: 2 }}>
               {gear.asset_code}
@@ -69,7 +71,7 @@ export default function GearDetailScreen() {
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
             <Card style={{ flex: 1 }}>
               <AppText variant="label" tone="muted">
-                ADQUIRIDO
+                {t('ADQUIRIDO')}
               </AppText>
               <AppText variant="bodyStrong" style={{ marginTop: spacing.xxs }}>
                 {formatDateTime(gear.acquired_at)}
@@ -77,10 +79,10 @@ export default function GearDetailScreen() {
             </Card>
             <Card style={{ flex: 1 }}>
               <AppText variant="label" tone="muted">
-                ACTIVADO
+                {t('ACTIVADO')}
               </AppText>
               <AppText variant="bodyStrong" style={{ marginTop: spacing.xxs }}>
-                {gear.activated_at ? formatDateTime(gear.activated_at) : 'Aún no'}
+                {gear.activated_at ? formatDateTime(gear.activated_at) : t('Aún no')}
               </AppText>
             </Card>
           </View>
@@ -88,12 +90,12 @@ export default function GearDetailScreen() {
           {gear.usage_history && gear.usage_history.length > 0 ? (
             <View>
               <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xs }}>
-                USADO EN
+                {t('USADO EN')}
               </AppText>
               <View style={{ gap: spacing.xs }}>
                 {gear.usage_history.map((entry, index) => (
                   <Card key={`${entry.event_participant_id}-${index}`}>
-                    <AppText variant="bodyStrong">{entry.event ?? 'Evento'}</AppText>
+                    <AppText variant="bodyStrong">{entry.event ?? t('Evento')}</AppText>
                     {entry.edition ? (
                       <AppText variant="caption" tone="muted">
                         {entry.edition}
@@ -108,7 +110,7 @@ export default function GearDetailScreen() {
             </View>
           ) : (
             <AppText variant="body" tone="muted">
-              Todavía no has usado este equipo en ningún evento.
+              {t('Todavía no has usado este equipo en ningún evento.')}
             </AppText>
           )}
         </Reveal>

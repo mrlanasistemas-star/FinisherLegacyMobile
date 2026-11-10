@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios';
 
 import type { ApiErrorBody, ValidationErrorBody } from '@/types/api';
+import { t } from '@/i18n';
 
 export type AppErrorKind =
   | 'validation'
@@ -57,26 +58,29 @@ export class AppError extends Error {
   }
 }
 
-const GENERIC_MESSAGE = 'Algo salió mal. Intenta nuevamente.';
+/** Resolved when the error is built, so it follows the app language. */
+function genericMessage(): string {
+  return t('Algo salió mal. Intenta nuevamente.');
+}
 
 export function toAppError(error: unknown): AppError {
   if (error instanceof AppError) return error;
 
   if (!isAxiosError(error)) {
-    return new AppError({ kind: 'unknown', message: GENERIC_MESSAGE });
+    return new AppError({ kind: 'unknown', message: genericMessage() });
   }
 
   if (error.code === 'ECONNABORTED') {
     return new AppError({
       kind: 'timeout',
-      message: 'La solicitud tardó demasiado. Verifica tu conexión e intenta de nuevo.',
+      message: t('La solicitud tardó demasiado. Verifica tu conexión e intenta de nuevo.'),
     });
   }
 
   if (!error.response) {
     return new AppError({
       kind: 'network',
-      message: 'No hay conexión a Internet. Verifica tu red e intenta de nuevo.',
+      message: t('No hay conexión a Internet. Verifica tu red e intenta de nuevo.'),
     });
   }
 
@@ -92,7 +96,7 @@ export function toAppError(error: unknown): AppError {
   if (status === 422 && raw?.errors) {
     return new AppError({
       kind: 'validation',
-      message: raw.message ?? 'Los datos proporcionados no son válidos.',
+      message: raw.message ?? t('Los datos proporcionados no son válidos.'),
       status,
       fieldErrors: raw.errors ?? {},
     });
@@ -110,7 +114,7 @@ export function toAppError(error: unknown): AppError {
   if (status === 422) {
     return new AppError({
       kind: 'business_rule',
-      message: backendMessage ?? 'No pudimos completar esta acción.',
+      message: backendMessage ?? t('No pudimos completar esta acción.'),
       code,
       status,
       details,
@@ -122,7 +126,7 @@ export function toAppError(error: unknown): AppError {
     case 401:
       return new AppError({
         kind: 'unauthenticated',
-        message: 'Tu sesión expiró. Inicia sesión nuevamente.',
+        message: t('Tu sesión expiró. Inicia sesión nuevamente.'),
         code,
         status,
         details,
@@ -131,7 +135,7 @@ export function toAppError(error: unknown): AppError {
     case 403:
       return new AppError({
         kind: 'forbidden',
-        message: backendMessage ?? 'No tienes permiso para hacer esto.',
+        message: backendMessage ?? t('No tienes permiso para hacer esto.'),
         code,
         status,
         details,
@@ -140,7 +144,7 @@ export function toAppError(error: unknown): AppError {
     case 404:
       return new AppError({
         kind: 'not_found',
-        message: 'No pudimos encontrar lo que buscas.',
+        message: t('No pudimos encontrar lo que buscas.'),
         code,
         status,
         details,
@@ -149,7 +153,7 @@ export function toAppError(error: unknown): AppError {
     case 409:
       return new AppError({
         kind: 'conflict',
-        message: backendMessage ?? 'Ya se realizó esta acción o hay un conflicto.',
+        message: backendMessage ?? t('Ya se realizó esta acción o hay un conflicto.'),
         code,
         status,
         details,
@@ -158,7 +162,7 @@ export function toAppError(error: unknown): AppError {
     case 429:
       return new AppError({
         kind: 'rate_limited',
-        message: 'Has realizado demasiados intentos. Intenta nuevamente en unos momentos.',
+        message: t('Has realizado demasiados intentos. Intenta nuevamente en unos momentos.'),
         code,
         status,
         details,
@@ -167,7 +171,7 @@ export function toAppError(error: unknown): AppError {
     default:
       return new AppError({
         kind: 'server',
-        message: GENERIC_MESSAGE,
+        message: genericMessage(),
         code,
         status,
         details,

@@ -4,6 +4,7 @@ import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { useFollow } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
+import { useI18n } from '@/i18n';
 
 interface FollowButtonProps {
   username: string;
@@ -16,6 +17,7 @@ interface FollowButtonProps {
 
 /** Seguir / Siguiendo — optimistic, reverts with a human message if the server says no. */
 export function FollowButton({ username, isFollowing, firstName, size = 'sm', fullWidth = false }: FollowButtonProps) {
+  const { t } = useI18n();
   const follow = useFollow(username);
   const [following, setFollowing] = useState(isFollowing);
   const [synced, setSynced] = useState(isFollowing);
@@ -31,24 +33,24 @@ export function FollowButton({ username, isFollowing, firstName, size = 'sm', fu
     setFollowing(next);
     follow.mutate(next, {
       onSuccess: () => {
-        if (next) showToast(firstName ? `Listo. Ya sigues a ${firstName}.` : 'Listo. Ya lo sigues.', 'success');
+        if (next) showToast(firstName ? t('Listo. Ya sigues a {name}.', { name: firstName }) : t('Listo. Ya lo sigues.'), 'success');
       },
       onError: (error) => {
         setFollowing(!next);
-        showToast(error instanceof AppError ? error.message : 'No pudimos completar esta acción. Intenta otra vez.', 'destructive');
+        showToast(error instanceof AppError ? error.message : t('No pudimos completar esta acción. Intenta otra vez.'), 'destructive');
       },
     });
   }
 
   return (
     <AppButton
-      label={following ? 'Siguiendo' : 'Seguir'}
+      label={following ? t('Siguiendo') : t('Seguir')}
       variant={following ? 'secondary' : 'primary'}
       size={size}
       fullWidth={fullWidth}
       haptic={false}
       onPress={toggle}
-      accessibilityLabel={following ? `Dejar de seguir a ${username}` : `Seguir a ${username}`}
+      accessibilityLabel={following ? t('Dejar de seguir a {username}', { username }) : t('Seguir a {username}', { username })}
     />
   );
 }

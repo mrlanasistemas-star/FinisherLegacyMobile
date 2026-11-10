@@ -16,6 +16,7 @@ import { useComments, useDeleteComment, usePostComment } from '@/hooks/use-socia
 import { showToast } from '@/stores/toastStore';
 import { colors, control, fontFamily, radius, spacing } from '@/theme/tokens';
 import type { MomentComment } from '@/types/social';
+import { useI18n } from '@/i18n';
 
 const MAX_COMMENT = 500;
 const DISMISS_THRESHOLD = 110;
@@ -32,6 +33,7 @@ interface CommentsSheetProps {
  * and idempotent posting come from `usePostComment`.
  */
 export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSheetProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const sheetHeight = Math.round(height * 0.74);
@@ -82,7 +84,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
       await postComment.mutateAsync(body);
       setDraft('');
     } catch (error) {
-      showToast(error instanceof AppError && error.kind !== 'server' ? error.message : 'No pudimos publicar tu mensaje. Intenta otra vez.', 'destructive');
+      showToast(error instanceof AppError && error.kind !== 'server' ? error.message : t('No pudimos publicar tu mensaje. Intenta otra vez.'), 'destructive');
     }
   }
 
@@ -90,7 +92,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
     try {
       await deleteComment.mutateAsync(uuid);
     } catch {
-      showToast('No pudimos borrar el mensaje. Intenta otra vez.', 'destructive');
+      showToast(t('No pudimos borrar el mensaje. Intenta otra vez.'), 'destructive');
     }
   }
 
@@ -105,7 +107,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.backdrop }, backdropStyle]}>
-            <Pressable style={{ flex: 1 }} onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar mensajes" />
+            <Pressable style={{ flex: 1 }} onPress={close} accessibilityRole="button" accessibilityLabel={t('Cerrar mensajes')} />
           </Animated.View>
 
           <Animated.View
@@ -129,9 +131,9 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg }}>
                   <AppText style={{ flex: 1, fontFamily: fontFamily.semibold, fontSize: 16 }} accessibilityRole="header">
-                    Mensajes de apoyo{commentsCount > 0 ? ` · ${commentsCount}` : ''}
+                    {commentsCount > 0 ? t('Mensajes de apoyo · {count}', { count: commentsCount }) : t('Mensajes de apoyo')}
                   </AppText>
-                  <IconButton icon={Maximize2} label="Ver momento completo" onPress={openFull} size={18} color={colors.muted} />
+                  <IconButton icon={Maximize2} label={t('Ver momento completo')} onPress={openFull} size={18} color={colors.muted} />
                 </View>
               </View>
             </GestureDetector>
@@ -162,11 +164,11 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                 ) : comments.isError ? (
                   <View style={{ alignItems: 'center', padding: spacing.xl, gap: spacing.xs }}>
                     <AppText variant="body" tone="muted" align="center">
-                      No pudimos cargar los mensajes.
+                      {t('No pudimos cargar los mensajes.')}
                     </AppText>
                     <Pressable onPress={() => comments.refetch()} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
                       <AppText variant="bodyStrong" tone="gold">
-                        Reintentar
+                        {t('Reintentar')}
                       </AppText>
                     </Pressable>
                   </View>
@@ -174,7 +176,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                   <View style={{ alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.xs }}>
                     <MessageCircleHeart size={28} color={colors.accent} />
                     <AppText variant="body" tone="muted" align="center">
-                      Sé el primero en dejar un mensaje de apoyo.
+                      {t('Sé el primero en dejar un mensaje de apoyo.')}
                     </AppText>
                   </View>
                 )
@@ -195,12 +197,12 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
-                placeholder="Escribe un mensaje de apoyo…"
+                placeholder={t('Escribe un mensaje de apoyo…')}
                 placeholderTextColor={colors.subtle}
                 multiline
                 maxLength={MAX_COMMENT}
                 selectionColor={colors.accent}
-                accessibilityLabel="Escribe un mensaje de apoyo"
+                accessibilityLabel={t('Escribe un mensaje de apoyo')}
                 style={{
                   flex: 1,
                   minHeight: control.compactHeight,
@@ -221,7 +223,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                 onPress={send}
                 disabled={!canSend}
                 accessibilityRole="button"
-                accessibilityLabel="Enviar mensaje"
+                accessibilityLabel={t('Enviar mensaje')}
                 style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: canSend ? colors.black : colors.surfaceMuted }}>
                 {postComment.isPending ? <ActivityIndicator color={colors.onDark} size="small" /> : <SendHorizontal size={20} color={canSend ? colors.onDark : colors.subtle} />}
               </Pressable>

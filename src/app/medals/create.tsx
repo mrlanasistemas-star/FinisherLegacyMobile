@@ -13,10 +13,12 @@ import { Screen } from '@/components/screen';
 import { InlineError } from '@/components/ui/inline-error';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { useCreateMedal } from '@/hooks/use-medal-mutations';
+import { useI18n } from '@/i18n';
 import { manualMedalSchema, type ManualMedalFormValues } from '@/schemas/medal';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function CreateMedalScreen() {
+  const { t } = useI18n();
   const { mutateAsync, isPending } = useCreateMedal();
   const [frontImage, setFrontImage] = useState<PickedImage | null>(null);
   const [backImage, setBackImage] = useState<PickedImage | null>(null);
@@ -44,7 +46,7 @@ export default function CreateMedalScreen() {
   async function onSubmit(values: ManualMedalFormValues) {
     setFormError(null);
     if (!frontImage) {
-      setFormError('Agrega una foto frontal de tu medalla.');
+      setFormError(t('Agrega una foto frontal de tu medalla.'));
       return;
     }
     try {
@@ -64,7 +66,7 @@ export default function CreateMedalScreen() {
       });
       router.replace(`/medals/${medal.id}`);
     } catch (error) {
-      setFormError(error instanceof AppError ? error.message : 'No pudimos guardar tu medalla.');
+      setFormError(error instanceof AppError ? error.message : t('No pudimos guardar tu medalla.'));
     }
   }
 
@@ -72,13 +74,13 @@ export default function CreateMedalScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
         <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52 }}>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cancelar" style={{ minWidth: 80, minHeight: 44, justifyContent: 'center' }}>
+          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Cancelar')} style={{ minWidth: 80, minHeight: 44, justifyContent: 'center' }}>
             <AppText variant="body" tone="accent">
-              Cancelar
+              {t('Cancelar')}
             </AppText>
           </Pressable>
           <AppText variant="bodyStrong" align="center" style={{ flex: 1 }} accessibilityRole="header">
-            Nueva medalla
+            {t('Nueva medalla')}
           </AppText>
           <View style={{ minWidth: 80 }} />
         </View>
@@ -87,8 +89,8 @@ export default function CreateMedalScreen() {
           <InlineError message={formError} />
 
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            <ImagePickerTile label="Foto frontal" value={frontImage} onChange={setFrontImage} style={{ flex: 1 }} />
-            <ImagePickerTile label="Foto trasera" value={backImage} onChange={setBackImage} style={{ flex: 1 }} />
+            <ImagePickerTile label={t('Foto frontal')} value={frontImage} onChange={setFrontImage} style={{ flex: 1 }} />
+            <ImagePickerTile label={t('Foto trasera')} value={backImage} onChange={setBackImage} style={{ flex: 1 }} />
           </View>
 
           <Controller
@@ -96,7 +98,7 @@ export default function CreateMedalScreen() {
             name="event_name_manual"
             render={({ field }) => (
               <FormInput
-                label="Evento"
+                label={t('Evento')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -109,7 +111,7 @@ export default function CreateMedalScreen() {
             name="event_date"
             render={({ field }) => (
               <FormInput
-                label="Fecha (AAAA-MM-DD)"
+                label={t('Fecha (AAAA-MM-DD)')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -125,7 +127,7 @@ export default function CreateMedalScreen() {
               name="city"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Ciudad" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.city?.message} />
+                  <FormInput label={t('Ciudad')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.city?.message} />
                 </View>
               )}
             />
@@ -134,7 +136,7 @@ export default function CreateMedalScreen() {
               name="country"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="País" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.country?.message} />
+                  <FormInput label={t('País')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.country?.message} />
                 </View>
               )}
             />
@@ -146,7 +148,7 @@ export default function CreateMedalScreen() {
               name="distance_label"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Distancia" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="21K" />
+                  <FormInput label={t('Distancia')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="21K" />
                 </View>
               )}
             />
@@ -155,7 +157,7 @@ export default function CreateMedalScreen() {
               name="official_time"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Tiempo oficial" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="1:45:30" />
+                  <FormInput label={t('Tiempo oficial')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="1:45:30" />
                 </View>
               )}
             />
@@ -164,7 +166,7 @@ export default function CreateMedalScreen() {
               name="pace"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Ritmo" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="5:00/km" />
+                  <FormInput label={t('Ritmo')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="5:00/km" />
                 </View>
               )}
             />
@@ -175,7 +177,7 @@ export default function CreateMedalScreen() {
             name="story"
             render={({ field }) => (
               <FormInput
-                label="Historia"
+                label={t('Historia')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -192,12 +194,12 @@ export default function CreateMedalScreen() {
             render={({ field }) => (
               <View style={{ gap: spacing.xs }}>
                 <AppText variant="caption" tone="muted">
-                  ¿Quién puede verla?
+                  {t('¿Quién puede verla?')}
                 </AppText>
                 <SegmentedControl
                   options={[
-                    { value: 'public', label: 'Pública' },
-                    { value: 'private', label: 'Solo yo' },
+                    { value: 'public', label: t('Pública') },
+                    { value: 'private', label: t('Solo yo') },
                   ]}
                   value={field.value ?? 'public'}
                   onChange={field.onChange}
@@ -206,7 +208,7 @@ export default function CreateMedalScreen() {
             )}
           />
 
-          <AppButton label="Guardar medalla" onPress={handleSubmit(onSubmit)} loading={isPending} />
+          <AppButton label={t('Guardar medalla')} onPress={handleSubmit(onSubmit)} loading={isPending} />
         </View>
       </Screen>
     </KeyboardAvoidingView>

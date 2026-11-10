@@ -18,6 +18,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
 import { formatDateTime } from '@/utils/dates';
 import { describeSupportStatus } from '@/utils/support-status';
 import type { SupportMessageOwnerView } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 /**
  * `useVideoPlayer` can drive audio-only playback without a mounted
@@ -27,6 +28,7 @@ import type { SupportMessageOwnerView } from '@/types/models';
  * project.
  */
 function AudioMessageButton({ url }: { url: string }) {
+  const { t } = useI18n();
   const player = useVideoPlayer(url);
   const [playing, setPlaying] = useState(false);
 
@@ -73,24 +75,26 @@ function AudioMessageButton({ url }: { url: string }) {
       accessibilityRole="button">
       {playing ? <Pause size={14} color={colors.accent} /> : <Play size={14} color={colors.accent} />}
       <AppText variant="caption" tone="gold">
-        Mensaje de voz
+        {t('Mensaje de voz')}
       </AppText>
     </Pressable>
   );
 }
 
 function MessageRow({ message }: { message: SupportMessageOwnerView }) {
+  const { t } = useI18n();
+
   return (
     <Card style={{ gap: spacing.xs }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <AppText variant="bodyStrong">{message.contributor_name ?? 'Anónimo'}</AppText>
+        <AppText variant="bodyStrong">{message.contributor_name ?? t('Anónimo')}</AppText>
         <AppText variant="caption" tone="muted">
           {formatDateTime(message.created_at)}
         </AppText>
       </View>
       {message.is_surprise ? (
         <AppText variant="caption" tone="gold">
-          🎁 Mensaje sorpresa — se revelará en el momento indicado.
+          {t('🎁 Mensaje sorpresa — se revelará en el momento indicado.')}
         </AppText>
       ) : message.type === 'audio' && message.audio_url ? (
         <AudioMessageButton url={message.audio_url} />
@@ -102,6 +106,7 @@ function MessageRow({ message }: { message: SupportMessageOwnerView }) {
 }
 
 export default function SupportSessionDetailScreen() {
+  const { t } = useI18n();
   const { id } = useLocalSearchParams<{ id: string }>();
   const sessionId = Number(id);
   const { data: session, isPending, isError, refetch } = useSupportSession(Number.isFinite(sessionId) ? sessionId : null);
@@ -118,7 +123,7 @@ export default function SupportSessionDetailScreen() {
   if (isPending) {
     return (
       <Screen scroll>
-        <ScreenHeader title="Sesión de apoyo" />
+        <ScreenHeader title={t('Sesión de apoyo')} />
         <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
           <Skeleton height={220} radius={16} />
           <Skeleton height={80} radius={12} />
@@ -130,8 +135,8 @@ export default function SupportSessionDetailScreen() {
   if (isError || !session) {
     return (
       <Screen>
-        <ScreenHeader title="Sesión de apoyo" />
-        <ErrorState message="No pudimos cargar esta sesión de apoyo." onRetry={refetch} />
+        <ScreenHeader title={t('Sesión de apoyo')} />
+        <ErrorState message={t('No pudimos cargar esta sesión de apoyo.')} onRetry={refetch} />
       </Screen>
     );
   }
@@ -147,7 +152,7 @@ export default function SupportSessionDetailScreen() {
           <Badge label={describeSupportStatus(session.status).label} variant={describeSupportStatus(session.status).variant} />
           <Image source={{ uri: session.qr_url }} style={{ width: 180, height: 180 }} contentFit="contain" />
           <AppText variant="caption" tone="muted" align="center">
-            Comparte este código o el enlace con las personas que te van a apoyar.
+            {t('Comparte este código o el enlace con las personas que te van a apoyar.')}
           </AppText>
           <Pressable
             onPress={handleShare}
@@ -155,18 +160,18 @@ export default function SupportSessionDetailScreen() {
             accessibilityRole="button">
             <Share2 size={16} color={colors.accent} />
             <AppText variant="bodyStrong" tone="gold">
-              Compartir enlace
+              {t('Compartir enlace')}
             </AppText>
           </Pressable>
         </Card>
 
         <View style={{ gap: spacing.sm }}>
           <AppText variant="label" tone="muted">
-            MENSAJES
+            {t('MENSAJES')}
           </AppText>
           {session.messages.length === 0 ? (
             <AppText variant="body" tone="muted">
-              Todavía no has recibido mensajes de apoyo.
+              {t('Todavía no has recibido mensajes de apoyo.')}
             </AppText>
           ) : (
             session.messages.map((message) => <MessageRow key={message.id} message={message} />)

@@ -7,7 +7,18 @@
  *     t('Mis historias')
  *     t('Hola, {name}', { name: user.first_name })
  *     tc('{count} foto|{count} fotos', photos.length)
- *     const { t, locale, setLocale } = useI18n();   // re-renders on change
+ *     const { t, tc, locale, setLocale } = useI18n();   // re-renders on change
+ *     const t = useT();                                 // only the translator
+ *     const locale = useLocale();                       // only the language code
+ *
+ * Inside React components ALWAYS take `t` / `tc` from `useI18n()` / `useT()`:
+ * the app is built with the React Compiler, which would cache a bare
+ * `t('…')` forever (no reactive input). The hook hands out a NEW `t`
+ * whenever the language or its catalog changes, so every text that uses it
+ * re-renders. The bare `t` import is for code that runs outside render
+ * (handlers, toasts, copy functions, zod messages). Text that reaches the
+ * screen through such helpers refreshes because every screen is remounted
+ * on a language change (`LocaleBoundary`, wired in the layouts).
  *
  * Only LITERAL strings: the backend's `php artisan i18n:sync` scans this
  * repository for `t('…')` / `tc('…')`, translates what is new and rewrites
@@ -20,7 +31,7 @@
  * translated yet falls back to the Spanish original.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSyncExternalStore } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 
 import { env } from '@/utils/env';
 
@@ -44,7 +55,7 @@ interface Snapshot {
   locale: string;
   /** Languages the server offers (falls back to the bundled ones offline). */
   locales: LocaleOption[];
-  /** Bumps on every catalog change so memoized texts refresh. */
+  /** Bumps when the language or its catalog changes (NOT when only the list of languages does), so memoized texts refresh. */
   revision: number;
 }
 
@@ -70,8 +81,8 @@ let version: string | null = null;
 
 const listeners = new Set<() => void>();
 
-function publish(next: Partial<Snapshot>) {
-  snapshot = { ...snapshot, ...next, revision: snapshot.revision + 1 };
+function publish(next: Partial<Snapshot>, textsChanged = true) {
+  snapshot = { ...snapshot, ...next, revision: snapshot.revision + (textsChanged ? 1 : 0) };
   setActiveLocale(snapshot.locale);
   listeners.forEach((listener) => listener());
 }
@@ -245,7 +256,7 @@ export async function refreshLocales(): Promise<void> {
     }
 
     await AsyncStorage.setItem(STORAGE.locales, JSON.stringify(offered));
-    publish({ locales: offered });
+    publish({ locales: offered }, false);
 
     // The active language was switched off by an admin: back to Spanish.
     if (!offered.some((option) => option.code === snapshot.locale)) {
@@ -262,13 +273,20 @@ export async function refreshLocales(): Promise<void> {
  * background. Never throws.
  */
 export async function initializeI18n(): Promise<void> {
-  const [choice, offered] = await Promise.all([readJson<string>(STORAGE.choice), readJson<LocaleOption[]>(STORAGE.locales)]);
+  try {
+    const [choice, offered] = await Promise.all([readJson<string>(STORAGE.choice), readJson<LocaleOption[]>(STORAGE.locales)]);
 
-  if (offered && offered.length > 0) {
-    snapshot = { ...snapshot, locales: offered };
+    if (offered && offered.length > 0) {
+      snapshot = { ...snapshot, locales: offered };
+    }
+
+    await activate(supported(choice) ?? deviceLocale() ?? SOURCE_LOCALE);
+  } catch {
+    // Whatever failed, the app opens in Spanish (the source language).
+    messages = {};
+    version = null;
+    publish({ locale: SOURCE_LOCALE });
   }
-
-  await activate(supported(choice) ?? deviceLocale() ?? SOURCE_LOCALE);
 
   void refreshLocales().then(() => refreshCatalog());
 }
@@ -306,18 +324,57 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-/**
- * The translator for components — re-renders when the language or its
- * catalog changes.
- */
-export function useI18n() {
-  const state = useSyncExternalStore(
+export type Translate = typeof t;
+export type TranslateCount = typeof tc;
+
+function useSnapshot(): Snapshot {
+  return useSyncExternalStore(
     subscribe,
     () => snapshot,
     () => snapshot,
   );
+}
 
-  return { t, tc, locale: state.locale, locales: state.locales, setLocale };
+/**
+ * The translator for components — re-renders when the language or its
+ * catalog changes. `t` and `tc` are NEW functions after every change, so
+ * memoized output (React Compiler, `useMemo`, `memo`) that depends on them
+ * is recomputed.
+ */
+export function useI18n() {
+  const state = useSnapshot();
+  const { revision } = state;
+
+  // Stable until the texts really change: effects that list `t` as a
+  // dependency do not re-run when only the list of languages is refreshed.
+  const translators = useMemo(() => {
+    const boundT: Translate = (source, params) => t(source, params);
+    const boundTc: TranslateCount = (source, count, params) => tc(source, count, params);
+
+    return { t: boundT, tc: boundTc, revision };
+  }, [revision]);
+
+  return useMemo(() => {
+    return {
+      t: translators.t,
+      tc: translators.tc,
+      locale: state.locale,
+      /** BCP 47 tag ("es-MX") for `Intl` and date formatting. */
+      regional: state.locales.find((option) => option.code === state.locale)?.regional ?? state.locale,
+      locales: state.locales,
+      setLocale,
+    };
+  }, [state, translators]);
+}
+
+/** Just the translator: `const t = useT();`. */
+export function useT(): Translate {
+  return useI18n().t;
+}
+
+/** Just the active language code; re-renders when it changes. */
+export function useLocale(): string {
+  return useSnapshot().locale;
 }
 
 /** Test-only: back to a clean Spanish state. */

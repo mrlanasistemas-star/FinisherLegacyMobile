@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { t } from '@/i18n';
 
 /**
  * Zod contract for Entrenamientos (`/training/*`): the voice and text
@@ -24,7 +25,7 @@ const trimmedOrNull = z
 
 export const trainingMessageSchema = z.object({
   uuid: z.string().min(1),
-  sender_name: z.string().trim().min(1).catch('Alguien especial'),
+  sender_name: z.string().trim().min(1).catch(() => t('Alguien especial')),
   relationship: trimmedOrNull,
   body: trimmedOrNull,
   icon: z.enum(TRAINING_ICONS).catch('heart'),
@@ -67,7 +68,7 @@ export interface TrainingMessagesPage {
 
 /** Drops individual malformed rows; a malformed envelope throws (it's a real contract break). */
 function parseRows<T>(schema: z.ZodType<T>, raw: unknown): T[] {
-  if (!Array.isArray(raw)) throw new Error('Respuesta inesperada del servidor.');
+  if (!Array.isArray(raw)) throw new Error(t('Respuesta inesperada del servidor.'));
   return raw.flatMap((row) => {
     const result = schema.safeParse(row);
     return result.success ? [result.data] : [];
@@ -81,7 +82,7 @@ export function parseTrainingMessagesPage(raw: unknown): TrainingMessagesPage {
 
 export const trainingLinkSchema = z.object({
   uuid: z.string().min(1),
-  title: z.string().trim().min(1).catch('Envíame ánimo'),
+  title: z.string().trim().min(1).catch(() => t('Envíame ánimo')),
   url: z.string().url(),
   expires_at: z.string().nullish().transform((v) => v ?? null),
   revoked_at: z.string().nullish().transform((v) => v ?? null),
@@ -101,7 +102,7 @@ export function parseTrainingLink(raw: unknown): TrainingLink {
 
 /** "Compartir mi enlace" form. Expiry in days; `null` = never expires. */
 export const createTrainingLinkSchema = z.object({
-  title: z.string().trim().min(2, 'Escribe un título de al menos 2 letras.').max(80, 'Máximo 80 caracteres.'),
+  title: z.string().trim().min(2, { error: () => t('Escribe un título de al menos 2 letras.') }).max(80, { error: () => t('Máximo 80 caracteres.') }),
   expires_in_days: z.union([z.literal(1), z.literal(7), z.literal(30), z.literal(90)]).nullable(),
 });
 

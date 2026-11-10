@@ -12,6 +12,7 @@ import { Reveal } from '@/components/motion/reveal';
 import { IconButton } from '@/components/ui/icon-button';
 import { useKeyboardInset, useRevealFocusedInput } from '@/hooks/use-keyboard-inset';
 import { colors, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface AuthShellProps {
   eyebrow?: string;
@@ -31,6 +32,7 @@ interface AuthShellProps {
  * pushed off-screen on short phones or by the keyboard.
  */
 export function AuthShell({ eyebrow, title, subtitle, children, footer, back = true }: AuthShellProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const canGoBack = back && router.canGoBack();
   const active = useHeroActive();
@@ -57,7 +59,7 @@ export function AuthShell({ eyebrow, title, subtitle, children, footer, back = t
           minHeight: 52,
         }}>
         <View style={{ width: 44, marginLeft: -10 }}>
-          {canGoBack ? <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} /> : null}
+          {canGoBack ? <IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} size={26} /> : null}
         </View>
         <MonogramSheen width={56} active={active} interval={4200} />
         <View style={{ width: 44 }} />

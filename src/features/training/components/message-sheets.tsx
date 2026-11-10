@@ -6,6 +6,7 @@ import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
+import { useI18n } from '@/i18n';
 import type { TrainingMessage } from '@/schemas/training';
 import { colors, spacing } from '@/theme/tokens';
 
@@ -36,6 +37,7 @@ interface MessageActionsSheetProps {
 }
 
 export function MessageActionsSheet({ message, offline, onClose, onPlay, onToggleFavorite, onToggleOffline, onHide, onBlock }: MessageActionsSheetProps) {
+  const { t } = useI18n();
   if (!message) return null;
   const run = (action: (m: TrainingMessage) => void) => () => {
     onClose();
@@ -56,27 +58,28 @@ export function MessageActionsSheet({ message, offline, onClose, onPlay, onToggl
           ) : null}
         </View>
       </View>
-      <SheetActionRow icon={Play} label="Escuchar" onPress={run(onPlay)} />
-      <SheetActionRow icon={Star} label={message.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'} onPress={run(onToggleFavorite)} />
+      <SheetActionRow icon={Play} label={t('Escuchar')} onPress={run(onPlay)} />
+      <SheetActionRow icon={Star} label={message.favorite ? t('Quitar de favoritos') : t('Marcar como favorito')} onPress={run(onToggleFavorite)} />
       {message.audio_url && isOfflineAvailable() ? (
         <SheetActionRow
           icon={offline ? CloudCheck : CloudDownload}
-          label={offline ? 'Quitar descarga' : 'Disponible sin conexión'}
+          label={offline ? t('Quitar descarga') : t('Disponible sin conexión')}
           onPress={run(onToggleOffline)}
         />
       ) : null}
-      <SheetActionRow icon={EyeOff} label="Ocultar mensaje" onPress={run(onHide)} />
-      <SheetActionRow icon={Ban} label={`Bloquear a ${message.sender_name}`} destructive onPress={run(onBlock)} />
+      <SheetActionRow icon={EyeOff} label={t('Ocultar mensaje')} onPress={run(onHide)} />
+      <SheetActionRow icon={Ban} label={t('Bloquear a {name}', { name: message.sender_name })} destructive onPress={run(onBlock)} />
     </Sheet>
   );
 }
 
-const MIX_OPTIONS: { value: MixMode; label: string }[] = [
-  { value: 'mix', label: 'Mezclar con mi música' },
-  { value: 'pause', label: 'Pausar mi música' },
-];
 
 export function AudioSettingsSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { t } = useI18n();
+  const mixOptions: { value: MixMode; label: string }[] = [
+    { value: 'mix', label: t('Mezclar con mi música') },
+    { value: 'pause', label: t('Pausar mi música') },
+  ];
   const mixMode = useTrainingSettings((s) => s.mixMode);
   const setMixMode = useTrainingSettings((s) => s.setMixMode);
   const keepAwake = useTrainingSettings((s) => s.keepAwake);
@@ -85,17 +88,17 @@ export function AudioSettingsSheet({ visible, onClose }: { visible: boolean; onC
   return (
     <Sheet visible onClose={onClose}>
       <View style={{ gap: spacing.md }}>
-        <AppText variant="subtitle">Audio del entrenamiento</AppText>
+        <AppText variant="subtitle">{t('Audio del entrenamiento')}</AppText>
         <View style={{ gap: spacing.xs }}>
-          <SegmentedControl options={MIX_OPTIONS} value={mixMode} onChange={setMixMode} />
+          <SegmentedControl options={mixOptions} value={mixMode} onChange={setMixMode} />
           <AppText variant="caption" tone="muted">
             {mixModeCaption(Platform.OS as Os, mixMode)}
           </AppText>
         </View>
         <ListGroup>
           <ListRow
-            label="Mantener pantalla encendida"
-            description="Solo durante el Modo entrenamiento"
+            label={t('Mantener pantalla encendida')}
+            description={t('Solo durante el Modo entrenamiento')}
             divider={false}
             trailing={
               <Switch
@@ -104,7 +107,7 @@ export function AudioSettingsSheet({ visible, onClose }: { visible: boolean; onC
                 trackColor={{ false: colors.surfaceMuted, true: colors.gold }}
                 thumbColor={colors.white}
                 ios_backgroundColor={colors.surfaceMuted}
-                accessibilityLabel="Mantener pantalla encendida"
+                accessibilityLabel={t('Mantener pantalla encendida')}
               />
             }
           />

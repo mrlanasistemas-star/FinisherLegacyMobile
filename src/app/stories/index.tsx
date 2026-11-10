@@ -19,9 +19,11 @@ import { TopBar } from '@/components/ui/top-bar';
 import { useMyStories } from '@/features/iap/use-photo-expansion';
 import { StoryCard } from '@/features/stories/components/story-card';
 import { useResponsive } from '@/hooks/use-responsive';
+import { useI18n } from '@/i18n';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function MyStoriesScreen() {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { width } = useResponsive();
   const stories = useMyStories();
@@ -32,7 +34,7 @@ export default function MyStoriesScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: side }}>
-        <TopBar title="Mis recuerdos" />
+        <TopBar title={t('Mis recuerdos')} />
       </View>
 
       {stories.isPending ? (
@@ -41,7 +43,7 @@ export default function MyStoriesScreen() {
           <Skeleton width={cardWidth} height={cardHeight} radius={radius.xl} />
         </View>
       ) : stories.isError && !stories.data ? (
-        <ErrorState error={stories.error} message="No pudimos cargar tus recuerdos." onRetry={stories.refetch} />
+        <ErrorState error={stories.error} message={t('No pudimos cargar tus recuerdos.')} onRetry={stories.refetch} />
       ) : (
         <FlatList
           data={stories.data}
@@ -57,9 +59,9 @@ export default function MyStoriesScreen() {
           ListEmptyComponent={
             <EmptyState
               icon={BookHeart}
-              title="Aún no tienes recuerdos"
-              message="Cuando actives tu Finisher Legacy Tag, su recuerdo aparecerá aquí para que lo llenes con tu historia y tus fotos."
-              actionLabel="Activar mi Tag"
+              title={t('Aún no tienes recuerdos')}
+              message={t('Cuando actives tu Finisher Legacy Tag, su recuerdo aparecerá aquí para que lo llenes con tu historia y tus fotos.')}
+              actionLabel={t('Activar mi Tag')}
               onAction={() => router.push('/activate' as Href)}
             />
           }

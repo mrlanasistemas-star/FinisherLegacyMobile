@@ -28,6 +28,7 @@ import { FormArea, FormGroup, FormRow } from '@/features/stories/components/form
 import { buildPatch, isOfficial, maskDate, serverFieldErrors, storyFormSchema, toFormValues, type StoryFormValues } from '@/features/stories/story-form';
 import { useEditableStory, useUpdateStory } from '@/features/stories/use-stories';
 import { useKeyboardInset, useRevealFocusedInput } from '@/hooks/use-keyboard-inset';
+import { useI18n } from '@/i18n';
 import type { EditableStory, StoryTextField } from '@/schemas/story';
 import { showToast } from '@/stores/toastStore';
 import { colors, radius, spacing } from '@/theme/tokens';
@@ -44,6 +45,7 @@ interface EditFormProps {
 }
 
 function EditForm({ story, publicId }: EditFormProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const update = useUpdateStory(publicId);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -104,7 +106,7 @@ function EditForm({ story, publicId }: EditFormProps) {
       onSuccess: (saved) => {
         reset(toFormValues(saved));
         haptics.success();
-        showToast('Guardamos tu recuerdo.', 'success');
+        showToast(t('Guardamos tu recuerdo.'), 'success');
         // `reset` clears the dirty flag on the next render; leaving now is safe because the guard reads state, not the form.
         leave();
       },
@@ -117,10 +119,10 @@ function EditForm({ story, publicId }: EditFormProps) {
         if (names[0]) setFocus(names[0]);
         setBanner(
           names.length > 0
-            ? 'Revisa los campos marcados.'
+            ? t('Revisa los campos marcados.')
             : error?.kind === 'not_found'
-              ? 'Todavía no podemos guardar cambios desde la app. Intenta más tarde.'
-              : (error?.message ?? 'No pudimos guardar. Intenta de nuevo.'),
+              ? t('Todavía no podemos guardar cambios desde la app. Intenta más tarde.')
+              : (error?.message ?? t('No pudimos guardar. Intenta de nuevo.')),
         );
         scrollRef.current?.scrollTo({ y: 0, animated: true });
       },
@@ -129,7 +131,7 @@ function EditForm({ story, publicId }: EditFormProps) {
 
   function onInvalid(invalid: FieldErrors<StoryFormValues>) {
     haptics.warning();
-    setBanner('Revisa los campos marcados.');
+    setBanner(t('Revisa los campos marcados.'));
     const first = Object.keys(invalid)[0] as StoryTextField | undefined;
     if (first) setFocus(first);
   }
@@ -195,7 +197,7 @@ function EditForm({ story, publicId }: EditFormProps) {
       <Stack.Screen options={{ gestureEnabled: !isDirty && !saving }} />
 
       <View style={{ paddingLeft: Math.max(insets.left, spacing.md), paddingRight: Math.max(insets.right, spacing.md), borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
-        <TopBar title="Editar recuerdo" onBack={requestLeave} right={<HeaderTextButton label="Guardar" onPress={save} disabled={!isDirty} loading={saving} />} />
+        <TopBar title={t('Editar recuerdo')} onBack={requestLeave} right={<HeaderTextButton label={t('Guardar')} onPress={save} disabled={!isDirty} loading={saving} />} />
       </View>
 
       <ScrollView
@@ -210,32 +212,32 @@ function EditForm({ story, publicId }: EditFormProps) {
         <View style={{ width: '100%', maxWidth: 640, paddingLeft: Math.max(insets.left, spacing.md), paddingRight: Math.max(insets.right, spacing.md), gap: spacing.lg }}>
           <InlineError message={banner} />
 
-          <FormGroup title="Recuerdo" footer="Es el nombre que verán quienes abran tu recuerdo.">
-            {row('title', 'Título', { placeholder: 'Mi primer maratón', autoCapitalize: 'sentences', maxLength: 120, last: true }, 'event_name')}
+          <FormGroup title={t('Recuerdo')} footer={t('Es el nombre que verán quienes abran tu recuerdo.')}>
+            {row('title', t('Título'), { placeholder: t('Mi primer maratón'), autoCapitalize: 'sentences', maxLength: 120, last: true }, 'event_name')}
           </FormGroup>
 
-          <FormGroup title="Carrera">
-            {row('event_name', 'Evento', { placeholder: 'Nombre del evento', autoCapitalize: 'words', maxLength: 160 }, 'race_date')}
-            {row('race_date', 'Fecha', { placeholder: 'DD/MM/AAAA', keyboardType: 'number-pad', maxLength: 10 }, 'location')}
-            {row('location', 'Lugar', { placeholder: 'Ciudad, estado', autoCapitalize: 'words', maxLength: 160 }, 'distance')}
-            {row('distance', 'Distancia', { placeholder: '21K', autoCapitalize: 'characters', maxLength: 60, last: true }, 'athlete_display_name')}
+          <FormGroup title={t('Carrera')}>
+            {row('event_name', t('Evento'), { placeholder: t('Nombre del evento'), autoCapitalize: 'words', maxLength: 160 }, 'race_date')}
+            {row('race_date', t('Fecha'), { placeholder: t('DD/MM/AAAA'), keyboardType: 'number-pad', maxLength: 10 }, 'location')}
+            {row('location', t('Lugar'), { placeholder: t('Ciudad, estado'), autoCapitalize: 'words', maxLength: 160 }, 'distance')}
+            {row('distance', t('Distancia'), { placeholder: '21K', autoCapitalize: 'characters', maxLength: 60, last: true }, 'athlete_display_name')}
           </FormGroup>
 
-          <FormGroup title="Mi resultado" footer={anyOfficial ? 'Los datos marcados como Oficial vienen del resultado publicado por el evento y no se pueden cambiar.' : undefined}>
-            {row('athlete_display_name', 'Nombre', { placeholder: 'Como quieres aparecer', autoCapitalize: 'words', autoComplete: 'name', maxLength: 80 }, 'bib_number')}
-            {row('bib_number', 'Dorsal', { placeholder: '1234', autoCapitalize: 'characters', autoCorrect: false, maxLength: 12 }, 'result_time')}
-            {row('result_time', 'Tiempo', { placeholder: 'h:mm:ss', keyboardType: 'numbers-and-punctuation', autoCorrect: false, maxLength: 8 }, 'pace')}
-            {row('pace', 'Ritmo', { placeholder: '5:30 /km', autoCorrect: false, maxLength: 20 }, 'result_position')}
-            {row('result_position', 'Posición general', { placeholder: '412', autoCorrect: false, maxLength: 60 }, 'category')}
-            {row('category', 'Categoría', { placeholder: 'Libre varonil', autoCapitalize: 'sentences', maxLength: 40 }, 'category_position')}
-            {row('category_position', 'Pos. en categoría', { placeholder: '31', autoCorrect: false, maxLength: 20 }, 'gender_position')}
-            {row('gender_position', 'Pos. por rama', { placeholder: '88', autoCorrect: false, maxLength: 20, last: true })}
+          <FormGroup title={t('Mi resultado')} footer={anyOfficial ? t('Los datos marcados como Oficial vienen del resultado publicado por el evento y no se pueden cambiar.') : undefined}>
+            {row('athlete_display_name', t('Nombre'), { placeholder: t('Como quieres aparecer'), autoCapitalize: 'words', autoComplete: 'name', maxLength: 80 }, 'bib_number')}
+            {row('bib_number', t('Dorsal'), { placeholder: '1234', autoCapitalize: 'characters', autoCorrect: false, maxLength: 12 }, 'result_time')}
+            {row('result_time', t('Tiempo'), { placeholder: 'h:mm:ss', keyboardType: 'numbers-and-punctuation', autoCorrect: false, maxLength: 8 }, 'pace')}
+            {row('pace', t('Ritmo'), { placeholder: '5:30 /km', autoCorrect: false, maxLength: 20 }, 'result_position')}
+            {row('result_position', t('Posición general'), { placeholder: '412', autoCorrect: false, maxLength: 60 }, 'category')}
+            {row('category', t('Categoría'), { placeholder: t('Libre varonil'), autoCapitalize: 'sentences', maxLength: 40 }, 'category_position')}
+            {row('category_position', t('Pos. en categoría'), { placeholder: '31', autoCorrect: false, maxLength: 20 }, 'gender_position')}
+            {row('gender_position', t('Pos. por rama'), { placeholder: '88', autoCorrect: false, maxLength: 20, last: true })}
           </FormGroup>
 
-          <FormGroup title="Dedicatoria">{area('dedication', 'Dedicatoria', 'A quién le dedicas esta meta…', 600, 72)}</FormGroup>
+          <FormGroup title={t('Dedicatoria')}>{area('dedication', t('Dedicatoria'), t('A quién le dedicas esta meta…'), 600, 72)}</FormGroup>
 
-          <FormGroup title="Mi historia" footer="Cuéntalo con tus palabras. Puedes volver a editarlo cuando quieras.">
-            {area('body', 'Mi historia', 'Cómo llegaste a la salida, qué pasó en el camino, qué sentiste al cruzar la meta…', 8000, 180)}
+          <FormGroup title={t('Mi historia')} footer={t('Cuéntalo con tus palabras. Puedes volver a editarlo cuando quieras.')}>
+            {area('body', t('Mi historia'), t('Cómo llegaste a la salida, qué pasó en el camino, qué sentiste al cruzar la meta…'), 8000, 180)}
           </FormGroup>
         </View>
       </ScrollView>
@@ -245,9 +247,9 @@ function EditForm({ story, publicId }: EditFormProps) {
 
       <ConfirmDialog
         visible={confirmLeave}
-        title="¿Descartar los cambios?"
-        description="Lo que escribiste en esta pantalla no se guardará."
-        confirmLabel="Descartar"
+        title={t('¿Descartar los cambios?')}
+        description={t('Lo que escribiste en esta pantalla no se guardará.')}
+        confirmLabel={t('Descartar')}
         onConfirm={() => {
           setConfirmLeave(false);
           reset(toFormValues(story));
@@ -260,6 +262,7 @@ function EditForm({ story, publicId }: EditFormProps) {
 }
 
 export default function EditStoryScreen() {
+  const { t } = useI18n();
   const { publicId = '' } = useLocalSearchParams<{ publicId?: string }>();
   const insets = useSafeAreaInsets();
   const story = useEditableStory(publicId);
@@ -271,13 +274,13 @@ export default function EditStoryScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: spacing.md }}>
-        <TopBar title="Editar recuerdo" onBack={leave} />
+        <TopBar title={t('Editar recuerdo')} onBack={leave} />
       </View>
       {story.isError ? (
         <ErrorState
           error={story.error}
-          title={missing ? 'Aún no disponible' : undefined}
-          message={missing ? 'Todavía no podemos editar este recuerdo desde la app. Mientras tanto puedes hacerlo en finisherlegacy.com.' : 'No pudimos cargar tu recuerdo.'}
+          title={missing ? t('Aún no disponible') : undefined}
+          message={missing ? t('Todavía no podemos editar este recuerdo desde la app. Mientras tanto puedes hacerlo en finisherlegacy.com.') : t('No pudimos cargar tu recuerdo.')}
           onRetry={missing ? undefined : story.refetch}
           onBack={leave}
         />

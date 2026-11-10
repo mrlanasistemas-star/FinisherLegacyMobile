@@ -12,20 +12,29 @@ import { useReport } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 import type { ReportReason, ReportTargetType } from '@/types/social';
+import { useI18n, type Translate } from '@/i18n';
 
-const REASONS: { value: ReportReason; label: string }[] = [
-  { value: 'spam', label: 'Spam o publicidad' },
-  { value: 'harassment', label: 'Acoso o lenguaje ofensivo' },
-  { value: 'inappropriate', label: 'Contenido inapropiado' },
-  { value: 'impersonation', label: 'Se hace pasar por otra persona' },
-  { value: 'other', label: 'Otro motivo' },
-];
+/** Built with the sheet's translator so the labels follow the language. */
+function reasons(t: Translate): { value: ReportReason; label: string }[] {
+  return [
+    { value: 'spam', label: t('Spam o publicidad') },
+    { value: 'harassment', label: t('Acoso o lenguaje ofensivo') },
+    { value: 'inappropriate', label: t('Contenido inapropiado') },
+    { value: 'impersonation', label: t('Se hace pasar por otra persona') },
+    { value: 'other', label: t('Otro motivo') },
+  ];
+}
 
-const TITLES: Record<ReportTargetType, string> = {
-  profile: 'Reportar perfil',
-  moment: 'Reportar momento',
-  comment: 'Reportar mensaje',
-};
+function title(targetType: ReportTargetType, t: Translate): string {
+  switch (targetType) {
+    case 'profile':
+      return t('Reportar perfil');
+    case 'moment':
+      return t('Reportar momento');
+    default:
+      return t('Reportar mensaje');
+  }
+}
 
 interface ReportSheetProps {
   visible: boolean;
@@ -36,6 +45,8 @@ interface ReportSheetProps {
 }
 
 export function ReportSheet({ visible, onClose, targetType, target }: ReportSheetProps) {
+  const { t } = useI18n();
+  const REASONS = reasons(t);
   const report = useReport();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
@@ -54,18 +65,18 @@ export function ReportSheet({ visible, onClose, targetType, target }: ReportShee
     try {
       await report.mutateAsync({ target_type: targetType, target, reason, details: details.trim() || undefined });
       close();
-      showToast('Gracias. Nuestro equipo revisará tu reporte.', 'success');
+      showToast(t('Gracias. Nuestro equipo revisará tu reporte.'), 'success');
     } catch (caught) {
-      setError(caught instanceof AppError ? caught.message : 'No pudimos enviar tu reporte. Intenta otra vez.');
+      setError(caught instanceof AppError ? caught.message : t('No pudimos enviar tu reporte. Intenta otra vez.'));
     }
   }
 
   return (
     <Sheet visible={visible} onClose={close}>
       <View style={{ gap: spacing.sm, paddingBottom: spacing.sm }}>
-        <AppText variant="subtitle">{TITLES[targetType]}</AppText>
+        <AppText variant="subtitle">{title(targetType, t)}</AppText>
         <AppText variant="caption" tone="muted">
-          Tu reporte es anónimo para la otra persona.
+          {t('Tu reporte es anónimo para la otra persona.')}
         </AppText>
         <View>
           {REASONS.map((item, index) => (
@@ -92,10 +103,10 @@ export function ReportSheet({ visible, onClose, targetType, target }: ReportShee
           ))}
         </View>
         {reason === 'other' ? (
-          <FormInput placeholder="Cuéntanos qué pasó (opcional)" value={details} onChangeText={setDetails} multiline maxLength={1000} />
+          <FormInput placeholder={t('Cuéntanos qué pasó (opcional)')} value={details} onChangeText={setDetails} multiline maxLength={1000} />
         ) : null}
         <InlineError message={error} />
-        <AppButton label="Enviar reporte" size="md" onPress={submit} disabled={!reason} loading={report.isPending} />
+        <AppButton label={t('Enviar reporte')} size="md" onPress={submit} disabled={!reason} loading={report.isPending} />
       </View>
     </Sheet>
   );

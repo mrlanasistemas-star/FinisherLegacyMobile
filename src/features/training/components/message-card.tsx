@@ -6,6 +6,7 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle, type SharedValu
 
 import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
+import { useI18n } from '@/i18n';
 import { isProcessing, type TrainingMessage } from '@/schemas/training';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import { relativeTime } from '@/utils/relative-time';
@@ -37,16 +38,17 @@ interface MessageCardProps {
 const ACTION_WIDTH = 78;
 
 function MessageCardBase({ message, current, playing, progress, offline, onPress, onLongPress, onToggleFavorite, onHide }: MessageCardProps) {
+  const { t } = useI18n();
   const unheard = !message.listened_at;
   const processing = isProcessing(message) && !offline;
   const hasAudio = !!message.audio_url || offline;
   const duration = message.duration_seconds;
   const label = [
-    `Mensaje de ${message.sender_name}`,
+    t('Mensaje de {name}', { name: message.sender_name }),
     message.relationship,
-    unheard ? 'sin escuchar' : null,
-    message.favorite ? 'favorito' : null,
-    processing ? 'audio procesándose' : hasAudio && duration ? `audio de ${Math.round(duration)} segundos` : 'mensaje de texto',
+    unheard ? t('sin escuchar') : null,
+    message.favorite ? t('favorito') : null,
+    processing ? t('audio procesándose') : hasAudio && duration ? t('audio de {seconds} segundos', { seconds: Math.round(duration) }) : t('mensaje de texto'),
   ]
     .filter(Boolean)
     .join(', ');
@@ -73,8 +75,8 @@ function MessageCardBase({ message, current, playing, progress, offline, onPress
         scaleTo={0.985}
         accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityHint="Toca para escuchar. Mantén presionado para más opciones."
-        accessibilityActions={[{ name: 'longpress', label: 'Más opciones' }]}
+        accessibilityHint={t('Toca para escuchar. Mantén presionado para más opciones.')}
+        accessibilityActions={[{ name: 'longpress', label: t('Más opciones') }]}
         onAccessibilityAction={(event) => {
           if (event.nativeEvent.actionName === 'longpress') onLongPress();
         }}
@@ -115,7 +117,7 @@ function MessageCardBase({ message, current, playing, progress, offline, onPress
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                 <ActivityIndicator size="small" color={colors.accent} />
                 <AppText variant="caption" tone="accent" style={{ fontFamily: fontFamily.semibold }}>
-                  Procesando audio…
+                  {t('Procesando audio…')}
                 </AppText>
               </View>
             ) : hasAudio ? (
@@ -142,11 +144,11 @@ function MessageCardBase({ message, current, playing, progress, offline, onPress
               </>
             ) : (
               <AppText variant="label" tone="subtle">
-                MENSAJE DE TEXTO
+                {t('MENSAJE DE TEXTO')}
               </AppText>
             )}
             <View style={{ flex: 1 }} />
-            {offline ? <CloudCheck size={16} color={colors.success} accessibilityLabel="Disponible sin conexión" /> : null}
+            {offline ? <CloudCheck size={16} color={colors.success} accessibilityLabel={t('Disponible sin conexión')} /> : null}
           </View>
         </View>
       </PressableScale>
@@ -165,6 +167,7 @@ interface SwipeActionsProps {
 }
 
 function SwipeActions({ progress, methods, favorite, onToggleFavorite, onHide }: SwipeActionsProps) {
+  const { t } = useI18n();
   const style = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.6, 1], [0, 0.8, 1], Extrapolation.CLAMP),
     transform: [{ scale: interpolate(progress.value, [0, 1], [0.85, 1], Extrapolation.CLAMP) }],
@@ -172,7 +175,7 @@ function SwipeActions({ progress, methods, favorite, onToggleFavorite, onHide }:
   return (
     <Animated.View style={[{ flexDirection: 'row', gap: spacing.xs, paddingLeft: spacing.xs }, style]}>
       <ActionButton
-        label={favorite ? 'Quitar' : 'Favorito'}
+        label={favorite ? t('Quitar') : t('Favorito')}
         icon={<Star size={20} color={colors.onGold} fill={favorite ? 'transparent' : colors.onGold} />}
         background={colors.gold}
         color={colors.onGold}
@@ -182,7 +185,7 @@ function SwipeActions({ progress, methods, favorite, onToggleFavorite, onHide }:
         }}
       />
       <ActionButton
-        label="Ocultar"
+        label={t('Ocultar')}
         icon={<EyeOff size={20} color={colors.white} />}
         background={colors.destructive}
         color={colors.white}

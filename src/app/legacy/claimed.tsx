@@ -11,9 +11,11 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GoldGlow } from '@/components/brand/gold-glow';
 import { useMedal, useMedals } from '@/hooks/use-medals';
+import { useI18n } from '@/i18n';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 export default function LegacyClaimedScreen() {
+  const { t } = useI18n();
   const { code, medalUuid } = useLocalSearchParams<{ code: string; medalUuid?: string }>();
   const { data: medal } = useMedal(medalUuid ?? '');
   // The claim mutation already invalidated the medals list, so this total
@@ -85,7 +87,7 @@ export default function LegacyClaimedScreen() {
 
         <Animated.View style={[{ alignItems: 'center', gap: spacing.xs }, contentStyle]}>
           <AppText variant="title" align="center" accessibilityRole="header">
-            {isFirstMedal ? 'Tu primera historia ya está aquí.' : 'Esta historia ya forma parte de tus recuerdos.'}
+            {isFirstMedal ? t('Tu primera historia ya está aquí.') : t('Esta historia ya forma parte de tus recuerdos.')}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
             Legacy Code {code}
@@ -96,11 +98,11 @@ export default function LegacyClaimedScreen() {
       <Animated.View style={[{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md }, contentStyle]}>
         {medalUuid ? (
           <>
-            <AppButton label="Compartir con mi comunidad" onPress={() => router.replace(`/moments/create?medalUuid=${medalUuid}`)} />
-            <AppButton label="Ver mi medalla" variant="secondary" onPress={() => router.replace(`/medals/${medalUuid}`)} />
+            <AppButton label={t('Compartir con mi comunidad')} onPress={() => router.replace(`/moments/create?medalUuid=${medalUuid}`)} />
+            <AppButton label={t('Ver mi medalla')} variant="secondary" onPress={() => router.replace(`/medals/${medalUuid}`)} />
           </>
         ) : (
-          <AppButton label="Ver mis recuerdos" onPress={() => router.replace('/legacy')} />
+          <AppButton label={t('Ver mis recuerdos')} onPress={() => router.replace('/legacy')} />
         )}
       </Animated.View>
     </View>

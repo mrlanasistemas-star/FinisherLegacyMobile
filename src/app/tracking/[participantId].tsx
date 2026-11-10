@@ -13,12 +13,14 @@ import { TrackingLivePanel } from '@/features/tracking/components/tracking-live-
 import { loadTrackingRecord, useTrackingStore } from '@/features/tracking/tracking-storage';
 import { useEventParticipant } from '@/hooks/use-my-events';
 import { colors, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 /**
  * Live tracking for one participation: consent → permissions → live
  * panel. Opening this screen never starts GPS by itself.
  */
 export default function TrackingScreen() {
+  const { t } = useI18n();
   const { participantId: param } = useLocalSearchParams<{ participantId: string }>();
   const parsed = Number(param);
   const participantId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
@@ -34,11 +36,11 @@ export default function TrackingScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title="Seguimiento en vivo" />
+        <TopBar title={t('Seguimiento en vivo')} />
       </View>
 
       {participantId === null ? (
-        <EmptyState icon={MapPin} title="No encontramos esta carrera" message="Vuelve a Mis eventos e inténtalo desde ahí." actionLabel="Ir a Mis eventos" onAction={() => router.replace('/my-events')} />
+        <EmptyState icon={MapPin} title={t('No encontramos esta carrera')} message={t('Vuelve a Mis eventos e inténtalo desde ahí.')} actionLabel={t('Ir a Mis eventos')} onAction={() => router.replace('/my-events')} />
       ) : !hydrated ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
           <Skeleton height={28} width="60%" />
@@ -50,11 +52,11 @@ export default function TrackingScreen() {
         <View style={{ flex: 1 }}>
           <EmptyState
             icon={MapPin}
-            title="Ya tienes un seguimiento activo"
-            message="Solo puede haber uno a la vez. Ábrelo para detenerlo antes de iniciar otro."
+            title={t('Ya tienes un seguimiento activo')}
+            message={t('Solo puede haber uno a la vez. Ábrelo para detenerlo antes de iniciar otro.')}
           />
           <View style={{ padding: spacing.lg }}>
-            <AppButton label="Ver seguimiento activo" onPress={() => router.replace(`/tracking/${record.participantId}`)} />
+            <AppButton label={t('Ver seguimiento activo')} onPress={() => router.replace(`/tracking/${record.participantId}`)} />
           </View>
         </View>
       ) : (

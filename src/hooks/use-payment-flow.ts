@@ -13,6 +13,7 @@ import { describeCommerceError } from '@/utils/commerce-errors';
 import { haptics } from '@/utils/haptics';
 import { ensureOnline } from '@/utils/network';
 import { uuidv4 } from '@/utils/uuid';
+import { t } from '@/i18n';
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -89,7 +90,7 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
         } else if (next) {
           setPhase(next);
         } else {
-          setMessage(appError ? describeCommerceError(appError) : 'No pudimos iniciar el pago. Intenta otra vez.');
+          setMessage(appError ? describeCommerceError(appError) : t('No pudimos iniciar el pago. Intenta otra vez.'));
           setPhase('failed');
         }
         return;
@@ -103,7 +104,7 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
         // The browser couldn't open — nothing was charged. Still ask the
         // server, in case a previous attempt settled meanwhile.
         outcome = { type: 'closed' };
-        setMessage('No pudimos abrir la ventana de pago. Intenta otra vez.');
+        setMessage(t('No pudimos abrir la ventana de pago. Intenta otra vez.'));
       }
 
       // Whatever the browser says, the server decides.
@@ -130,7 +131,7 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
           queryClient.invalidateQueries({ queryKey: queryKeys.cart });
           queryClient.invalidateQueries({ queryKey: queryKeys.orders, exact: true });
         } catch (error) {
-          setMessage(error instanceof AppError ? describeCommerceError(error) : 'No pudimos crear tu pedido. Intenta otra vez.');
+          setMessage(error instanceof AppError ? describeCommerceError(error) : t('No pudimos crear tu pedido. Intenta otra vez.'));
           setPhase('review');
           return;
         }

@@ -1,4 +1,5 @@
 import type { FollowState, LegacyMoment, ReactionState, ReactionType } from '@/types/social';
+import { t } from '@/i18n';
 
 /**
  * Pure state transitions for optimistic UI — the server response always
@@ -65,18 +66,33 @@ export function parseDuration(input: string): number | null {
   return seconds > 0 ? seconds : null;
 }
 
-export const MOMENT_TYPE_LABEL: Record<LegacyMoment['type'], string> = {
-  race_completed: 'Carrera terminada',
-  medal_claimed: 'Nueva medalla',
-  memory: 'Recuerdo',
-  training: 'Entrenamiento',
-  personal_record: 'Récord personal',
-  gear: 'Nuevo gear',
-  manual: 'Momento',
-};
+/** A function, not a table: the label is resolved in the language active when it is shown. */
+export function momentTypeLabel(type: LegacyMoment['type']): string {
+  switch (type) {
+    case 'race_completed':
+      return t('Carrera terminada');
+    case 'medal_claimed':
+      return t('Nueva medalla');
+    case 'memory':
+      return t('Recuerdo');
+    case 'training':
+      return t('Entrenamiento');
+    case 'personal_record':
+      return t('Récord personal');
+    case 'gear':
+      return t('Nuevo gear');
+    default:
+      return t('Momento');
+  }
+}
 
-export const VISIBILITY_LABEL: Record<LegacyMoment['visibility'], string> = {
-  public: 'Todos',
-  followers: 'Seguidores',
-  private: 'Solo yo',
-};
+export function visibilityLabel(visibility: LegacyMoment['visibility']): string {
+  switch (visibility) {
+    case 'followers':
+      return t('Seguidores');
+    case 'private':
+      return t('Solo yo');
+    default:
+      return t('Todos');
+  }
+}

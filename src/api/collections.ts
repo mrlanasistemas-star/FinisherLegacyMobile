@@ -3,6 +3,7 @@ import { AppError, toAppError } from '@/api/errors';
 import { normalizeProduct } from '@/api/storeProducts';
 import { parseCollection, parseCollections, type StoreCollection } from '@/schemas/store';
 import type { ProductSummary } from '@/types/models';
+import { t } from '@/i18n';
 
 export type StoreCollectionDetail = Omit<StoreCollection, 'products'> & { products: ProductSummary[] };
 
@@ -26,7 +27,7 @@ export async function fetchCollection(slug: string): Promise<StoreCollectionDeta
   try {
     const { data } = await apiClient.get<{ data: unknown }>(`store/collections/${encodeURIComponent(slug)}`);
     const collection = parseCollection(data.data);
-    if (!collection) throw new AppError({ kind: 'server', message: 'No pudimos leer esta colección.' });
+    if (!collection) throw new AppError({ kind: 'server', message: t('No pudimos leer esta colección.') });
     return { ...collection, products: (collection.products ?? []).map((row) => normalizeProduct(row as ProductSummary)) };
   } catch (error) {
     throw toAppError(error);

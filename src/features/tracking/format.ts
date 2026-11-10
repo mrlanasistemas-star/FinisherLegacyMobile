@@ -1,4 +1,6 @@
-/** "8.42 km" / "640 m" — runner-friendly, es-MX decimal point. */
+import { t } from '@/i18n';
+
+/** "8.42 km" / "640 m" — runner-friendly, decimal point in every language. */
 export function formatDistance(meters: number): string {
   if (!Number.isFinite(meters) || meters < 0) return '0 m';
   if (meters < 1000) return `${Math.round(meters)} m`;
@@ -18,11 +20,11 @@ export function formatElapsed(fromIso: string, now: number): string {
 
 /** "hace 12 s" / "hace 3 min" — for the last upload. */
 export function formatAgo(iso: string | null, now: number): string {
-  if (!iso) return 'aún no';
+  if (!iso) return t('aún no');
   const seconds = Math.max(0, Math.round((now - Date.parse(iso)) / 1000));
-  if (seconds < 5) return 'justo ahora';
-  if (seconds < 60) return `hace ${seconds} s`;
+  if (seconds < 5) return t('justo ahora');
+  if (seconds < 60) return t('hace {seconds} s', { seconds });
   const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `hace ${minutes} min`;
-  return `hace ${Math.round(minutes / 60)} h`;
+  if (minutes < 60) return t('hace {minutes} min', { minutes });
+  return t('hace {hours} h', { hours: Math.round(minutes / 60) });
 }

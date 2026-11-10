@@ -12,6 +12,7 @@ import { ScrollView, View } from 'react-native';
 import { SectionHeader } from '@/components/ui/section-header';
 import { StoryCard } from '@/features/stories/components/story-card';
 import { useResponsive } from '@/hooks/use-responsive';
+import { useI18n } from '@/i18n';
 import { spacing } from '@/theme/tokens';
 
 import { useMyStories } from './use-photo-expansion';
@@ -19,6 +20,7 @@ import { useMyStories } from './use-photo-expansion';
 const RAIL_LIMIT = 8;
 
 export function MyStoriesEntry() {
+  const { t } = useI18n();
   const { width } = useResponsive();
   const stories = useMyStories();
   const list = stories.data ?? [];
@@ -31,8 +33,8 @@ export function MyStoriesEntry() {
   return (
     <View>
       <SectionHeader
-        title={count === 1 ? 'Mi recuerdo' : 'Mis recuerdos'}
-        actionLabel={count > 1 ? `Ver ${count}` : undefined}
+        title={count === 1 ? t('Mi recuerdo') : t('Mis recuerdos')}
+        actionLabel={count > 1 ? t('Ver {count}', { count }) : undefined}
         onAction={count > 1 ? () => router.push('/stories' as Href) : undefined}
         style={{ paddingHorizontal: spacing.lg }}
       />

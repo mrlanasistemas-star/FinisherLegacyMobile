@@ -8,6 +8,7 @@
  */
 
 import { AppError } from '@/api/errors';
+import { t, tc } from '@/i18n';
 import {
   mediaLimitDetailsSchema,
   type BillingPeriod,
@@ -17,6 +18,7 @@ import {
   type QuotaBucket,
   type QuotaKind,
 } from '@/schemas/story';
+import { dateFormatter } from '@/utils/dates';
 
 export const MEDIA_LIMIT_CODE = 'MEDIA_LIMIT_REACHED';
 
@@ -77,36 +79,80 @@ export function meterRatio(bucket: QuotaBucket): number {
 
 /** "3 de 10" */
 export function meterText(bucket: QuotaBucket): string {
-  return `${bucket.used} de ${bucket.limit}`;
+  return t('{used} de {limit}', { used: bucket.used, limit: bucket.limit });
 }
 
-const KIND_NOUN: Record<QuotaKind, { one: string; many: string; label: string }> = {
-  photos: { one: 'foto', many: 'fotos', label: 'Fotos' },
-  videos: { one: 'video', many: 'videos', label: 'Videos' },
-  audio: { one: 'mensaje de voz', many: 'mensajes de voz', label: 'Mensaje de voz' },
-};
+// Copy per kind is written as whole sentences (never "noun" pieces glued
+// together), resolved when shown so it follows the app language.
 
 export function kindLabel(kind: QuotaKind): string {
-  return KIND_NOUN[kind].label;
+  if (kind === 'photos') return t('Fotos');
+  if (kind === 'videos') return t('Videos');
+  return t('Mensaje de voz');
 }
 
-export function kindNoun(kind: QuotaKind, amount: number): string {
-  return amount === 1 ? KIND_NOUN[kind].one : KIND_NOUN[kind].many;
+/** "3 de 10 fotos" — the meter read aloud. */
+export function meterAccessibilityLabel(kind: QuotaKind, bucket: QuotaBucket): string {
+  const params = { used: bucket.used, limit: bucket.limit };
+  if (kind === 'photos') return t('{used} de {limit} fotos', params);
+  if (kind === 'videos') return t('{used} de {limit} videos', params);
+  return t('{used} de {limit} mensaje de voz', params);
+}
+
+/** "Ampliar fotos" / "Renovar plan de fotos" — the action next to a full meter. */
+export function expandActionLabel(kind: QuotaKind, expired: boolean): string {
+  if (kind === 'photos') return expired ? t('Renovar plan de fotos') : t('Ampliar fotos');
+  if (kind === 'videos') return expired ? t('Renovar plan de videos') : t('Ampliar videos');
+  return expired ? t('Renovar plan de mensaje de voz') : t('Ampliar mensaje de voz');
 }
 
 /** Message shown when a kind is full; the content already added always stays. */
 export function limitMessage(kind: QuotaKind): string {
-  return `Llegaste al límite de ${KIND_NOUN[kind].many} de este recuerdo. Lo que ya agregaste se queda.`;
+  if (kind === 'photos') return t('Llegaste al límite de fotos de este recuerdo. Lo que ya agregaste se queda.');
+  if (kind === 'videos') return t('Llegaste al límite de videos de este recuerdo. Lo que ya agregaste se queda.');
+  return t('Llegaste al límite de mensajes de voz de este recuerdo. Lo que ya agregaste se queda.');
+}
+
+/** "Te quedan 6 fotos." */
+export function remainingMessage(kind: QuotaKind, remaining: number): string {
+  if (kind === 'photos') return tc('Te queda {count} foto.|Te quedan {count} fotos.', remaining);
+  if (kind === 'videos') return tc('Te queda {count} video.|Te quedan {count} videos.', remaining);
+  return tc('Te queda {count} mensaje de voz.|Te quedan {count} mensajes de voz.', remaining);
+}
+
+/** "Quedan 6 fotos" — the short line of the add-media sheet. */
+export function remainingShort(kind: QuotaKind, remaining: number): string {
+  if (kind === 'photos') return tc('Queda {count} foto|Quedan {count} fotos', remaining);
+  if (kind === 'videos') return tc('Queda {count} video|Quedan {count} videos', remaining);
+  return tc('Queda {count} mensaje de voz|Quedan {count} mensajes de voz', remaining);
+}
+
+/** "Solo cabían 2 fotos. Las otras 3 no se agregaron." — the picker returned more than fits. */
+export function partialFitMessage(kind: QuotaKind, accepted: number, rejected: number): string {
+  const fit =
+    kind === 'photos'
+      ? tc('Solo cabía {count} foto.|Solo cabían {count} fotos.', accepted)
+      : kind === 'videos'
+        ? tc('Solo cabía {count} video.|Solo cabían {count} videos.', accepted)
+        : tc('Solo cabía {count} mensaje de voz.|Solo cabían {count} mensajes de voz.', accepted);
+  return `${fit} ${tc('La otra no se agregó.|Las otras {count} no se agregaron.', rejected)}`;
+}
+
+/** "Subiendo tu foto…" / "Subiendo 3 fotos…" */
+export function uploadingMessage(kind: QuotaKind, count: number): string {
+  if (kind === 'photos') return tc('Subiendo tu foto…|Subiendo {count} fotos…', count);
+  if (kind === 'videos') return tc('Subiendo tu video…|Subiendo {count} videos…', count);
+  return tc('Subiendo tu mensaje de voz…|Subiendo {count} mensajes de voz…', count);
 }
 
 /** "por 12 meses" / "por 6 meses" / "pago único" — shown next to the store price. */
 export function billingPeriodLabel(period: BillingPeriod | null | undefined): string {
-  if (period === 'annual') return 'por 12 meses';
-  if (period === 'semiannual') return 'por 6 meses';
-  return 'pago único';
+  if (period === 'annual') return t('por 12 meses');
+  if (period === 'semiannual') return t('por 6 meses');
+  return t('pago único');
 }
 
-const DATE = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+const DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
 
 /** Accepts `YYYY-MM-DD` (parsed as a local day) or a full ISO timestamp. */
 export function formatPlanDate(value: string): string | null {
@@ -114,7 +160,7 @@ export function formatPlanDate(value: string): string | null {
   const date = dateOnly ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3])) : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   try {
-    return DATE.format(date);
+    return dateFormatter('plan-date', DATE).format(date);
   } catch {
     return null;
   }
@@ -132,20 +178,21 @@ export function planState(bucket: QuotaBucket): PlanState {
   if (plan.expired) return { status: 'expired', renewable: plan.renewable };
   if (plan.expires_at && plan.billing_period !== 'one_time') {
     const label = formatPlanDate(plan.expires_at);
-    return { status: 'active', expiresLabel: label ? `Vence el ${label}` : null };
+    return { status: 'active', expiresLabel: label ? t('Vence el {date}', { date: label }) : null };
   }
   return { status: 'none' };
 }
 
-export const PLAN_EXPIRED_MESSAGE = 'Tu plan venció — renuévalo para seguir agregando.';
+/** Resolved when it is shown, so it follows the app language. */
+export function planExpiredMessage(): string {
+  return t('Tu plan venció — renuévalo para seguir agregando.');
+}
 
 /** The line under a meter. */
 export function meterCaption(kind: QuotaKind, bucket: QuotaBucket): string {
   const plan = planState(bucket);
-  if (plan.status === 'expired') return PLAN_EXPIRED_MESSAGE;
-  const base = isFull(bucket)
-    ? limitMessage(kind)
-    : `Te ${bucket.remaining === 1 ? 'queda' : 'quedan'} ${bucket.remaining} ${kindNoun(kind, bucket.remaining)}.`;
+  if (plan.status === 'expired') return planExpiredMessage();
+  const base = isFull(bucket) ? limitMessage(kind) : remainingMessage(kind, bucket.remaining);
   return plan.status === 'active' && plan.expiresLabel ? `${base} ${plan.expiresLabel}.` : base;
 }
 
@@ -162,11 +209,11 @@ export function formatDuration(totalSeconds: number): string {
 /** "45 segundos" / "2 minutos" / "1 min 30 s" */
 export function humanDuration(totalSeconds: number): string {
   const seconds = Math.max(0, Math.round(totalSeconds));
-  if (seconds < 60) return `${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`;
+  if (seconds < 60) return tc('{count} segundo|{count} segundos', seconds);
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  if (s === 0) return `${m} ${m === 1 ? 'minuto' : 'minutos'}`;
-  return `${m} min ${s} s`;
+  if (s === 0) return tc('{count} minuto|{count} minutos', m);
+  return t('{minutes} min {seconds} s', { minutes: m, seconds: s });
 }
 
 /**
@@ -178,6 +225,8 @@ export function durationProblem(durationMs: number | null | undefined, maxSecond
   if (!maxSeconds || !durationMs || durationMs <= 0) return null;
   // Half a second of grace: pickers round container durations differently.
   if (durationMs / 1000 <= maxSeconds + 0.5) return null;
-  const what = kind === 'videos' ? 'Este video' : 'Este audio';
-  return `${what} dura ${humanDuration(durationMs / 1000)} y el máximo es de ${humanDuration(maxSeconds)}. Recórtalo en tu galería y vuelve a elegirlo.`;
+  const params = { duration: humanDuration(durationMs / 1000), max: humanDuration(maxSeconds) };
+  return kind === 'videos'
+    ? t('Este video dura {duration} y el máximo es de {max}. Recórtalo en tu galería y vuelve a elegirlo.', params)
+    : t('Este audio dura {duration} y el máximo es de {max}. Recórtalo en tu galería y vuelve a elegirlo.', params);
 }

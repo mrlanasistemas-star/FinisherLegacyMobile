@@ -13,17 +13,27 @@ import { haptics } from '@/utils/haptics';
 
 import { createConsent } from '../consent';
 import { getLocationAccess, requestBackgroundAccess, requestForegroundAccess, startLiveTracking, TrackingError, type TrackingStartError } from '../tracking-controller';
+import { useI18n, type Translate } from '@/i18n';
 
 type Step = 'consent' | 'background' | 'starting';
 
-const START_ERROR_COPY: Record<TrackingStartError, string> = {
-  no_consent: 'Necesitamos tu confirmación para empezar.',
-  permission_denied: 'Sin permiso de ubicación no podemos compartir tu recorrido.',
-  services_off: 'Activa la ubicación de tu teléfono e intenta otra vez.',
-  other_active: 'Ya tienes otro seguimiento activo. Detenlo antes de iniciar uno nuevo.',
-  unavailable: 'El seguimiento en vivo todavía no está disponible para esta carrera.',
-  offline: 'Necesitas conexión para iniciar. Después, si pierdes señal, guardamos tu recorrido y lo enviamos al reconectar.',
-};
+/** A function, not a table: the message is resolved in the language active when it is shown. */
+function startErrorCopy(reason: TrackingStartError, t: Translate): string {
+  switch (reason) {
+    case 'no_consent':
+      return t('Necesitamos tu confirmación para empezar.');
+    case 'permission_denied':
+      return t('Sin permiso de ubicación no podemos compartir tu recorrido.');
+    case 'services_off':
+      return t('Activa la ubicación de tu teléfono e intenta otra vez.');
+    case 'other_active':
+      return t('Ya tienes otro seguimiento activo. Detenlo antes de iniciar uno nuevo.');
+    case 'unavailable':
+      return t('El seguimiento en vivo todavía no está disponible para esta carrera.');
+    case 'offline':
+      return t('Necesitas conexión para iniciar. Después, si pierdes señal, guardamos tu recorrido y lo enviamos al reconectar.');
+  }
+}
 
 /**
  * Explicit, informed consent before any GPS: who sees it, what's shared,
@@ -31,6 +41,7 @@ const START_ERROR_COPY: Record<TrackingStartError, string> = {
  * with its own explanation — the background one (optional).
  */
 export function TrackingConsentFlow({ participantId, eventName, onStarted }: { participantId: number; eventName: string | null; onStarted: () => void }) {
+  const { t } = useI18n();
   const [accepted, setAccepted] = useState(false);
   const [step, setStep] = useState<Step>('consent');
   const [consent, setConsent] = useState<ReturnType<typeof createConsent> | null>(null);
@@ -47,7 +58,7 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
     } catch (caught) {
       haptics.error();
       setStep('consent');
-      setError(caught instanceof TrackingError ? START_ERROR_COPY[caught.reason] : 'No pudimos iniciar el seguimiento. Intenta otra vez.');
+      setError(caught instanceof TrackingError ? startErrorCopy(caught.reason, t) : t('No pudimos iniciar el seguimiento. Intenta otra vez.'));
     }
   }
 
@@ -63,12 +74,12 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
     if (access !== 'foreground') {
       if (access === 'denied' && !canAskAgain) {
         setNeedsSettings(true);
-        setError('El permiso de ubicación está desactivado para Finisher Legacy.');
+        setError(t('El permiso de ubicación está desactivado para Finisher Legacy.'));
         return;
       }
       const granted = await requestForegroundAccess();
       if (!granted) {
-        setError('Sin permiso de ubicación no podemos compartir tu recorrido. Puedes activarlo en Ajustes.');
+        setError(t('Sin permiso de ubicación no podemos compartir tu recorrido. Puedes activarlo en Ajustes.'));
         setNeedsSettings(true);
         return;
       }
@@ -89,25 +100,25 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
             <MapPin size={28} color={colors.accent} />
           </View>
           <AppText variant="title" accessibilityRole="header">
-            ¿Seguimos con la pantalla apagada?
+            {t('¿Seguimos con la pantalla apagada?')}
           </AppText>
           <AppText variant="body" tone="muted">
-            Para que tu gente te vea avanzar aunque guardes el teléfono, elige{' '}
-            <AppText variant="bodyStrong">“Permitir siempre”</AppText> (o “Permitir todo el tiempo”) en el siguiente aviso.
+            {t('Para que tu gente te vea avanzar aunque guardes el teléfono, elige')}{' '}
+            <AppText variant="bodyStrong">{t('“Permitir siempre”')}</AppText> {t('(o “Permitir todo el tiempo”) en el siguiente aviso.')}
           </AppText>
           <AppText variant="body" tone="muted">
-            Solo se usa mientras tu seguimiento esté activo. Verás un aviso permanente en tu teléfono mientras compartes tu ubicación.
+            {t('Solo se usa mientras tu seguimiento esté activo. Verás un aviso permanente en tu teléfono mientras compartes tu ubicación.')}
           </AppText>
         </ScrollView>
         <StickyFooter>
           <AppButton
-            label="Permitir en segundo plano"
+            label={t('Permitir en segundo plano')}
             onPress={async () => {
               await requestBackgroundAccess();
               await start(consent);
             }}
           />
-          <AppButton label="Ahora no, iniciar así" variant="ghost" onPress={() => start(consent)} />
+          <AppButton label={t('Ahora no, iniciar así')} variant="ghost" onPress={() => start(consent)} />
         </StickyFooter>
       </Animated.View>
     );
@@ -118,21 +129,23 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl }}>
         <Animated.View entering={FadeInDown.duration(320)} style={{ gap: spacing.xs }}>
           <AppText variant="label" tone="gold">
-            SEGUIMIENTO EN VIVO
+            {t('SEGUIMIENTO EN VIVO')}
           </AppText>
           <AppText variant="title" accessibilityRole="header">
-            Tu gente también corre contigo
+            {t('Tu gente también corre contigo')}
           </AppText>
           <AppText variant="body" tone="muted">
-            {eventName ? `Durante ${eventName}, ` : 'Durante tu carrera, '}las personas que elijas podrán ver por dónde vas en tiempo real.
+            {eventName
+              ? t('Durante {event}, las personas que elijas podrán ver por dónde vas en tiempo real.', { event: eventName })
+              : t('Durante tu carrera, las personas que elijas podrán ver por dónde vas en tiempo real.')}
           </AppText>
         </Animated.View>
 
         <View style={{ gap: spacing.sm }}>
-          <Point icon={Eye} title="Quién lo ve" body="Solo quien reciba tu enlace. No necesitan cuenta, y puedes revocar cada enlace cuando quieras." />
-          <Point icon={MapPin} title="Qué se comparte" body="Tu ubicación, la distancia y la hora de tu último punto, solo mientras el seguimiento está activo." />
-          <Point icon={BatteryLow} title="Batería" body="Usa GPS: puede gastar entre 5 % y 10 % de batería por hora. Sal con el teléfono cargado; el modo de ahorro puede pausarlo." />
-          <Point icon={Hand} title="Tú decides" body="Lo detienes cuando quieras con el botón Detener. Si pierdes señal, guardamos tu recorrido y lo enviamos al reconectar." />
+          <Point icon={Eye} title={t('Quién lo ve')} body={t('Solo quien reciba tu enlace. No necesitan cuenta, y puedes revocar cada enlace cuando quieras.')} />
+          <Point icon={MapPin} title={t('Qué se comparte')} body={t('Tu ubicación, la distancia y la hora de tu último punto, solo mientras el seguimiento está activo.')} />
+          <Point icon={BatteryLow} title={t('Batería')} body={t('Usa GPS: puede gastar entre 5 % y 10 % de batería por hora. Sal con el teléfono cargado; el modo de ahorro puede pausarlo.')} />
+          <Point icon={Hand} title={t('Tú decides')} body={t('Lo detienes cuando quieras con el botón Detener. Si pierdes señal, guardamos tu recorrido y lo enviamos al reconectar.')} />
         </View>
 
         <Pressable
@@ -146,21 +159,21 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
           <View style={{ width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: accepted ? colors.gold : colors.muted, backgroundColor: accepted ? colors.gold : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
             {accepted ? <Check size={15} color={colors.black} strokeWidth={3} /> : null}
           </View>
-          <AppText style={{ flex: 1, fontFamily: fontFamily.medium, fontSize: 15 }}>Entiendo y quiero compartir mi ubicación durante esta carrera.</AppText>
+          <AppText style={{ flex: 1, fontFamily: fontFamily.medium, fontSize: 15 }}>{t('Entiendo y quiero compartir mi ubicación durante esta carrera.')}</AppText>
         </Pressable>
 
         <View style={{ flexDirection: 'row', gap: spacing.xs, alignItems: 'flex-start' }}>
           <ShieldCheck size={16} color={colors.success} />
           <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-            Nunca activamos tu GPS sin que lo inicies aquí.
+            {t('Nunca activamos tu GPS sin que lo inicies aquí.')}
           </AppText>
         </View>
       </ScrollView>
 
       <StickyFooter>
         <InlineError message={error} />
-        {needsSettings ? <AppButton label="Abrir Ajustes" variant="secondary" onPress={() => Linking.openSettings().catch(() => {})} /> : null}
-        <AppButton label="Iniciar seguimiento" icon={MapPin} disabled={!accepted} loading={step === 'starting'} onPress={onContinue} />
+        {needsSettings ? <AppButton label={t('Abrir Ajustes')} variant="secondary" onPress={() => Linking.openSettings().catch(() => {})} /> : null}
+        <AppButton label={t('Iniciar seguimiento')} icon={MapPin} disabled={!accepted} loading={step === 'starting'} onPress={onContinue} />
       </StickyFooter>
     </View>
   );

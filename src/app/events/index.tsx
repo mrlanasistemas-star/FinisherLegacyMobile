@@ -17,10 +17,12 @@ import { useEvents } from '@/hooks/use-events';
 import { colors, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
 import { isPastDate } from '@/utils/dates';
+import { useI18n } from '@/i18n';
 
 type Filter = 'upcoming' | 'past';
 
 export default function EventsScreen() {
+  const { t } = useI18n();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useEvents();
   const [filter, setFilter] = useState<Filter>('upcoming');
   const insets = useSafeAreaInsets();
@@ -31,16 +33,16 @@ export default function EventsScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}>
-        <TopBar title="Eventos" />
+        <TopBar title={t('Eventos')} />
         <AppText variant="body" tone="muted">
-          Encuentra tu siguiente meta.
+          {t('Encuentra tu siguiente meta.')}
         </AppText>
         <SegmentedControl
           value={filter}
           onChange={setFilter}
           options={[
-            { value: 'upcoming', label: 'Próximos' },
-            { value: 'past', label: 'Pasados' },
+            { value: 'upcoming', label: t('Próximos') },
+            { value: 'past', label: t('Pasados') },
           ]}
         />
       </View>
@@ -51,7 +53,7 @@ export default function EventsScreen() {
           <Skeleton height={120} radius={16} />
         </View>
       ) : isError ? (
-        <ErrorState error={error} message="No pudimos cargar los eventos." onRetry={refetch} />
+        <ErrorState error={error} message={t('No pudimos cargar los eventos.')} onRetry={refetch} />
       ) : (
         <FlatList
           data={editions}
@@ -70,8 +72,8 @@ export default function EventsScreen() {
             <EmptyState
               compact
               icon={CalendarDays}
-              title={filter === 'upcoming' ? 'Sin eventos próximos por ahora' : 'Aún no hay eventos pasados'}
-              message="Vuelve pronto: aquí aparecen las carreras de la comunidad Finisher Legacy."
+              title={filter === 'upcoming' ? t('Sin eventos próximos por ahora') : t('Aún no hay eventos pasados')}
+              message={t('Vuelve pronto: aquí aparecen las carreras de la comunidad Finisher Legacy.')}
             />
           }
         />

@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 
+import { t } from '@/i18n';
 import { isProcessing, type TrainingMessage } from '@/schemas/training';
 import { haptics } from '@/utils/haptics';
 
@@ -321,8 +322,8 @@ function showOnLockScreen(p: AudioPlayer, message: TrainingMessage) {
       true,
       {
         title: message.relationship ? `${message.sender_name} · ${message.relationship}` : message.sender_name,
-        artist: 'Finisher Legacy · Entrenamientos',
-        albumTitle: message.link?.title ?? 'Envíame ánimo',
+        artist: t('Finisher Legacy · Entrenamientos'),
+        albumTitle: message.link?.title ?? t('Envíame ánimo'),
       },
       { showSeekForward: true, showSeekBackward: true },
     );
@@ -348,7 +349,7 @@ function pauseKeepAlive() {
 function showKeepAliveOnLockScreen(label: string) {
   if (OS !== 'android' || !keepAlive) return;
   try {
-    keepAlive.setActiveForLockScreen(true, { title: 'Modo entrenamiento', artist: label, albumTitle: 'Finisher Legacy' }, {});
+    keepAlive.setActiveForLockScreen(true, { title: t('Modo entrenamiento'), artist: label, albumTitle: 'Finisher Legacy' }, {});
     keepAliveOnLockScreen = true;
     messageOnLockScreen = false;
   } catch {
@@ -585,7 +586,7 @@ async function transition(target: AudioPhase) {
     ka.play();
     keepAliveWasPlaying = true;
     keepAliveHoldsSession = true;
-    showKeepAliveOnLockScreen('Sesión activa');
+    showKeepAliveOnLockScreen(t('Sesión activa'));
     appliedPhase = target;
     return;
   }
@@ -596,7 +597,7 @@ async function transition(target: AudioPhase) {
   if (keepAliveWasOn) await releaseSession();
   if (target === 'paused') {
     // Android: the notification stays so the workout can be resumed from it.
-    if (keepAliveOnLockScreen) showKeepAliveOnLockScreen('En pausa');
+    if (keepAliveOnLockScreen) showKeepAliveOnLockScreen(t('En pausa'));
   } else {
     clearKeepAliveLockScreen();
   }

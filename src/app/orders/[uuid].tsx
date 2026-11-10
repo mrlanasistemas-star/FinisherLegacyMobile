@@ -12,23 +12,25 @@ import { Skeleton } from '@/components/skeleton';
 import { InlineError } from '@/components/ui/inline-error';
 import { StickyFooter } from '@/components/ui/sticky-footer';
 import { TopBar } from '@/components/ui/top-bar';
-import { orderTimeline, PAYMENT_STATE_LABEL, type StepState } from '@/features/commerce/order-timeline';
+import { orderTimeline, paymentStateLabel, type StepState } from '@/features/commerce/order-timeline';
 import { useOrder } from '@/hooks/use-orders';
 import { usePaymentFlow } from '@/hooks/use-payment-flow';
-import { PAYMENT_PHASE_COPY } from '@/payments/payment-flow';
+import { useI18n } from '@/i18n';
+import { paymentPhaseCopy } from '@/payments/payment-flow';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import type { Order } from '@/types/models';
 import { formatDateTime } from '@/utils/dates';
 import { formatMoney } from '@/utils/money';
 
 export default function OrderDetailScreen() {
+  const { t } = useI18n();
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const { data: order, isPending, isError, error, refetch, isRefetching } = useOrder(uuid, { watchSettlement: true });
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title={order ? `Pedido #${order.order_number}` : 'Pedido'} />
+        <TopBar title={order ? t('Pedido #{number}', { number: order.order_number }) : t('Pedido')} />
       </View>
       {isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
@@ -37,7 +39,7 @@ export default function OrderDetailScreen() {
           <Skeleton height={120} radius={18} />
         </View>
       ) : isError || !order ? (
-        <ErrorState error={error} message="No pudimos cargar este pedido." onRetry={refetch} />
+        <ErrorState error={error} message={t('No pudimos cargar este pedido.')} onRetry={refetch} />
       ) : (
         <OrderDetail order={order} refreshing={isRefetching} onRefresh={refetch} />
       )}
@@ -46,10 +48,11 @@ export default function OrderDetailScreen() {
 }
 
 function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshing: boolean; onRefresh: () => void }) {
+  const { t } = useI18n();
   const flow = usePaymentFlow(order);
   const current = flow.order ?? order;
   const steps = orderTimeline(current);
-  const state = PAYMENT_STATE_LABEL[current.payment_state];
+  const state = paymentStateLabel(current.payment_state);
   const busy = ['preparing', 'in_browser', 'confirming'].includes(flow.phase);
 
   // Keep the flow's copy of the order in sync with refetches (webhook updates).
@@ -60,11 +63,11 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
 
   const statusTitle =
     current.status === 'cancelled' && current.payment_state !== 'paid'
-      ? 'Pedido cancelado'
+      ? t('Pedido cancelado')
       : current.fulfillment_status === 'fulfilled'
-        ? 'Entregado'
+        ? t('Entregado')
         : current.payment_state === 'paid'
-          ? 'Pagado · en preparación'
+          ? t('Pagado · en preparación')
           : state.label;
 
   return (
@@ -81,12 +84,12 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
           </AppText>
           {current.payment_state === 'processing' ? (
             <AppText variant="caption" tone="gold" accessibilityLiveRegion="polite">
-              Tu banco está confirmando el pago. Esta pantalla se actualiza sola.
+              {t('Tu banco está confirmando el pago. Esta pantalla se actualiza sola.')}
             </AppText>
           ) : null}
           {current.payable && current.expires_at && current.payment_state !== 'processing' ? (
             <AppText variant="caption" tone="gold">
-              Apartado hasta {formatDateTime(current.expires_at)}
+              {t('Apartado hasta {date}', { date: formatDateTime(current.expires_at) })}
             </AppText>
           ) : null}
         </View>
@@ -98,7 +101,7 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
         </View>
 
         <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
-          <AppText variant="eyebrow" tone="subtle">Productos</AppText>
+          <AppText variant="eyebrow" tone="subtle">{t('Productos')}</AppText>
           {(current.items ?? []).map((item) => (
             <View key={item.uuid} style={{ flexDirection: 'row', gap: spacing.sm }}>
               <AppText variant="body" tone="muted" style={{ width: 28 }}>
@@ -115,7 +118,7 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
                 ) : null}
                 {item.fulfilled ? (
                   <AppText variant="caption" style={{ color: colors.success }}>
-                    Entregado
+                    {t('Entregado')}
                   </AppText>
                 ) : null}
               </View>
@@ -125,25 +128,25 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
         </View>
 
         <View style={{ gap: spacing.xs, paddingHorizontal: spacing.md }}>
-          <Row label="Subtotal" value={formatMoney(current.subtotal_minor, current.currency)} />
-          {current.discount_minor > 0 ? <Row label={`Descuento${current.coupon_code ? ` (${current.coupon_code})` : ''}`} value={`−${formatMoney(current.discount_minor, current.currency)}`} /> : null}
-          {current.tax_minor > 0 ? <Row label="Impuestos" value={formatMoney(current.tax_minor, current.currency)} /> : null}
-          <Row label="Total" value={formatMoney(current.total_minor, current.currency)} strong />
+          <Row label={t('Subtotal')} value={formatMoney(current.subtotal_minor, current.currency)} />
+          {current.discount_minor > 0 ? <Row label={current.coupon_code ? t('Descuento ({code})', { code: current.coupon_code }) : t('Descuento')} value={`−${formatMoney(current.discount_minor, current.currency)}`} /> : null}
+          {current.tax_minor > 0 ? <Row label={t('Impuestos')} value={formatMoney(current.tax_minor, current.currency)} /> : null}
+          <Row label={t('Total')} value={formatMoney(current.total_minor, current.currency)} strong />
         </View>
       </ScrollView>
 
       {/* Digital goods are never paid in the app (store policies): no button. */}
       {current.payable && current.app_payable !== false && current.payment_state !== 'processing' ? (
         <StickyFooter>
-          {flow.phase === 'failed' ? <InlineError message={flow.message ?? PAYMENT_PHASE_COPY.failed.message} /> : null}
-          {flow.phase === 'unavailable' ? <InlineError message={PAYMENT_PHASE_COPY.unavailable.message} /> : null}
+          {flow.phase === 'failed' ? <InlineError message={flow.message ?? paymentPhaseCopy('failed').message} /> : null}
+          {flow.phase === 'unavailable' ? <InlineError message={paymentPhaseCopy('unavailable').message} /> : null}
           {flow.phase === 'pending' || flow.phase === 'cancelled' ? (
             <AppText variant="caption" tone="muted" align="center" accessibilityLiveRegion="polite">
-              {PAYMENT_PHASE_COPY[flow.phase].message}
+              {paymentPhaseCopy(flow.phase).message}
             </AppText>
           ) : null}
           <AppButton
-            label={busy ? PAYMENT_PHASE_COPY[flow.phase].title : `Pagar ${formatMoney(current.total_minor, current.currency)}`}
+            label={busy ? paymentPhaseCopy(flow.phase).title : t('Pagar {total}', { total: formatMoney(current.total_minor, current.currency) })}
             icon={Lock}
             loading={busy}
             onPress={flow.payExisting}
@@ -155,9 +158,10 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
 }
 
 function TimelineRow({ label, state, at, last }: { label: string; state: StepState; at?: string | null; last: boolean }) {
+  const { t } = useI18n();
   const dotColor = state === 'done' ? colors.gold : state === 'current' ? colors.gold : state === 'failed' ? colors.destructive : colors.surfaceMuted;
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.md }} accessibilityLabel={`${label}${state === 'done' ? ', completado' : state === 'current' ? ', en curso' : ''}`}>
+    <View style={{ flexDirection: 'row', gap: spacing.md }} accessibilityLabel={state === 'done' ? t('{label}, completado', { label }) : state === 'current' ? t('{label}, en curso', { label }) : label}>
       <View style={{ alignItems: 'center', width: 22 }}>
         <View
           style={{

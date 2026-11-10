@@ -17,8 +17,10 @@ import { loginSchema, type LoginFormValues } from '@/schemas/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
+import { useI18n } from '@/i18n';
 
 export default function LoginScreen() {
+  const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,7 +55,7 @@ export default function LoginScreen() {
         }
         setFormError(error.message);
       } else {
-        setFormError('Algo salió mal. Intenta nuevamente.');
+        setFormError(t('Algo salió mal. Intenta nuevamente.'));
       }
     } finally {
       setSubmitting(false);
@@ -62,17 +64,17 @@ export default function LoginScreen() {
 
   return (
     <AuthShell
-      eyebrow="Bienvenido de vuelta"
-      title="Tu historia sigue aquí."
-      subtitle="Entra con tu correo para ver tus recuerdos, tu comunidad y tus piezas Finisher Legacy."
+      eyebrow={t('Bienvenido de vuelta')}
+      title={t('Tu historia sigue aquí.')}
+      subtitle={t('Entra con tu correo para ver tus recuerdos, tu comunidad y tus piezas Finisher Legacy.')}
       footer={
         <>
-          <AppButton label="Entrar" onPress={handleSubmit(onSubmit)} loading={submitting} />
+          <AppButton label={t('Entrar')} onPress={handleSubmit(onSubmit)} loading={submitting} />
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.xxs, flexWrap: 'wrap' }}>
             <AppText variant="body" tone="muted">
-              ¿No tienes cuenta?
+              {t('¿No tienes cuenta?')}
             </AppText>
-            <AppLink label="Crea una" onPress={() => router.replace('/register')} />
+            <AppLink label={t('Crea una')} onPress={() => router.replace('/register')} />
           </View>
         </>
       }>
@@ -86,7 +88,7 @@ export default function LoginScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Correo electrónico"
+                label={t('Correo electrónico')}
                 kind="email"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -103,7 +105,7 @@ export default function LoginScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Contraseña"
+                label={t('Contraseña')}
                 kind="password"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -118,7 +120,7 @@ export default function LoginScreen() {
       </Reveal>
 
       <Reveal delay={210} style={{ alignSelf: 'flex-end' }}>
-        <AppLink label="¿Olvidaste tu contraseña?" onPress={() => router.push('/forgot-password')} small />
+        <AppLink label={t('¿Olvidaste tu contraseña?')} onPress={() => router.push('/forgot-password')} small />
       </Reveal>
     </AuthShell>
   );

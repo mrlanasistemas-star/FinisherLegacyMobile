@@ -20,6 +20,7 @@ import {
   type StoryQuota,
   type StorySummary,
 } from '@/schemas/iap';
+import { t } from '@/i18n';
 
 export interface SubmitPurchaseBody {
   platform: 'ios' | 'android';
@@ -35,7 +36,7 @@ export interface SubmitPurchaseBody {
 function parsed<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {
-    throw new AppError({ kind: 'server', message: 'Respuesta inesperada del servidor.' });
+    throw new AppError({ kind: 'server', message: t('Respuesta inesperada del servidor.') });
   }
   return result.data;
 }

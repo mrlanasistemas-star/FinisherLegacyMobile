@@ -8,6 +8,7 @@ import { GlassSurface } from '@/components/brand/glass-surface';
 
 import { useMascotTip } from '@/hooks/use-mascot-tip';
 import { colors, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface MascotTipProps {
   id: string;
@@ -20,6 +21,7 @@ interface MascotTipProps {
  * `id`, dismissible, never a chatbot/blocking modal (AGENTS.md §121/§123).
  */
 export function MascotTip({ id, message, style }: MascotTipProps) {
+  const { t } = useI18n();
   const { visible, dismiss } = useMascotTip(id);
 
   if (!visible) return null;
@@ -36,7 +38,7 @@ export function MascotTip({ id, message, style }: MascotTipProps) {
           <AppText variant="caption" style={{ flex: 1 }}>
             {message}
           </AppText>
-          <Pressable onPress={dismiss} hitSlop={10} accessibilityRole="button" accessibilityLabel="Cerrar consejo">
+          <Pressable onPress={dismiss} hitSlop={10} accessibilityRole="button" accessibilityLabel={t('Cerrar consejo')}>
             <X color={colors.muted} size={16} />
           </Pressable>
         </View>

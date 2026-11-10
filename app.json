@@ -8,10 +8,17 @@
     "scheme": "finisherlegacy",
     "userInterfaceStyle": "light",
     "backgroundColor": "#F8F7F3",
+    "locales": {
+      "es": "./locales/es.json",
+      "en": "./locales/en.json"
+    },
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.finisherlegacy.app",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      }
     },
     "android": {
       "package": "com.finisherlegacy.app",

@@ -7,6 +7,7 @@ import { AppText } from './app-text';
 
 import { AppError } from '@/api/errors';
 import { colors, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface ErrorStateProps {
   message?: string;
@@ -21,10 +22,11 @@ interface ErrorStateProps {
 
 /** Full-area error with a retry. Never shows codes, stack traces or "AxiosError". */
 export function ErrorState({ message, error, onRetry, title: customTitle, onBack }: ErrorStateProps) {
+  const { t } = useI18n();
   const offline = error instanceof AppError && (error.kind === 'network' || error.kind === 'timeout');
   const Icon = offline ? CloudOff : TriangleAlert;
-  const title = offline ? 'Sin conexión' : (customTitle ?? 'Algo no salió bien');
-  const text = offline ? 'Revisa tu red y vuelve a intentarlo.' : (message ?? 'No pudimos cargar esta información.');
+  const title = offline ? t('Sin conexión') : (customTitle ?? t('Algo no salió bien'));
+  const text = offline ? t('Revisa tu red y vuelve a intentarlo.') : (message ?? t('No pudimos cargar esta información.'));
 
   return (
     <Animated.View entering={FadeIn.duration(220)} style={{ alignItems: 'center', paddingVertical: spacing.xxl, paddingHorizontal: spacing.lg, gap: spacing.sm }}>
@@ -47,10 +49,10 @@ export function ErrorState({ message, error, onRetry, title: customTitle, onBack
         {text}
       </AppText>
       {onRetry ? (
-        <AppButton label="Reintentar" variant="secondary" size="md" onPress={onRetry} fullWidth={false} style={{ minWidth: 160, alignSelf: 'center', marginTop: spacing.xs }} />
+        <AppButton label={t('Reintentar')} variant="secondary" size="md" onPress={onRetry} fullWidth={false} style={{ minWidth: 160, alignSelf: 'center', marginTop: spacing.xs }} />
       ) : null}
       {onBack ? (
-        <AppButton label="Volver" variant={onRetry ? 'ghost' : 'secondary'} size="md" onPress={onBack} fullWidth={false} style={{ minWidth: 160, alignSelf: 'center', marginTop: onRetry ? 0 : spacing.xs }} />
+        <AppButton label={t('Volver')} variant={onRetry ? 'ghost' : 'secondary'} size="md" onPress={onBack} fullWidth={false} style={{ minWidth: 160, alignSelf: 'center', marginTop: onRetry ? 0 : spacing.xs }} />
       ) : null}
     </Animated.View>
   );

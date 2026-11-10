@@ -16,7 +16,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { InlineError } from '@/components/ui/inline-error';
 import { ListRow } from '@/components/ui/list-row';
 import { Sheet } from '@/components/ui/sheet';
-import { parseDuration, VISIBILITY_LABEL } from '@/features/social/moment-state';
+import { parseDuration, visibilityLabel } from '@/features/social/moment-state';
 import { useEventMedia } from '@/hooks/use-event-media';
 import { useMyGear } from '@/hooks/use-gear';
 import { useMedal, useMedals } from '@/hooks/use-medals';
@@ -28,22 +28,28 @@ import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { MomentType, MomentVisibility } from '@/types/social';
 import { prepareImageUpload, type UploadDescriptor } from '@/utils/media-file';
+import { useI18n, type Translate } from '@/i18n';
 
 const MAX_PHOTOS = 4;
 const MAX_CAPTION = 1000;
 
-const TYPE_OPTIONS: { value: MomentType; label: string }[] = [
-  { value: 'training', label: 'Entrenamiento' },
-  { value: 'personal_record', label: 'Récord personal' },
-  { value: 'memory', label: 'Recuerdo' },
-  { value: 'manual', label: 'Otro' },
-];
+/** Built at render time with the screen's translator so the labels follow the language. */
+function typeOptions(t: Translate): { value: MomentType; label: string }[] {
+  return [
+    { value: 'training', label: t('Entrenamiento') },
+    { value: 'personal_record', label: t('Récord personal') },
+    { value: 'memory', label: t('Recuerdo') },
+    { value: 'manual', label: t('Otro') },
+  ];
+}
 
-const VISIBILITY_OPTIONS: { value: MomentVisibility; label: string; description: string; icon: typeof Globe }[] = [
-  { value: 'public', label: 'Todos', description: 'Cualquier atleta que vea tu perfil.', icon: Globe },
-  { value: 'followers', label: 'Seguidores', description: 'Solo quienes te siguen.', icon: Users },
-  { value: 'private', label: 'Solo yo', description: 'Queda guardado en tu Legacy, sin compartir.', icon: Lock },
-];
+function visibilityOptions(t: Translate): { value: MomentVisibility; label: string; description: string; icon: typeof Globe }[] {
+  return [
+    { value: 'public', label: t('Todos'), description: t('Cualquier atleta que vea tu perfil.'), icon: Globe },
+    { value: 'followers', label: t('Seguidores'), description: t('Solo quienes te siguen.'), icon: Users },
+    { value: 'private', label: t('Solo yo'), description: t('Queda guardado en tu Legacy, sin compartir.'), icon: Lock },
+  ];
+}
 
 /**
  * Compose a Legacy Moment. Opened empty from "+", or prefilled from a race
@@ -52,6 +58,9 @@ const VISIBILITY_OPTIONS: { value: MomentVisibility; label: string; description:
  */
 export default function CreateMomentScreen() {
   const params = useLocalSearchParams<{ type?: string; participantId?: string; medalUuid?: string; gearUuid?: string; mediaUuids?: string }>();
+  const { t } = useI18n();
+  const TYPE_OPTIONS = typeOptions(t);
+  const VISIBILITY_OPTIONS = visibilityOptions(t);
   const profile = useProfile();
   const create = useCreateMoment();
 
@@ -96,7 +105,7 @@ export default function CreateMomentScreen() {
   async function pickPhotos() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      showToast('Necesitamos acceso a tus fotos para agregarlas.', 'default');
+      showToast(t('Necesitamos acceso a tus fotos para agregarlas.'), 'default');
       return;
     }
     const remaining = MAX_PHOTOS - mediaCount;
@@ -159,21 +168,21 @@ export default function CreateMomentScreen() {
             }
           : undefined,
       });
-      showToast(visibility === 'private' ? 'Guardado en tu Legacy.' : 'Publicado. Ya es parte de tu Legacy.', 'success');
+      showToast(visibility === 'private' ? t('Guardado en tu Legacy.') : t('Publicado. Ya es parte de tu Legacy.'), 'success');
       router.replace(`/moments/${moment.uuid}`);
     } catch (caught) {
-      setError(caught instanceof AppError ? (caught.fieldErrors ? Object.values(caught.fieldErrors)[0]?.[0] ?? caught.message : caught.message) : 'No pudimos publicar tu momento. Intenta otra vez.');
+      setError(caught instanceof AppError ? (caught.fieldErrors ? Object.values(caught.fieldErrors)[0]?.[0] ?? caught.message : caught.message) : t('No pudimos publicar tu momento. Intenta otra vez.'));
     }
   }
 
   return (
     <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, minHeight: 52 }}>
-        <IconButton icon={X} label="Cancelar" onPress={() => router.back()} />
+        <IconButton icon={X} label={t('Cancelar')} onPress={() => router.back()} />
         <AppText style={{ flex: 1, textAlign: 'center', fontFamily: fontFamily.semibold, fontSize: 16 }} accessibilityRole="header">
-          Nuevo momento
+          {t('Nuevo momento')}
         </AppText>
-        <HeaderTextButton label={visibility === 'private' ? 'Guardar' : 'Publicar'} onPress={publish} disabled={!canPublish} loading={create.isPending} />
+        <HeaderTextButton label={visibility === 'private' ? t('Guardar') : t('Publicar')} onPress={publish} disabled={!canPublish} loading={create.isPending} />
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
@@ -187,11 +196,11 @@ export default function CreateMomentScreen() {
               <Pressable
                 onPress={() => setSheet('visibility')}
                 accessibilityRole="button"
-                accessibilityLabel={`Visible para: ${VISIBILITY_LABEL[visibility]}. Cambiar`}
+                accessibilityLabel={t('Visible para: {audience}. Cambiar', { audience: visibilityLabel(visibility) })}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', minHeight: 32 }}>
                 <VisibilityIcon size={13} color={colors.accent} />
                 <AppText variant="caption" tone="gold">
-                  {VISIBILITY_LABEL[visibility]}
+                  {visibilityLabel(visibility)}
                 </AppText>
                 <ChevronDown size={14} color={colors.accent} />
               </Pressable>
@@ -200,27 +209,27 @@ export default function CreateMomentScreen() {
 
           {profilePrivate && visibility !== 'private' ? (
             <AppText variant="caption" tone="muted">
-              Tu perfil es privado: por ahora solo tú verás este momento.
+              {t('Tu perfil es privado: por ahora solo tú verás este momento.')}
             </AppText>
           ) : null}
 
           <TextInput
             value={caption}
             onChangeText={setCaption}
-            placeholder={type === 'race_completed' ? '¿Cómo te fue? Cuéntalo…' : '¿Qué quieres recordar de hoy?'}
+            placeholder={type === 'race_completed' ? t('¿Cómo te fue? Cuéntalo…') : t('¿Qué quieres recordar de hoy?')}
             placeholderTextColor={colors.subtle}
             multiline
             maxLength={MAX_CAPTION}
             selectionColor={colors.accent}
-            accessibilityLabel="Texto del momento"
+            accessibilityLabel={t('Texto del momento')}
             style={{ minHeight: 96, color: colors.foreground, fontFamily: fontFamily.regular, fontSize: 18, lineHeight: 25, textAlignVertical: 'top' }}
           />
 
           {linkedRace || participantId ? (
             <LinkedCard
               icon={Trophy}
-              title={linkedRace?.event ?? 'Tu carrera'}
-              subtitle={[linkedRace?.race, participant.data?.result?.official_time].filter(Boolean).join(' · ') || 'Cargando…'}
+              title={linkedRace?.event ?? t('Tu carrera')}
+              subtitle={[linkedRace?.race, participant.data?.result?.official_time].filter(Boolean).join(' · ') || t('Cargando…')}
               onRemove={() => {
                 setParticipantId(null);
                 setSelectedMedia([]);
@@ -232,8 +241,8 @@ export default function CreateMomentScreen() {
           {medalUuid ? (
             <LinkedCard
               icon={Award}
-              title={medal.data?.title ?? medal.data?.event_name ?? 'Tu medalla'}
-              subtitle={medal.data?.distance_label ?? 'Medalla'}
+              title={medal.data?.title ?? medal.data?.event_name ?? t('Tu medalla')}
+              subtitle={medal.data?.distance_label ?? t('Medalla')}
               onRemove={() => {
                 setMedalUuid(null);
                 if (type === 'medal_claimed') setType('memory');
@@ -244,8 +253,8 @@ export default function CreateMomentScreen() {
           {gearUuid ? (
             <LinkedCard
               icon={Shirt}
-              title={linkedGear?.product_name ?? 'Tu gear'}
-              subtitle={linkedGear?.variant_name ?? 'Nuevo en mi equipo'}
+              title={linkedGear?.product_name ?? t('Tu gear')}
+              subtitle={linkedGear?.variant_name ?? t('Nuevo en mi equipo')}
               onRemove={() => {
                 setGearUuid(null);
                 if (type === 'gear') setType('memory');
@@ -263,11 +272,11 @@ export default function CreateMomentScreen() {
 
           {showMetrics ? (
             <View style={{ gap: spacing.sm }}>
-              <FormInput label="Título (opcional)" placeholder="Fondo del domingo" value={title} onChangeText={setTitle} maxLength={80} />
+              <FormInput label={t('Título (opcional)')} placeholder={t('Fondo del domingo')} value={title} onChangeText={setTitle} maxLength={80} />
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                 <FormInput
                   containerStyle={{ flex: 1 }}
-                  label="Distancia"
+                  label={t('Distancia')}
                   kind="decimal"
                   placeholder="10.0"
                   value={distance}
@@ -276,7 +285,7 @@ export default function CreateMomentScreen() {
                 />
                 <FormInput
                   containerStyle={{ flex: 1 }}
-                  label="Tiempo"
+                  label={t('Tiempo')}
                   kind="text"
                   keyboardType="numbers-and-punctuation"
                   placeholder="52:14"
@@ -289,7 +298,7 @@ export default function CreateMomentScreen() {
                 />
               </View>
               <AppText variant="caption" style={{ color: colors.subtle }}>
-                El ritmo se calcula solo.
+                {t('El ritmo se calcula solo.')}
               </AppText>
             </View>
           ) : null}
@@ -297,7 +306,7 @@ export default function CreateMomentScreen() {
           {participantId !== null && (eventMedia.data?.length ?? 0) > 0 ? (
             <View style={{ gap: spacing.xs }}>
               <AppText variant="caption" tone="muted">
-                Fotos de esta carrera
+                {t('Fotos de esta carrera')}
               </AppText>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs }}>
                 {eventMedia.data
@@ -310,7 +319,7 @@ export default function CreateMomentScreen() {
                         onPress={() => toggleEventMedia(media.uuid)}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: selected }}
-                        accessibilityLabel="Foto de la carrera"
+                        accessibilityLabel={t('Foto de la carrera')}
                         style={{ width: 84, height: 84, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: selected ? colors.gold : 'transparent' }}>
                         <Image source={{ uri: media.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                       </Pressable>
@@ -327,7 +336,7 @@ export default function CreateMomentScreen() {
                   <Image source={{ uri: photo.uri }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
                   <IconButton
                     icon={X}
-                    label="Quitar foto"
+                    label={t('Quitar foto')}
                     filled
                     size={16}
                     onPress={() => setPhotos((current) => current.filter((_, i) => i !== index))}
@@ -341,12 +350,12 @@ export default function CreateMomentScreen() {
           <View style={{ borderTopWidth: 1, borderTopColor: colors.hairline }}>
             <ListRow
               icon={ImagePlus}
-              label="Agregar fotos"
+              label={t('Agregar fotos')}
               description={`${mediaCount}/${MAX_PHOTOS}`}
               onPress={mediaCount < MAX_PHOTOS ? pickPhotos : undefined}
             />
-            {participantId === null ? <ListRow icon={Flag} label="Vincular una carrera" onPress={() => setSheet('race')} /> : null}
-            {medalUuid === null ? <ListRow icon={Award} label="Vincular una medalla" onPress={() => setSheet('medal')} divider={false} /> : null}
+            {participantId === null ? <ListRow icon={Flag} label={t('Vincular una carrera')} onPress={() => setSheet('race')} /> : null}
+            {medalUuid === null ? <ListRow icon={Award} label={t('Vincular una medalla')} onPress={() => setSheet('medal')} divider={false} /> : null}
           </View>
 
           <InlineError message={error} />
@@ -356,7 +365,7 @@ export default function CreateMomentScreen() {
       {sheet === 'visibility' ? (
         <Sheet visible onClose={() => setSheet(null)}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
-            ¿Quién puede verlo?
+            {t('¿Quién puede verlo?')}
           </AppText>
           {VISIBILITY_OPTIONS.map((option, index) => (
             <ListRow
@@ -378,11 +387,11 @@ export default function CreateMomentScreen() {
       {sheet === 'race' ? (
         <Sheet visible onClose={() => setSheet(null)}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
-            Vincular una carrera
+            {t('Vincular una carrera')}
           </AppText>
           {(myEvents.data?.pages[0]?.rows ?? []).length === 0 ? (
             <AppText variant="body" tone="muted" style={{ paddingVertical: spacing.md }}>
-              Aún no tienes carreras registradas.
+              {t('Aún no tienes carreras registradas.')}
             </AppText>
           ) : (
             <ScrollView style={{ maxHeight: 360 }}>
@@ -390,7 +399,7 @@ export default function CreateMomentScreen() {
                 <ListRow
                   key={row.id}
                   icon={Trophy}
-                  label={row.event ?? 'Carrera'}
+                  label={row.event ?? t('Carrera')}
                   description={[row.race, row.result?.official_time].filter(Boolean).join(' · ')}
                   onPress={() => {
                     setParticipantId(row.id);
@@ -407,11 +416,11 @@ export default function CreateMomentScreen() {
       {sheet === 'medal' ? (
         <Sheet visible onClose={() => setSheet(null)}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
-            Vincular una medalla
+            {t('Vincular una medalla')}
           </AppText>
           {(medals.data?.pages[0]?.data ?? []).length === 0 ? (
             <AppText variant="body" tone="muted" style={{ paddingVertical: spacing.md }}>
-              Aún no tienes medallas en tu Legacy.
+              {t('Aún no tienes medallas en tu Legacy.')}
             </AppText>
           ) : (
             <ScrollView style={{ maxHeight: 360 }}>
@@ -419,7 +428,7 @@ export default function CreateMomentScreen() {
                 <ListRow
                   key={item.id}
                   icon={Award}
-                  label={item.title ?? item.event_name ?? 'Medalla'}
+                  label={item.title ?? item.event_name ?? t('Medalla')}
                   description={item.distance_label}
                   onPress={() => {
                     setMedalUuid(item.id);
@@ -437,6 +446,8 @@ export default function CreateMomentScreen() {
 }
 
 function LinkedCard({ icon: Icon, title, subtitle, onRemove }: { icon: typeof Trophy; title: string; subtitle: string; onRemove: () => void }) {
+  const { t } = useI18n();
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: 14, backgroundColor: colors.card }}>
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
@@ -450,7 +461,7 @@ function LinkedCard({ icon: Icon, title, subtitle, onRemove }: { icon: typeof Tr
           {subtitle}
         </AppText>
       </View>
-      <IconButton icon={X} label="Quitar vínculo" onPress={onRemove} size={18} color={colors.subtle} />
+      <IconButton icon={X} label={t('Quitar vínculo')} onPress={onRemove} size={18} color={colors.subtle} />
     </View>
   );
 }

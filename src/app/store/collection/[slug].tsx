@@ -20,6 +20,7 @@ import { DesignChips, Grouped, HowItWorksStrip, TagHero } from '@/features/comme
 import { tagFaceFrom } from '@/features/commerce/tag-design';
 import { useCartCount } from '@/hooks/use-cart';
 import { useCollection } from '@/hooks/use-store-products';
+import { useI18n } from '@/i18n';
 import { colors, motion, radius, spacing } from '@/theme/tokens';
 
 const NAV_HEIGHT = 52;
@@ -31,6 +32,7 @@ const GRID_GAP = spacing.md;
  * its story and the pieces you can buy. Only what the API returns.
  */
 export default function CollectionScreen() {
+  const { t } = useI18n();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: collection, isPending, isError, error, refetch, isRefetching } = useCollection(slug);
   const { width } = useWindowDimensions();
@@ -78,8 +80,8 @@ export default function CollectionScreen() {
   if (isError || !collection) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-        <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} />
-        <ErrorState error={error} message="No pudimos cargar esta colección." onRetry={refetch} />
+        <IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} size={26} />
+        <ErrorState error={error} message={t('No pudimos cargar esta colección.')} onRetry={refetch} />
       </View>
     );
   }
@@ -124,14 +126,14 @@ export default function CollectionScreen() {
           </View>
 
           <DesignChips
-            label={selected ? `Diseño: ${selected.name}` : 'Diseños'}
+            label={selected ? t('Diseño: {name}', { name: selected.name }) : t('Diseños')}
             options={designs.map((d) => ({ value: d.slug, label: d.name }))}
             value={selected?.slug ?? ''}
             onChange={setDesignSlug}
           />
 
           {collection.description ? (
-            <Grouped title="La colección">
+            <Grouped title={t('La colección')}>
               <AppText variant="body" tone="muted" style={{ lineHeight: 23 }}>
                 {collection.description}
               </AppText>
@@ -141,9 +143,9 @@ export default function CollectionScreen() {
           <HowItWorksStrip />
 
           <View style={{ gap: spacing.md }}>
-            <SectionHeader title={rows.length > 0 ? `Piezas (${rows.length})` : 'Piezas'} style={{ marginBottom: 0 }} />
+            <SectionHeader title={rows.length > 0 ? t('Piezas ({count})', { count: rows.length }) : t('Piezas')} style={{ marginBottom: 0 }} />
             {rows.length === 0 ? (
-              <EmptyState compact icon={ShoppingBag} title="Aún no hay piezas a la venta" message="Cuando esta colección publique piezas aparecerán aquí." />
+              <EmptyState compact icon={ShoppingBag} title={t('Aún no hay piezas a la venta')} message={t('Cuando esta colección publique piezas aparecerán aquí.')} />
             ) : (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP }}>
                 {rows.map((product, index) => (
@@ -161,8 +163,8 @@ export default function CollectionScreen() {
         scrollY={scrollY}
         title={collection.name}
         threshold={heroHeight - 100}
-        left={<IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled={overHero} size={24} />}
-        right={<IconButton icon={ShoppingCart} label="Carrito" badge={cartCount} onPress={() => router.push('/cart')} filled={overHero} size={20} />}
+        left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} filled={overHero} size={24} />}
+        right={<IconButton icon={ShoppingCart} label={t('Carrito')} badge={cartCount} onPress={() => router.push('/cart')} filled={overHero} size={20} />}
       />
     </View>
   );

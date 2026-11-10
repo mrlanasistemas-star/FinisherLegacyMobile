@@ -7,14 +7,14 @@ import { View } from 'react-native';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { Avatar } from '@/components/ui/avatar';
-import { MOMENT_TYPE_LABEL } from '@/features/social/moment-state';
+import { momentTypeLabel } from '@/features/social/moment-state';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import type { LegacyMoment } from '@/types/social';
 import { relativeTime } from '@/utils/relative-time';
 
 /** Compact community row for Inicio — a glance, not the full feed card. */
 export const MomentPreviewRow = memo(function MomentPreviewRow({ moment }: { moment: LegacyMoment }) {
-  const headline = moment.activity?.event ?? moment.metrics?.title ?? moment.medal?.title ?? moment.caption ?? MOMENT_TYPE_LABEL[moment.type];
+  const headline = moment.activity?.event ?? moment.metrics?.title ?? moment.medal?.title ?? moment.caption ?? momentTypeLabel(moment.type);
   const thumb = moment.media.find((m) => m.type === 'image')?.url ?? moment.medal?.image_url ?? null;
   const time = moment.activity?.official_time ?? moment.metrics?.pace ?? null;
 

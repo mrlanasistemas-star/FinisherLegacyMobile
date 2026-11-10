@@ -16,11 +16,13 @@ import { InlineError } from '@/components/ui/inline-error';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { useMedal } from '@/hooks/use-medals';
 import { useUpdateMedal } from '@/hooks/use-medal-mutations';
+import { useI18n } from '@/i18n';
 import { manualMedalSchema, type ManualMedalFormValues } from '@/schemas/medal';
 import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function EditMedalScreen() {
+  const { t } = useI18n();
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
   const { data: medal, isPending: loadingMedal, isError, refetch } = useMedal(uuid);
   const { mutateAsync, isPending: saving } = useUpdateMedal(uuid);
@@ -80,9 +82,9 @@ export default function EditMedalScreen() {
         back_image: backImage,
       });
       router.back();
-      showToast('Medalla actualizada.', 'success');
+      showToast(t('Medalla actualizada.'), 'success');
     } catch (error) {
-      setFormError(error instanceof AppError ? error.message : 'No pudimos guardar los cambios.');
+      setFormError(error instanceof AppError ? error.message : t('No pudimos guardar los cambios.'));
     }
   }
 
@@ -90,8 +92,8 @@ export default function EditMedalScreen() {
   if (isError || !medal) {
     return (
       <Screen>
-        <TopBar title="Editar medalla" />
-        <ErrorState message="No pudimos cargar esta medalla." onRetry={refetch} onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
+        <TopBar title={t('Editar medalla')} />
+        <ErrorState message={t('No pudimos cargar esta medalla.')} onRetry={refetch} onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       </Screen>
     );
   }
@@ -100,13 +102,13 @@ export default function EditMedalScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
         <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52 }}>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cancelar" style={{ minWidth: 80, minHeight: 44, justifyContent: 'center' }}>
+          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Cancelar')} style={{ minWidth: 80, minHeight: 44, justifyContent: 'center' }}>
             <AppText variant="body" tone="accent">
-              Cancelar
+              {t('Cancelar')}
             </AppText>
           </Pressable>
           <AppText variant="bodyStrong" align="center" style={{ flex: 1 }} accessibilityRole="header">
-            Editar medalla
+            {t('Editar medalla')}
           </AppText>
           <View style={{ minWidth: 80 }} />
         </View>
@@ -116,14 +118,14 @@ export default function EditMedalScreen() {
 
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <ImagePickerTile
-              label="Foto frontal"
+              label={t('Foto frontal')}
               value={frontImage}
               existingUrl={medal.front_image_url}
               onChange={setFrontImage}
               style={{ flex: 1 }}
             />
             <ImagePickerTile
-              label="Foto trasera"
+              label={t('Foto trasera')}
               value={backImage}
               existingUrl={medal.back_image_url}
               onChange={setBackImage}
@@ -135,14 +137,14 @@ export default function EditMedalScreen() {
             control={control}
             name="event_name_manual"
             render={({ field }) => (
-              <FormInput label="Evento" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.event_name_manual?.message} />
+              <FormInput label={t('Evento')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} error={errors.event_name_manual?.message} />
             )}
           />
           <Controller
             control={control}
             name="event_date"
             render={({ field }) => (
-              <FormInput label="Fecha (AAAA-MM-DD)" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="2026-03-15" />
+              <FormInput label={t('Fecha (AAAA-MM-DD)')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} placeholder="2026-03-15" />
             )}
           />
 
@@ -152,7 +154,7 @@ export default function EditMedalScreen() {
               name="city"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Ciudad" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  <FormInput label={t('Ciudad')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
                 </View>
               )}
             />
@@ -161,7 +163,7 @@ export default function EditMedalScreen() {
               name="country"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="País" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  <FormInput label={t('País')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
                 </View>
               )}
             />
@@ -173,7 +175,7 @@ export default function EditMedalScreen() {
               name="distance_label"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Distancia" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  <FormInput label={t('Distancia')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
                 </View>
               )}
             />
@@ -182,7 +184,7 @@ export default function EditMedalScreen() {
               name="official_time"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Tiempo oficial" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  <FormInput label={t('Tiempo oficial')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
                 </View>
               )}
             />
@@ -191,7 +193,7 @@ export default function EditMedalScreen() {
               name="pace"
               render={({ field }) => (
                 <View style={{ flex: 1 }}>
-                  <FormInput label="Ritmo" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
+                  <FormInput label={t('Ritmo')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} />
                 </View>
               )}
             />
@@ -201,7 +203,7 @@ export default function EditMedalScreen() {
             control={control}
             name="story"
             render={({ field }) => (
-              <FormInput label="Historia" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} multiline numberOfLines={4} />
+              <FormInput label={t('Historia')} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} multiline numberOfLines={4} />
             )}
           />
 
@@ -211,12 +213,12 @@ export default function EditMedalScreen() {
             render={({ field }) => (
               <View style={{ gap: spacing.xs }}>
                 <AppText variant="caption" tone="muted">
-                  ¿Quién puede verla?
+                  {t('¿Quién puede verla?')}
                 </AppText>
                 <SegmentedControl
                   options={[
-                    { value: 'public', label: 'Pública' },
-                    { value: 'private', label: 'Solo yo' },
+                    { value: 'public', label: t('Pública') },
+                    { value: 'private', label: t('Solo yo') },
                   ]}
                   value={field.value ?? 'public'}
                   onChange={field.onChange}
@@ -225,7 +227,7 @@ export default function EditMedalScreen() {
             )}
           />
 
-          <AppButton label="Guardar cambios" onPress={handleSubmit(onSubmit)} loading={saving} />
+          <AppButton label={t('Guardar cambios')} onPress={handleSubmit(onSubmit)} loading={saving} />
         </View>
       </Screen>
     </KeyboardAvoidingView>

@@ -7,11 +7,12 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
-import { PAYMENT_STATE_LABEL } from '@/features/commerce/order-timeline';
+import { paymentStateLabel } from '@/features/commerce/order-timeline';
 import { useOrders } from '@/hooks/use-orders';
 import { useSupportSessions } from '@/hooks/use-support';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import type { Order } from '@/types/models';
+import { useI18n, type Translate } from '@/i18n';
 
 const LIVE_SUPPORT_STATUSES = new Set(['active', 'open']);
 
@@ -22,6 +23,7 @@ const LIVE_SUPPORT_STATUSES = new Set(['active', 'open']);
  * yet, so only support is surfaced here.)
  */
 export function ActiveSupportBanner() {
+  const { t } = useI18n();
   const sessions = useSupportSessions();
   const live = useMemo(() => sessions.data?.pages[0]?.rows.find((s) => LIVE_SUPPORT_STATUSES.has(s.status)) ?? null, [sessions.data]);
   if (!live) return null;
@@ -35,7 +37,7 @@ export function ActiveSupportBanner() {
         scaleTo={0.98}
         onPress={() => router.push(`/support/${live.id}`)}
         accessibilityRole="button"
-        accessibilityLabel={`${isActive ? 'Apoyo en vivo' : 'Tu equipo de apoyo está recibiendo mensajes'}: ${live.title}`}
+        accessibilityLabel={isActive ? t('Apoyo en vivo: {title}', { title: live.title }) : t('Tu equipo de apoyo está recibiendo mensajes: {title}', { title: live.title })}
         style={{ borderRadius: radius.lg, overflow: 'hidden' }}>
         <LinearGradient
           colors={['rgba(201,174,139,0.22)', 'rgba(201,174,139,0.06)']}
@@ -49,7 +51,7 @@ export function ActiveSupportBanner() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               {isActive ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: colors.success }} /> : null}
               <AppText variant="label" tone="gold" style={{ letterSpacing: 1.5 }}>
-                {isActive ? 'APOYO EN VIVO' : 'TU GENTE TE ESTÁ ESCRIBIENDO'}
+                {isActive ? t('APOYO EN VIVO') : t('TU GENTE TE ESTÁ ESCRIBIENDO')}
               </AppText>
             </View>
             <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }} numberOfLines={1}>
@@ -63,14 +65,15 @@ export function ActiveSupportBanner() {
   );
 }
 
-function orderStatusLabel(order: Order): string {
-  if (order.payment_state !== 'paid') return PAYMENT_STATE_LABEL[order.payment_state]?.label ?? 'En proceso';
-  if (order.fulfillment_status === 'partially_fulfilled') return 'Entrega parcial';
-  return 'En preparación';
+function orderStatusLabel(order: Order, t: Translate): string {
+  if (order.payment_state !== 'paid') return paymentStateLabel(order.payment_state)?.label ?? t('En proceso');
+  if (order.fulfillment_status === 'partially_fulfilled') return t('Entrega parcial');
+  return t('En preparación');
 }
 
 /** One chip for the most recent order still in motion — nothing when all are done. */
 export function OrderStatusChip() {
+  const { t } = useI18n();
   const orders = useOrders();
   const open = useMemo(
     () =>
@@ -89,7 +92,7 @@ export function OrderStatusChip() {
       scaleTo={0.98}
       onPress={() => router.push(`/orders/${open.uuid}`)}
       accessibilityRole="button"
-      accessibilityLabel={`Pedido ${open.order_number}: ${orderStatusLabel(open)}`}
+      accessibilityLabel={t('Pedido {number}: {status}', { number: open.order_number, status: orderStatusLabel(open, t) })}
       style={{
         alignSelf: 'flex-start',
         flexDirection: 'row',
@@ -104,10 +107,10 @@ export function OrderStatusChip() {
       }}>
       <Package size={15} color={needsPayment ? colors.gold : colors.muted} />
       <AppText variant="caption" style={{ fontFamily: fontFamily.medium }}>
-        Pedido {open.order_number}
+        {t('Pedido {number}', { number: open.order_number })}
       </AppText>
       <AppText variant="caption" tone={needsPayment ? 'gold' : 'muted'}>
-        · {orderStatusLabel(open)}
+        · {orderStatusLabel(open, t)}
       </AppText>
       <ChevronRight size={14} color={colors.subtle} />
     </PressableScale>

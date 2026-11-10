@@ -40,6 +40,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { LegacyMoment } from '@/types/social';
+import { useI18n } from '@/i18n';
 
 type Section = 'moments' | 'races' | 'medals' | 'gear';
 
@@ -58,6 +59,7 @@ interface ProfileViewProps {
  * Own and other profiles share this layout; only the actions differ.
  */
 export function ProfileView({ username, own }: ProfileViewProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const user = useAuthStore((s) => s.user);
@@ -88,14 +90,14 @@ export function ProfileView({ username, own }: ProfileViewProps) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.sm, minHeight: 52, alignItems: 'center' }}>
-          {canGoBack ? <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} /> : <View />}
-          <IconButton icon={Settings} label="Configuración" onPress={() => router.push('/settings')} />
+          {canGoBack ? <IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} size={26} /> : <View />}
+          <IconButton icon={Settings} label={t('Configuración')} onPress={() => router.push('/settings')} />
         </View>
         <EmptyState
           icon={UserRoundPlus}
-          title={`Hola, ${user?.first_name ?? 'atleta'}`}
-          message="Elige tu nombre de usuario y una foto para que otros atletas te encuentren y sigan tu historia."
-          actionLabel="Crear mi perfil"
+          title={t('Hola, {name}', { name: user?.first_name ?? t('atleta') })}
+          message={t('Elige tu nombre de usuario y una foto para que otros atletas te encuentren y sigan tu historia.')}
+          actionLabel={t('Crear mi perfil')}
           onAction={() => router.push('/settings/account')}
         />
       </View>
@@ -121,13 +123,13 @@ export function ProfileView({ username, own }: ProfileViewProps) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={{ paddingHorizontal: spacing.sm, minHeight: 52, justifyContent: 'center' }}>
-          <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} />
+          <IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} size={26} />
         </View>
         <ErrorState
           error={notFound ? undefined : athlete.error}
-          title={notFound ? 'Perfil no disponible' : undefined}
+          title={notFound ? t('Perfil no disponible') : undefined}
           onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-          message={notFound ? 'Este perfil no está disponible. Puede ser privado o ya no existir.' : 'No pudimos cargar este perfil.'}
+          message={notFound ? t('Este perfil no está disponible. Puede ser privado o ya no existir.') : t('No pudimos cargar este perfil.')}
           onRetry={notFound ? undefined : athlete.refetch}
         />
       </View>
@@ -152,10 +154,10 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   const isPrivate = own && mine?.profile?.profile_visibility === 'private';
 
   const sections: { value: Section; label: string }[] = [
-    { value: 'moments', label: 'Momentos' },
-    { value: 'races', label: 'Carreras' },
-    { value: 'medals', label: 'Medallas' },
-    ...(own ? [{ value: 'gear' as const, label: 'Equipo' }] : []),
+    { value: 'moments', label: t('Momentos') },
+    { value: 'races', label: t('Carreras') },
+    { value: 'medals', label: t('Medallas') },
+    ...(own ? [{ value: 'gear' as const, label: t('Equipo') }] : []),
   ];
 
   const refresh = () => {
@@ -184,13 +186,13 @@ export function ProfileView({ username, own }: ProfileViewProps) {
           <LinearGradient colors={['rgba(11,11,12,0.35)', 'rgba(11,11,12,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + 72 }} />
         ) : null}
         <View style={{ position: 'absolute', top: insets.top + 4, left: spacing.sm, right: spacing.sm, flexDirection: 'row', justifyContent: 'space-between' }}>
-          {own && !canGoBack ? <View /> : <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled size={24} />}
+          {own && !canGoBack ? <View /> : <IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} filled size={24} />}
           <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-            <IconButton icon={Share2} label="Compartir perfil" onPress={() => Share.share({ message: shareUrl, url: shareUrl })} filled size={20} />
+            <IconButton icon={Share2} label={t('Compartir perfil')} onPress={() => Share.share({ message: shareUrl, url: shareUrl })} filled size={20} />
             {own ? (
-              <IconButton icon={Settings} label="Configuración" onPress={() => router.push('/settings')} filled size={20} />
+              <IconButton icon={Settings} label={t('Configuración')} onPress={() => router.push('/settings')} filled size={20} />
             ) : (
-              <IconButton icon={MoreHorizontal} label="Más opciones" onPress={() => setMenuOpen(true)} filled size={20} />
+              <IconButton icon={MoreHorizontal} label={t('Más opciones')} onPress={() => setMenuOpen(true)} filled size={20} />
             )}
           </View>
         </View>
@@ -213,7 +215,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
             ) : null}
             {isPrivate ? (
               <AppText variant="caption" style={{ color: colors.subtle }}>
-                · Perfil privado
+                {t('· Perfil privado')}
               </AppText>
             ) : null}
           </View>
@@ -233,10 +235,10 @@ export function ProfileView({ username, own }: ProfileViewProps) {
         <View style={{ marginTop: spacing.xs }}>
           <StatStrip
             items={[
-              { label: 'Carreras', value: stats.races, onPress: () => setSection('races') },
-              { label: 'Medallas', value: stats.medals, onPress: () => setSection('medals') },
-              { label: 'Seguidores', value: stats.followers, onPress: handle ? () => router.push(`/athlete/${handle}/connections?kind=followers`) : undefined },
-              { label: 'Siguiendo', value: stats.following, onPress: handle ? () => router.push(`/athlete/${handle}/connections?kind=following`) : undefined },
+              { label: t('Carreras'), value: stats.races, onPress: () => setSection('races') },
+              { label: t('Medallas'), value: stats.medals, onPress: () => setSection('medals') },
+              { label: t('Seguidores'), value: stats.followers, onPress: handle ? () => router.push(`/athlete/${handle}/connections?kind=followers`) : undefined },
+              { label: t('Siguiendo'), value: stats.following, onPress: handle ? () => router.push(`/athlete/${handle}/connections?kind=following`) : undefined },
             ]}
           />
         </View>
@@ -244,8 +246,8 @@ export function ProfileView({ username, own }: ProfileViewProps) {
         <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs }}>
           {own ? (
             <>
-              <AppButton label="Editar perfil" icon={Pencil} variant="secondary" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/settings/account')} />
-              <AppButton label="Compartir momento" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/moments/create')} />
+              <AppButton label={t('Editar perfil')} icon={Pencil} variant="secondary" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/settings/account')} />
+              <AppButton label={t('Compartir momento')} size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/moments/create')} />
             </>
           ) : pub && handle && pub.viewer.can_follow ? (
             <View style={{ flex: 1 }}>
@@ -287,7 +289,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
           }));
 
       if (rows.length === 0) {
-        return <EmptyState compact icon={Trophy} title="Sin carreras todavía" message={own ? 'Tus resultados oficiales aparecerán aquí después de cada evento.' : 'Aún no hay carreras públicas.'} />;
+        return <EmptyState compact icon={Trophy} title={t('Sin carreras todavía')} message={own ? t('Tus resultados oficiales aparecerán aquí después de cada evento.') : t('Aún no hay carreras públicas.')} />;
       }
       return (
         <View style={{ paddingHorizontal: spacing.lg }}>
@@ -300,17 +302,17 @@ export function ProfileView({ username, own }: ProfileViewProps) {
 
     if (section === 'medals') {
       const tiles = own
-        ? (myMedals.data?.pages.flatMap((p) => p.data) ?? []).map((m) => ({ id: m.id, title: m.title ?? m.event_name ?? 'Medalla', image: m.front_image_url }))
-        : (pub?.medals ?? []).map((m) => ({ id: m.id, title: m.title ?? 'Medalla', image: m.thumbnail_url }));
+        ? (myMedals.data?.pages.flatMap((p) => p.data) ?? []).map((m) => ({ id: m.id, title: m.title ?? m.event_name ?? t('Medalla'), image: m.front_image_url }))
+        : (pub?.medals ?? []).map((m) => ({ id: m.id, title: m.title ?? t('Medalla'), image: m.thumbnail_url }));
 
       if (tiles.length === 0) {
         return (
           <EmptyState
             compact
             icon={Award}
-            title="Sin medallas todavía"
-            message={own ? 'Acerca tu pieza Finisher Legacy al teléfono o agrega tu medalla a mano.' : 'Aún no hay medallas públicas.'}
-            actionLabel={own ? 'Agregar medalla' : undefined}
+            title={t('Sin medallas todavía')}
+            message={own ? t('Acerca tu pieza Finisher Legacy al teléfono o agrega tu medalla a mano.') : t('Aún no hay medallas públicas.')}
+            actionLabel={own ? t('Agregar medalla') : undefined}
             onAction={own ? () => router.push('/medals/create') : undefined}
           />
         );
@@ -341,7 +343,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
       const gear = myGear.data ?? [];
       if (gear.length === 0) {
         return (
-          <EmptyState compact icon={Shirt} title="Tu equipo está vacío" message="Reclama el gear Finisher Legacy que compraste o recibiste." actionLabel="Reclamar gear" onAction={() => router.push('/gear/claim')} />
+          <EmptyState compact icon={Shirt} title={t('Tu equipo está vacío')} message={t('Reclama el gear Finisher Legacy que compraste o recibiste.')} actionLabel={t('Reclamar gear')} onAction={() => router.push('/gear/claim')} />
         );
       }
       return (
@@ -400,9 +402,9 @@ export function ProfileView({ username, own }: ProfileViewProps) {
               <EmptyState
                 compact
                 icon={BookHeart}
-                title={own ? 'Comparte tu primer momento' : 'Sin momentos todavía'}
-                message={own ? 'Un entrenamiento, una carrera o un recuerdo: aquí se va construyendo tu historia.' : 'Cuando comparta algo, lo verás aquí.'}
-                actionLabel={own ? 'Crear un momento' : undefined}
+                title={own ? t('Comparte tu primer momento') : t('Sin momentos todavía')}
+                message={own ? t('Un entrenamiento, una carrera o un recuerdo: aquí se va construyendo tu historia.') : t('Cuando comparta algo, lo verás aquí.')}
+                actionLabel={own ? t('Crear un momento') : undefined}
                 onAction={own ? () => router.push('/moments/create') : undefined}
               />
             )
@@ -425,7 +427,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
         <Sheet visible onClose={() => setMenuOpen(false)}>
           <SheetActionRow
             icon={Flag}
-            label="Reportar perfil"
+            label={t('Reportar perfil')}
             onPress={() => {
               setMenuOpen(false);
               setReporting(true);
@@ -433,7 +435,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
           />
           <SheetActionRow
             icon={Ban}
-            label={`Bloquear a @${handle}`}
+            label={t('Bloquear a @{handle}', { handle })}
             destructive
             onPress={() => {
               setMenuOpen(false);
@@ -448,20 +450,20 @@ export function ProfileView({ username, own }: ProfileViewProps) {
       {confirmBlock && handle ? (
         <ConfirmDialog
           visible
-          title={`¿Bloquear a @${handle}?`}
-          description="No verán la actividad del otro, y dejarán de seguirse. Puedes desbloquear desde Configuración › Privacidad."
-          confirmLabel="Bloquear"
+          title={t('¿Bloquear a @{handle}?', { handle })}
+          description={t('No verán la actividad del otro, y dejarán de seguirse. Puedes desbloquear desde Configuración › Privacidad.')}
+          confirmLabel={t('Bloquear')}
           loading={block.isPending}
           onCancel={() => setConfirmBlock(false)}
           onConfirm={async () => {
             try {
               await block.mutateAsync(true);
               setConfirmBlock(false);
-              showToast(`Bloqueaste a @${handle}.`, 'default');
+              showToast(t('Bloqueaste a @{handle}.', { handle }), 'default');
               router.back();
             } catch (error) {
               setConfirmBlock(false);
-              showToast(error instanceof AppError ? error.message : 'No pudimos bloquear. Intenta otra vez.', 'destructive');
+              showToast(error instanceof AppError ? error.message : t('No pudimos bloquear. Intenta otra vez.'), 'destructive');
             }
           }}
         />

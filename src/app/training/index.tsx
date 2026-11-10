@@ -39,6 +39,7 @@ import {
   useToggleFavorite,
   useTrainingMessages,
 } from '@/features/training/use-training';
+import { useI18n } from '@/i18n';
 import type { TrainingFilter, TrainingMessage } from '@/schemas/training';
 import { showToast } from '@/stores/toastStore';
 import { gradients } from '@/theme/gradients';
@@ -49,13 +50,13 @@ const NAV_HEIGHT = 52;
 const SESSION_HREF = '/training/session' as Href;
 const SHARE_HREF = '/training/share' as Href;
 
-const FILTERS: { value: TrainingFilter; label: string }[] = [
-  { value: 'all', label: 'Todos' },
-  { value: 'unheard', label: 'Sin escuchar' },
-  { value: 'favorites', label: 'Favoritos' },
-];
-
 export default function TrainingHomeScreen() {
+  const { t } = useI18n();
+  const filters: { value: TrainingFilter; label: string }[] = [
+    { value: 'all', label: t('Todos') },
+    { value: 'unheard', label: t('Sin escuchar') },
+    { value: 'favorites', label: t('Favoritos') },
+  ];
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const { scrollY, onScroll } = useScrollY();
@@ -105,12 +106,12 @@ export default function TrainingHomeScreen() {
   const play = useCallback(
     (message: TrainingMessage) => {
       if (!playFromList(messages, message.uuid)) {
-        showToast('Este audio se está procesando. Estará listo en unos segundos.');
+        showToast(t('Este audio se está procesando. Estará listo en unos segundos.'));
         return;
       }
       router.push(PLAYER_HREF);
     },
-    [messages],
+    [messages, t],
   );
 
   const onToggleFavorite = useCallback((message: TrainingMessage) => toggleFavorite.mutate({ uuid: message.uuid, favorite: !message.favorite }, { onError: (e) => showToast(e.message, 'destructive') }), [toggleFavorite]);
@@ -119,22 +120,22 @@ export default function TrainingHomeScreen() {
     (message: TrainingMessage) => {
       haptics.light();
       hide.mutate(message.uuid, {
-        onSuccess: () => showToast('Mensaje oculto'),
+        onSuccess: () => showToast(t('Mensaje oculto')),
         onError: (e) => showToast(e.message, 'destructive'),
       });
     },
-    [hide],
+    [hide, t],
   );
 
   const onToggleOffline = useCallback(async (message: TrainingMessage) => {
     if (useOfflineStore.getState().entries[message.uuid]) {
       removeDownload(message.uuid);
-      showToast('Descarga eliminada');
+      showToast(t('Descarga eliminada'));
       return;
     }
     const ok = await downloadMessage(message);
-    showToast(ok ? 'Disponible sin conexión' : 'No pudimos descargarlo. Actualiza la lista e intenta de nuevo.', ok ? 'success' : 'destructive');
-  }, []);
+    showToast(ok ? t('Disponible sin conexión') : t('No pudimos descargarlo. Actualiza la lista e intenta de nuevo.'), ok ? 'success' : 'destructive');
+  }, [t]);
 
   const pendingDownloads = messages.filter((m) => m.audio_url && !entries[m.uuid]);
   const onDownloadAll = async () => {
@@ -144,19 +145,19 @@ export default function TrainingHomeScreen() {
     const list = flattenMessages(fresh.data).filter((m) => m.audio_url);
     const result = await downloadAll(list);
     setDownloadingAll(false);
-    if (result.failed > 0) showToast(`Descargamos ${result.ok}. ${result.failed} no se pudieron descargar.`, 'destructive');
-    else showToast('Tus mensajes están disponibles sin conexión', 'success');
+    if (result.failed > 0) showToast(t('Descargamos {ok}. {failed} no se pudieron descargar.', { ok: result.ok, failed: result.failed }), 'destructive');
+    else showToast(t('Tus mensajes están disponibles sin conexión'), 'success');
   };
 
   const header = (
     <View style={{ paddingHorizontal: spacing.lg, gap: spacing.lg, paddingBottom: spacing.md }}>
       <Reveal style={{ gap: 4 }}>
-        <AppText variant="eyebrow">Envíame ánimo</AppText>
+        <AppText variant="eyebrow">{t('Envíame ánimo')}</AppText>
         <AppText variant="display" accessibilityRole="header">
-          Entrenamientos
+          {t('Entrenamientos')}
         </AppText>
         <AppText variant="body" tone="muted">
-          Escucha a quienes creen en ti mientras entrenas.
+          {t('Escucha a quienes creen en ti mientras entrenas.')}
         </AppText>
       </Reveal>
 
@@ -165,18 +166,18 @@ export default function TrainingHomeScreen() {
       </Reveal>
 
       <Reveal delay={110} style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Counter label="Nuevos" value={unheardCount} active={filter === 'unheard'} onPress={() => setFilter('unheard')} />
-        <Counter label="Favoritos" value={favoritesCount} active={filter === 'favorites'} onPress={() => setFilter('favorites')} />
-        <Counter label="Total" value={totalCount} active={filter === 'all'} onPress={() => setFilter('all')} />
+        <Counter label={t('Nuevos')} value={unheardCount} active={filter === 'unheard'} onPress={() => setFilter('unheard')} />
+        <Counter label={t('Favoritos')} value={favoritesCount} active={filter === 'favorites'} onPress={() => setFilter('favorites')} />
+        <Counter label={t('Total')} value={totalCount} active={filter === 'all'} onPress={() => setFilter('all')} />
       </Reveal>
 
       <View style={{ gap: spacing.sm }}>
-        <SegmentedControl options={FILTERS} value={filter} onChange={setFilter} />
+        <SegmentedControl options={filters} value={filter} onChange={setFilter} />
         {offlineFallback ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.xxs }}>
             <CloudOff size={16} color={colors.muted} />
             <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-              Sin conexión · te mostramos los mensajes descargados.
+              {t('Sin conexión · te mostramos los mensajes descargados.')}
             </AppText>
           </View>
         ) : isOfflineAvailable() && pendingDownloads.length > 1 ? (
@@ -184,11 +185,11 @@ export default function TrainingHomeScreen() {
             onPress={onDownloadAll}
             disabled={downloadingAll}
             accessibilityRole="button"
-            accessibilityLabel="Descargar todos para escucharlos sin conexión"
+            accessibilityLabel={t('Descargar todos para escucharlos sin conexión')}
             style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 40, alignSelf: 'flex-start', paddingHorizontal: spacing.xxs }}>
             {downloadingAll ? <ActivityIndicator size="small" color={colors.accent} /> : <CloudDownload size={17} color={colors.accent} />}
             <AppText variant="caption" tone="accent" style={{ fontFamily: fontFamily.semibold }}>
-              {downloadingAll ? 'Descargando…' : `Descargar todos (${pendingDownloads.length}) para sin conexión`}
+              {downloadingAll ? t('Descargando…') : t('Descargar todos ({count}) para sin conexión', { count: pendingDownloads.length })}
             </AppText>
           </PressableScale>
         ) : null}
@@ -212,28 +213,28 @@ export default function TrainingHomeScreen() {
     body = notFound ? (
       <EmptyState
         icon={MessageCircleHeart}
-        title="Muy pronto"
-        message="Estamos preparando tus mensajes de ánimo. Vuelve a intentarlo en un momento."
-        actionLabel="Reintentar"
+        title={t('Muy pronto')}
+        message={t('Estamos preparando tus mensajes de ánimo. Vuelve a intentarlo en un momento.')}
+        actionLabel={t('Reintentar')}
         onAction={() => query.refetch()}
       />
     ) : (
-      <ErrorState error={query.error} onRetry={() => query.refetch()} message="No pudimos cargar tus mensajes." />
+      <ErrorState error={query.error} onRetry={() => query.refetch()} message={t('No pudimos cargar tus mensajes.')} />
     );
   } else if (messages.length === 0) {
     body =
       filter === 'all' ? (
         <EmptyState
           icon={MessageCircleHeart}
-          title="Tu equipo de ánimo te espera"
-          message="Comparte tu enlace con familia y amigos. Te mandarán audios y mensajes que escucharás mientras entrenas — sin necesidad de app."
-          actionLabel="Compartir mi enlace"
+          title={t('Tu equipo de ánimo te espera')}
+          message={t('Comparte tu enlace con familia y amigos. Te mandarán audios y mensajes que escucharás mientras entrenas — sin necesidad de app.')}
+          actionLabel={t('Compartir mi enlace')}
           onAction={() => router.push(SHARE_HREF)}
         />
       ) : filter === 'unheard' ? (
-        <EmptyState compact icon={MessageCircleHeart} title="Estás al día" message="Ya escuchaste todos tus mensajes. Cuando llegue uno nuevo aparecerá aquí." />
+        <EmptyState compact icon={MessageCircleHeart} title={t('Estás al día')} message={t('Ya escuchaste todos tus mensajes. Cuando llegue uno nuevo aparecerá aquí.')} />
       ) : (
-        <EmptyState compact icon={MessageCircleHeart} title="Sin favoritos aún" message="Desliza un mensaje a la izquierda o mantenlo presionado para guardarlo en favoritos." />
+        <EmptyState compact icon={MessageCircleHeart} title={t('Sin favoritos aún')} message={t('Desliza un mensaje a la izquierda o mantenlo presionado para guardarlo en favoritos.')} />
       );
   }
 
@@ -277,13 +278,13 @@ export default function TrainingHomeScreen() {
 
       <ScrollHeader
         scrollY={scrollY}
-        title="Entrenamientos"
+        title={t('Entrenamientos')}
         threshold={90}
-        left={<IconButton icon={ChevronLeft} label="Volver" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} size={26} />}
+        left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} size={26} />}
         right={
           <>
-            <IconButton icon={Link2} label="Compartir mi enlace" onPress={() => router.push(SHARE_HREF)} />
-            <IconButton icon={Settings2} label="Audio del entrenamiento" onPress={() => setSettingsOpen(true)} />
+            <IconButton icon={Link2} label={t('Compartir mi enlace')} onPress={() => router.push(SHARE_HREF)} />
+            <IconButton icon={Settings2} label={t('Audio del entrenamiento')} onPress={() => setSettingsOpen(true)} />
           </>
         }
       />
@@ -305,15 +306,15 @@ export default function TrainingHomeScreen() {
 
       <ConfirmDialog
         visible={!!blockTarget}
-        title={`¿Bloquear a ${blockTarget?.sender_name ?? ''}?`}
-        description="Sus mensajes desaparecerán de tu lista y no podrá enviarte más desde tus enlaces."
-        confirmLabel="Bloquear"
+        title={t('¿Bloquear a {name}?', { name: blockTarget?.sender_name ?? '' })}
+        description={t('Sus mensajes desaparecerán de tu lista y no podrá enviarte más desde tus enlaces.')}
+        confirmLabel={t('Bloquear')}
         loading={block.isPending}
         onCancel={() => setBlockTarget(null)}
         onConfirm={() => {
           if (!blockTarget) return;
           block.mutate(blockTarget, {
-            onSuccess: () => showToast('Remitente bloqueado'),
+            onSuccess: () => showToast(t('Remitente bloqueado')),
             onError: (e) => showToast(e.message, 'destructive'),
             onSettled: () => setBlockTarget(null),
           });
@@ -326,15 +327,20 @@ export default function TrainingHomeScreen() {
 }
 
 function TrainingHero({ unheard }: { unheard: number | null }) {
+  const { t, tc } = useI18n();
   const subtitle =
-    unheard === null ? 'Tu equipo te acompaña en cada kilómetro.' : unheard > 0 ? `${unheard} ${unheard === 1 ? 'mensaje nuevo te espera' : 'mensajes nuevos te esperan'}.` : 'Escucha de nuevo a tu equipo mientras entrenas.';
+    unheard === null
+      ? t('Tu equipo te acompaña en cada kilómetro.')
+      : unheard > 0
+        ? tc('{count} mensaje nuevo te espera.|{count} mensajes nuevos te esperan.', unheard)
+        : t('Escucha de nuevo a tu equipo mientras entrenas.');
   return (
     <PressableScale
       onPress={() => router.push(SESSION_HREF)}
       scaleTo={0.98}
       accessibilityRole="button"
-      accessibilityLabel="Modo entrenamiento"
-      accessibilityHint="Empieza un entrenamiento con tus mensajes de ánimo"
+      accessibilityLabel={t('Modo entrenamiento')}
+      accessibilityHint={t('Empieza un entrenamiento con tus mensajes de ánimo')}
       style={{ borderRadius: radius.xl, ...shadows.card }}>
       <LinearGradient
         colors={gradients.carbon}
@@ -350,10 +356,10 @@ function TrainingHero({ unheard }: { unheard: number | null }) {
         />
         <View style={{ flex: 1, gap: spacing.xs }}>
           <AppText variant="eyebrow" style={{ color: colors.gold }}>
-            Modo entrenamiento
+            {t('Modo entrenamiento')}
           </AppText>
           <AppText variant="subtitle" tone="onDark" style={{ fontSize: 21, lineHeight: 26 }}>
-            Entrena con tu equipo
+            {t('Entrena con tu equipo')}
           </AppText>
           <AppText variant="caption" tone="onDarkMuted">
             {subtitle}
@@ -372,6 +378,7 @@ function TrainingHero({ unheard }: { unheard: number | null }) {
 }
 
 function Counter({ label, value, active, onPress }: { label: string; value: number | null; active: boolean; onPress: () => void }) {
+  const { t } = useI18n();
   return (
     <PressableScale
       onPress={onPress}
@@ -379,7 +386,7 @@ function Counter({ label, value, active, onPress }: { label: string; value: numb
       scaleTo={0.96}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
-      accessibilityLabel={`${label}: ${value ?? 'cargando'}`}
+      accessibilityLabel={t('{label}: {value}', { label, value: value ?? t('cargando') })}
       style={{
         flex: 1,
         backgroundColor: colors.card,

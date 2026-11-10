@@ -1,4 +1,5 @@
 import type { Order, PaymentState } from '@/types/models';
+import { t } from '@/i18n';
 
 /**
  * The checkout → OpenPay in-app browser → confirmation state machine, kept
@@ -94,21 +95,37 @@ export function isTerminalSuccess(phase: PaymentPhase): boolean {
 /** Backoff for polling the server after the browser closes: ~1s, 2s, 3s, 5s, 8s. */
 export const CONFIRM_POLL_DELAYS_MS = [1000, 2000, 3000, 5000, 8000] as const;
 
-export const PAYMENT_PHASE_COPY: Record<PaymentPhase, { title: string; message: string }> = {
-  review: { title: 'Confirma tu pedido', message: '' },
-  creating_order: { title: 'Creando tu pedido…', message: 'Estamos apartando tus productos.' },
-  preparing: { title: 'Preparando el pago…', message: 'Un momento.' },
-  in_browser: { title: 'Completa tu pago', message: 'Termina el pago en la ventana segura.' },
-  confirming: { title: 'Confirmando tu pago…', message: 'Esto toma solo unos segundos.' },
-  paid: { title: 'Pago confirmado', message: 'Listo. Tu pedido ya es parte de tu Legacy.' },
-  processing: { title: 'Pago en proceso', message: 'Tu banco lo está procesando. Te avisaremos cuando se confirme.' },
-  pending: { title: 'Aún no vemos tu pago', message: 'Si ya pagaste, en unos momentos se confirmará aquí. Si no, puedes intentarlo otra vez: no se cobra dos veces.' },
-  failed: { title: 'El pago no se completó', message: 'Tu tarjeta no fue cargada. Puedes intentarlo otra vez o usar otra tarjeta.' },
-  cancelled: { title: 'Pago sin terminar', message: 'Tu pedido sigue apartado por un rato. Puedes pagarlo cuando quieras.' },
-  expired: { title: 'Este pedido ya no se puede pagar', message: 'El tiempo para pagarlo terminó. Vuelve a tu carrito para crear uno nuevo.' },
-  not_app_payable: { title: 'Este pedido no se paga en la app', message: 'Este tipo de producto no está disponible para pago en la app.' },
-  unavailable: { title: 'Pago en línea no disponible', message: 'El pago con tarjeta todavía no está activo. Tu pedido quedó guardado en Mis pedidos.' },
-};
+/** A function, not a table: the copy is resolved in the language active when it is shown. */
+export function paymentPhaseCopy(phase: PaymentPhase): { title: string; message: string } {
+  switch (phase) {
+    case 'review':
+      return { title: t('Confirma tu pedido'), message: '' };
+    case 'creating_order':
+      return { title: t('Creando tu pedido…'), message: t('Estamos apartando tus productos.') };
+    case 'preparing':
+      return { title: t('Preparando el pago…'), message: t('Un momento.') };
+    case 'in_browser':
+      return { title: t('Completa tu pago'), message: t('Termina el pago en la ventana segura.') };
+    case 'confirming':
+      return { title: t('Confirmando tu pago…'), message: t('Esto toma solo unos segundos.') };
+    case 'paid':
+      return { title: t('Pago confirmado'), message: t('Listo. Tu pedido ya es parte de tu Legacy.') };
+    case 'processing':
+      return { title: t('Pago en proceso'), message: t('Tu banco lo está procesando. Te avisaremos cuando se confirme.') };
+    case 'pending':
+      return { title: t('Aún no vemos tu pago'), message: t('Si ya pagaste, en unos momentos se confirmará aquí. Si no, puedes intentarlo otra vez: no se cobra dos veces.') };
+    case 'failed':
+      return { title: t('El pago no se completó'), message: t('Tu tarjeta no fue cargada. Puedes intentarlo otra vez o usar otra tarjeta.') };
+    case 'cancelled':
+      return { title: t('Pago sin terminar'), message: t('Tu pedido sigue apartado por un rato. Puedes pagarlo cuando quieras.') };
+    case 'expired':
+      return { title: t('Este pedido ya no se puede pagar'), message: t('El tiempo para pagarlo terminó. Vuelve a tu carrito para crear uno nuevo.') };
+    case 'not_app_payable':
+      return { title: t('Este pedido no se paga en la app'), message: t('Este tipo de producto no está disponible para pago en la app.') };
+    case 'unavailable':
+      return { title: t('Pago en línea no disponible'), message: t('El pago con tarjeta todavía no está activo. Tu pedido quedó guardado en Mis pedidos.') };
+  }
+}
 
 /**
  * After the in-flow polls, a "processing" order keeps being polled

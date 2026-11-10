@@ -1,4 +1,5 @@
 import { AppError } from '@/api/errors';
+import { t } from '@/i18n';
 import type { ActivationConfirm, ActivationStart, PendingActivation } from '@/schemas/activation';
 
 import { describeContent, encodeUriMessage, type ForeignContentKind } from './ndef';
@@ -66,25 +67,48 @@ export type ActivationOutcome =
   | { type: 'failed'; failure: ActivationFailure };
 
 /** Copy shown in the iOS system sheet (Android shows our own UI). */
-export const IOS_MESSAGES = {
-  approach: 'Acerca la parte superior de tu iPhone a tu Finisher Legacy.',
-  detected: 'Finisher Legacy detectado. No lo muevas…',
-  authorizing: 'Autorizando tu Finisher Legacy…',
-  writing: 'Escribiendo… mantén tu iPhone quieto.',
-  verifying: 'Verificando…',
-  done: 'Listo. Tu Finisher Legacy quedó escrito.',
-  existing: 'Este Finisher Legacy ya tiene su enlace.',
-  read: 'Listo.',
-} as const;
+export type IosMessage = 'approach' | 'detected' | 'authorizing' | 'writing' | 'verifying' | 'done' | 'existing' | 'read';
 
-const FAIL_SHEET_MESSAGE: Partial<Record<ActivationFailure['kind'], string>> = {
-  read_only: 'Este chip está bloqueado contra escritura.',
-  not_ndef: 'Este chip no es compatible.',
-  too_small: 'Este chip no tiene espacio suficiente.',
-  tag_changed: 'Este no es el mismo chip.',
-  different_fl_tag: 'Este chip ya pertenece a otro Finisher Legacy.',
-  verify_failed: 'No pudimos verificar la escritura.',
-};
+/** Resolved when the session shows it, so it follows the app language. */
+export function iosMessage(key: IosMessage): string {
+  switch (key) {
+    case 'approach':
+      return t('Acerca la parte superior de tu iPhone a tu Finisher Legacy.');
+    case 'detected':
+      return t('Finisher Legacy detectado. No lo muevas…');
+    case 'authorizing':
+      return t('Autorizando tu Finisher Legacy…');
+    case 'writing':
+      return t('Escribiendo… mantén tu iPhone quieto.');
+    case 'verifying':
+      return t('Verificando…');
+    case 'done':
+      return t('Listo. Tu Finisher Legacy quedó escrito.');
+    case 'existing':
+      return t('Este Finisher Legacy ya tiene su enlace.');
+    case 'read':
+      return t('Listo.');
+  }
+}
+
+function failSheetMessage(kind: ActivationFailure['kind']): string | undefined {
+  switch (kind) {
+    case 'read_only':
+      return t('Este chip está bloqueado contra escritura.');
+    case 'not_ndef':
+      return t('Este chip no es compatible.');
+    case 'too_small':
+      return t('Este chip no tiene espacio suficiente.');
+    case 'tag_changed':
+      return t('Este no es el mismo chip.');
+    case 'different_fl_tag':
+      return t('Este chip ya pertenece a otro Finisher Legacy.');
+    case 'verify_failed':
+      return t('No pudimos verificar la escritura.');
+    default:
+      return undefined;
+  }
+}
 
 function appErrorToFailure(error: unknown): ActivationFailure {
   if (error instanceof AppError) {
@@ -185,12 +209,12 @@ export async function runActivation(deps: ActivationDeps, request: ActivationReq
 
     progress('waiting');
     sessionOpen = true;
-    await driver.beginSession(IOS_MESSAGES.approach);
+    await driver.beginSession(iosMessage('approach'));
 
     // ── Detect & inspect ──────────────────────────────────────────────
     const snapshot: TagSnapshot = await driver.inspect();
     progress('detected');
-    await driver.setMessage(IOS_MESSAGES.detected);
+    await driver.setMessage(iosMessage('detected'));
 
     if (snapshot.ndef === 'read_only') throw new NfcFlowError({ kind: 'read_only' });
     if (snapshot.ndef === 'unsupported') throw new NfcFlowError({ kind: 'not_ndef' });
@@ -204,21 +228,21 @@ export async function runActivation(deps: ActivationDeps, request: ActivationReq
     if (stored && flUrls.some((uri) => sameUrl(uri, stored.write_url)) && !uidsDiffer(stored.nfc_uid, snapshot.uid)) {
       const pending: PendingActivation = { ...stored, phase: 'written', nfc_uid: stored.nfc_uid ?? snapshot.uid };
       await deps.pending.save(pending);
-      await closeSession({ success: IOS_MESSAGES.done });
+      await closeSession({ success: iosMessage('done') });
       return await confirmWith(deps, pending);
     }
 
     if (content.foreignKind !== null && !flCode) {
       const consented = request.overwriteConsent && !uidsDiffer(request.overwriteConsent.uid, snapshot.uid);
       if (!consented) {
-        await closeSession({ success: IOS_MESSAGES.read });
+        await closeSession({ success: iosMessage('read') });
         return { type: 'needs_overwrite_consent', uid: snapshot.uid, summary: { kind: content.foreignKind, host: content.foreignHost } };
       }
     }
 
     // ── Authorize ─────────────────────────────────────────────────────
     progress('authorizing');
-    await driver.setMessage(IOS_MESSAGES.authorizing);
+    await driver.setMessage(iosMessage('authorizing'));
     let start: ActivationStart;
     try {
       start = await api.start({
@@ -231,14 +255,14 @@ export async function runActivation(deps: ActivationDeps, request: ActivationReq
       const failure = appErrorToFailure(error);
       // A chip that already has a FL URL and whose activation the backend refuses is still a real tag — show it.
       if (flCode && failure.kind === 'api' && failure.code === 'TAG_ALREADY_ACTIVATED') {
-        await closeSession({ success: IOS_MESSAGES.existing });
+        await closeSession({ success: iosMessage('existing') });
         return { type: 'existing_fl_tag', tagCode: flCode };
       }
       throw new NfcFlowError(failure);
     }
 
     if (start.status === 'already_activated') {
-      await closeSession({ success: IOS_MESSAGES.existing });
+      await closeSession({ success: iosMessage('existing') });
       return { type: 'already_activated', start };
     }
 
@@ -275,14 +299,14 @@ export async function runActivation(deps: ActivationDeps, request: ActivationReq
       const bytes = encodeUriMessage(writeUrl);
       if (snapshot.capacity !== null && bytes.length > snapshot.capacity) throw new NfcFlowError({ kind: 'too_small' });
       progress('writing');
-      await driver.setMessage(IOS_MESSAGES.writing);
+      await driver.setMessage(iosMessage('writing'));
       writeAttempted = true;
       await driver.write(bytes, snapshot.ndef === 'formatable' ? 'format' : 'ndef');
     }
 
     // ── Verify ────────────────────────────────────────────────────────
     progress('verifying');
-    await driver.setMessage(IOS_MESSAGES.verifying);
+    await driver.setMessage(iosMessage('verifying'));
     const readBack = describeContent(await driver.readRecords(), () => true);
     if (!(readBack.uris.length === 1 && readBack.otherRecords === 0 && sameUrl(readBack.uris[0], writeUrl))) {
       throw new NfcFlowError({ kind: 'verify_failed' });
@@ -291,13 +315,13 @@ export async function runActivation(deps: ActivationDeps, request: ActivationReq
     const written: PendingActivation = { ...pending, phase: 'written' };
     await deps.pending.save(written);
     intentToFail = null;
-    await closeSession({ success: IOS_MESSAGES.done });
+    await closeSession({ success: iosMessage('done') });
 
     // ── Confirm ───────────────────────────────────────────────────────
     return await confirmWith(deps, written);
   } catch (error) {
     const failure = classifyAny(error, driver);
-    await closeSession({ error: FAIL_SHEET_MESSAGE[failure.kind] ?? (failure.kind === 'cancelled' ? undefined : 'No se completó. Intenta de nuevo.') });
+    await closeSession({ error: failSheetMessage(failure.kind) ?? (failure.kind === 'cancelled' ? undefined : t('No se completó. Intenta de nuevo.')) });
     if (intentToFail) {
       // After an interrupted write the chip may already hold the URL: keep the
       // intent alive so the next tap recovers it (the "already carries our URL"
@@ -336,17 +360,17 @@ export async function readTagOnce(driver: NfcDriver): Promise<ReadOutcome> {
     const notReady = await preflight(driver);
     if (notReady) return { type: 'failed', failure: notReady };
     open = true;
-    await driver.beginSession(IOS_MESSAGES.approach);
+    await driver.beginSession(iosMessage('approach'));
     const snapshot = await driver.inspect();
     const content = describeContent(snapshot.records, () => false);
     open = false;
-    await driver.endSession({ success: IOS_MESSAGES.read });
+    await driver.endSession({ success: iosMessage('read') });
     return { type: 'read', uris: content.uris, blank: content.blank, foreign: content.foreignKind !== null };
   } catch (error) {
     const failure = classifyAny(error, driver);
     if (open) {
       open = false;
-      await driver.endSession({ error: failure.kind === 'cancelled' ? undefined : 'No pudimos leerlo. Intenta de nuevo.' });
+      await driver.endSession({ error: failure.kind === 'cancelled' ? undefined : t('No pudimos leerlo. Intenta de nuevo.') });
     }
     return { type: 'failed', failure };
   } finally {

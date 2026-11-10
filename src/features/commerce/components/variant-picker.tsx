@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { ProductVariant } from '@/types/models';
 import { haptics } from '@/utils/haptics';
@@ -29,12 +30,13 @@ interface VariantPickerProps {
  * struck through — the athlete sees the full range, never a hidden size.
  */
 export function VariantPicker({ variants, selected, onSelect }: VariantPickerProps) {
+  const { t } = useI18n();
   const axes = buildAxes(variants);
   if (variants.length <= 1) return null;
 
   if (!axes.structured || (axes.sizes.length === 0 && axes.colors.length === 0)) {
     return (
-      <Group label={selected ? `Opción: ${selected.name}` : 'Elige una opción'}>
+      <Group label={selected ? t('Opción: {name}', { name: selected.name }) : t('Elige una opción')}>
         {variants.map((variant) => (
           <OptionChip
             key={variant.uuid}
@@ -69,7 +71,7 @@ export function VariantPicker({ variants, selected, onSelect }: VariantPickerPro
   return (
     <View style={{ gap: spacing.md }}>
       {axes.colors.length > 0 ? (
-        <Group label={currentColor ? `Color: ${currentColor}` : 'Color'}>
+        <Group label={currentColor ? t('Color: {name}', { name: currentColor }) : t('Color')}>
           {axes.colors.map((color) => {
             const active = color.name === currentColor;
             const unavailable = !isColorAvailable(variants, color.name);
@@ -79,7 +81,7 @@ export function VariantPicker({ variants, selected, onSelect }: VariantPickerPro
                 onPress={() => pick(currentSize, color.name)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: active, disabled: unavailable }}
-                accessibilityLabel={`Color ${color.name}${unavailable ? ', agotado' : ''}`}
+                accessibilityLabel={unavailable ? t('Color {name}, agotado', { name: color.name }) : t('Color {name}', { name: color.name })}
                 style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: active ? colors.gold : 'transparent', opacity: unavailable ? 0.4 : 1 }}>
                 <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color.hex, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' }}>
                   {active ? <Check size={14} color={isLight(color.hex) ? colors.black : colors.white} strokeWidth={3} /> : null}
@@ -93,7 +95,7 @@ export function VariantPicker({ variants, selected, onSelect }: VariantPickerPro
       ) : null}
 
       {axes.sizes.length > 0 ? (
-        <Group label={currentSize ? `Talla: ${currentSize}` : 'Talla'}>
+        <Group label={currentSize ? t('Talla: {size}', { size: currentSize }) : t('Talla')}>
           {axes.sizes.map((size) => (
             <OptionChip
               key={size}
@@ -121,12 +123,13 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function OptionChip({ label, active, unavailable, onPress }: { label: string; active: boolean; unavailable: boolean; onPress: () => void }) {
+  const { t } = useI18n();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="radio"
       accessibilityState={{ selected: active, disabled: unavailable }}
-      accessibilityLabel={`${label}${unavailable ? ', agotado' : ''}`}
+      accessibilityLabel={unavailable ? t('{label}, agotado', { label }) : label}
       style={({ pressed }) => ({
         minWidth: 52,
         minHeight: 44,

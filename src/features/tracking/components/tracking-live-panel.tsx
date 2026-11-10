@@ -19,6 +19,7 @@ import { formatAgo, formatDistance, formatElapsed } from '../format';
 import { resumeLiveTracking, stopLiveTracking } from '../tracking-controller';
 import type { TrackingRecord } from '../tracking-storage';
 import { useCreateTrackingShare, useNow, useRevokeTrackingShare, useTrackingSupportMessages } from '../use-live-tracking';
+import { useI18n } from '@/i18n';
 
 /**
  * What the athlete sees while sharing: it's live, how far, since when,
@@ -26,6 +27,7 @@ import { useCreateTrackingShare, useNow, useRevokeTrackingShare, useTrackingSupp
  * button that never scrolls away.
  */
 export function TrackingLivePanel({ record, eventName, onStopped }: { record: TrackingRecord; eventName: string | null; onStopped: () => void }) {
+  const { t } = useI18n();
   const now = useNow(1000);
   const [confirmStop, setConfirmStop] = useState(false);
   const [stopping, setStopping] = useState(false);
@@ -40,15 +42,15 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
     setShareError(null);
     try {
       const created = record.shares[0] ?? (await createShare.mutateAsync(record.sessionUuid));
-      await Share.share({ message: `Sígueme en vivo${eventName ? ` en ${eventName}` : ''}: ${created.url}`, url: created.url });
+      await Share.share({ message: eventName ? t('Sígueme en vivo en {event}: {url}', { event: eventName, url: created.url }) : t('Sígueme en vivo: {url}', { url: created.url }), url: created.url });
     } catch (error) {
       const appError = error as { status?: number; kind?: string };
       setShareError(
         appError.status === 404
-          ? 'Compartir todavía no está disponible.'
+          ? t('Compartir todavía no está disponible.')
           : appError.kind === 'network'
-            ? 'Sin conexión. Intenta de nuevo cuando tengas señal.'
-            : 'No pudimos crear el enlace. Intenta otra vez.',
+            ? t('Sin conexión. Intenta de nuevo cuando tengas señal.')
+            : t('No pudimos crear el enlace. Intenta otra vez.'),
       );
     }
   }
@@ -58,7 +60,7 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
     try {
       const result = await stopLiveTracking();
       haptics.success();
-      showToast(result === 'stopped' ? 'Seguimiento detenido.' : 'GPS detenido. Enviaremos tus últimos puntos al reconectar.', 'success');
+      showToast(result === 'stopped' ? t('Seguimiento detenido.') : t('GPS detenido. Enviaremos tus últimos puntos al reconectar.'), 'success');
       setConfirmStop(false);
       if (result === 'stopped') onStopped();
     } finally {
@@ -73,7 +75,7 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
             {stopRequested ? <CloudOff size={14} color={colors.accent} /> : <LivePulse />}
             <AppText variant="label" tone="gold" accessibilityLiveRegion="polite">
-              {stopRequested ? 'ENVIANDO TUS ÚLTIMOS PUNTOS' : 'EN VIVO'}
+              {stopRequested ? t('ENVIANDO TUS ÚLTIMOS PUNTOS') : t('EN VIVO')}
             </AppText>
           </View>
           {eventName ? (
@@ -84,37 +86,37 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
         </Animated.View>
 
         <View style={{ flexDirection: 'row', gap: spacing.md }}>
-          <Metric label="Distancia" value={formatDistance(record.distanceM)} />
-          <Metric label="Tiempo" value={formatElapsed(record.startedAt, now)} />
+          <Metric label={t('Distancia')} value={formatDistance(record.distanceM)} />
+          <Metric label={t('Tiempo')} value={formatElapsed(record.startedAt, now)} />
         </View>
 
         <View style={{ gap: 6 }}>
-          <StatusLine label="Última actualización enviada" value={formatAgo(record.lastSyncAt, now)} />
+          <StatusLine label={t('Última actualización enviada')} value={formatAgo(record.lastSyncAt, now)} />
           {record.pending.length > 0 ? (
             <StatusLine
-              label={record.lastError === 'offline' ? 'Sin señal · guardados en tu teléfono' : 'Puntos por enviar'}
+              label={record.lastError === 'offline' ? t('Sin señal · guardados en tu teléfono') : t('Puntos por enviar')}
               value={String(record.pending.length)}
               tone={record.lastError ? 'warn' : 'default'}
             />
           ) : null}
-          {record.lastError === 'login' ? <InlineError message="Tu sesión expiró. Inicia sesión para seguir enviando tu recorrido." /> : null}
+          {record.lastError === 'login' ? <InlineError message={t('Tu sesión expiró. Inicia sesión para seguir enviando tu recorrido.')} /> : null}
         </View>
 
         {record.mode === 'foreground' && !stopRequested ? (
-          <Notice icon={TriangleAlert} text="En este dispositivo el seguimiento solo funciona con la app abierta. Mantén esta pantalla visible." />
+          <Notice icon={TriangleAlert} text={t('En este dispositivo el seguimiento solo funciona con la app abierta. Mantén esta pantalla visible.')} />
         ) : null}
-        {!stopRequested ? <Notice icon={TriangleAlert} text="El GPS consume batería. Si tu teléfono entra en ahorro de energía, el seguimiento puede pausarse." subtle /> : null}
+        {!stopRequested ? <Notice icon={TriangleAlert} text={t('El GPS consume batería. Si tu teléfono entra en ahorro de energía, el seguimiento puede pausarse.')} subtle /> : null}
         {record.mode === 'foreground' && !stopRequested ? (
-          <AppButton label="Reanudar GPS" variant="secondary" size="md" onPress={() => resumeLiveTracking().catch(() => {})} />
+          <AppButton label={t('Reanudar GPS')} variant="secondary" size="md" onPress={() => resumeLiveTracking().catch(() => {})} />
         ) : null}
 
         {!stopRequested ? (
           <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Compartir seguimiento</AppText>
+            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>{t('Compartir seguimiento')}</AppText>
             <AppText variant="caption" tone="muted">
-              Quien abra el enlace verá tu avance en un mapa. No necesita cuenta.
+              {t('Quien abra el enlace verá tu avance en un mapa. No necesita cuenta.')}
             </AppText>
-            <AppButton label={record.shares.length > 0 ? 'Compartir enlace' : 'Crear enlace y compartir'} icon={Share2} loading={createShare.isPending} onPress={share} />
+            <AppButton label={record.shares.length > 0 ? t('Compartir enlace') : t('Crear enlace y compartir')} icon={Share2} loading={createShare.isPending} onPress={share} />
             <InlineError message={shareError} />
             {record.shares.map((item) => (
               <View key={item.uuid} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.hairline }}>
@@ -125,17 +127,17 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
                   </AppText>
                   {item.expires_at ? (
                     <AppText variant="caption" tone="muted">
-                      Vence {formatDateTime(item.expires_at)}
+                      {t('Vence {date}', { date: formatDateTime(item.expires_at) })}
                     </AppText>
                   ) : null}
                 </View>
                 <Pressable
                   onPress={() => setRevoking(item.uuid)}
                   accessibilityRole="button"
-                  accessibilityLabel="Revocar este enlace"
+                  accessibilityLabel={t('Revocar este enlace')}
                   style={{ minHeight: 44, paddingHorizontal: spacing.sm, justifyContent: 'center' }}>
                   <AppText variant="caption" tone="destructive">
-                    Revocar
+                    {t('Revocar')}
                   </AppText>
                 </Pressable>
               </View>
@@ -147,7 +149,7 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
           <View style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               <HeartHandshake size={18} color={colors.accent} />
-              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Mensajes de tu equipo de apoyo</AppText>
+              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>{t('Mensajes de tu equipo de apoyo')}</AppText>
             </View>
             {support.messages.map((message) => (
               <SupportMessageCard key={message.id} message={message} onSeen={() => support.consume(message.id)} />
@@ -157,29 +159,29 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
       </ScrollView>
 
       <StickyFooter>
-        <AppButton label={stopRequested ? 'Reintentar envío' : 'Detener seguimiento'} icon={Square} variant={stopRequested ? 'secondary' : 'destructive'} loading={stopping} onPress={() => (stopRequested ? stop() : setConfirmStop(true))} />
+        <AppButton label={stopRequested ? t('Reintentar envío') : t('Detener seguimiento')} icon={Square} variant={stopRequested ? 'secondary' : 'destructive'} loading={stopping} onPress={() => (stopRequested ? stop() : setConfirmStop(true))} />
       </StickyFooter>
 
       <ConfirmDialog
         visible={confirmStop}
-        title="¿Detener el seguimiento?"
-        description="Tu GPS se apagará y quienes te siguen verán tu último punto. Los enlaces dejan de actualizarse."
-        confirmLabel="Detener"
+        title={t('¿Detener el seguimiento?')}
+        description={t('Tu GPS se apagará y quienes te siguen verán tu último punto. Los enlaces dejan de actualizarse.')}
+        confirmLabel={t('Detener')}
         loading={stopping}
         onConfirm={stop}
         onCancel={() => setConfirmStop(false)}
       />
       <ConfirmDialog
         visible={revoking !== null}
-        title="¿Revocar este enlace?"
-        description="Quien lo tenga dejará de ver tu ubicación de inmediato."
-        confirmLabel="Revocar"
+        title={t('¿Revocar este enlace?')}
+        description={t('Quien lo tenga dejará de ver tu ubicación de inmediato.')}
+        confirmLabel={t('Revocar')}
         loading={revokeShare.isPending}
         onConfirm={() => {
           if (!revoking) return;
           revokeShare.mutate(revoking, {
-            onSuccess: () => showToast('Enlace revocado.', 'success'),
-            onError: () => showToast('No pudimos revocarlo. Intenta otra vez.', 'destructive'),
+            onSuccess: () => showToast(t('Enlace revocado.'), 'success'),
+            onError: () => showToast(t('No pudimos revocarlo. Intenta otra vez.'), 'destructive'),
             onSettled: () => setRevoking(null),
           });
         }}
@@ -242,13 +244,15 @@ function Notice({ icon: Icon, text, subtle = false }: { icon: typeof TriangleAle
 }
 
 function SupportMessageCard({ message, onSeen }: { message: SupportTriggeredMessage; onSeen: () => void }) {
+  const { t } = useI18n();
+
   return (
     <Animated.View entering={FadeInDown.duration(280)} style={{ gap: spacing.xs, padding: spacing.md, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.goldDim, backgroundColor: colors.goldWash }}>
-      <AppText style={{ fontFamily: fontFamily.semibold }}>{message.contributor_name ?? 'Alguien que te apoya'}</AppText>
+      <AppText style={{ fontFamily: fontFamily.semibold }}>{message.contributor_name ?? t('Alguien que te apoya')}</AppText>
       {message.type === 'audio' && message.audio_url ? <AudioButton url={message.audio_url} /> : <AppText variant="body">{message.message_text}</AppText>}
       <Pressable onPress={onSeen} accessibilityRole="button" style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.sm }}>
         <AppText variant="caption" tone="gold">
-          Listo, gracias
+          {t('Listo, gracias')}
         </AppText>
       </Pressable>
     </Animated.View>
@@ -256,6 +260,7 @@ function SupportMessageCard({ message, onSeen }: { message: SupportTriggeredMess
 }
 
 function AudioButton({ url }: { url: string }) {
+  const { t } = useI18n();
   const player = useVideoPlayer(url);
   const [playing, setPlaying] = useState(false);
   return (
@@ -266,11 +271,11 @@ function AudioButton({ url }: { url: string }) {
         setPlaying(!playing);
       }}
       accessibilityRole="button"
-      accessibilityLabel={playing ? 'Pausar mensaje de voz' : 'Escuchar mensaje de voz'}
+      accessibilityLabel={playing ? t('Pausar mensaje de voz') : t('Escuchar mensaje de voz')}
       style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start', minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.goldDim }}>
       {playing ? <Pause size={14} color={colors.accent} /> : <Play size={14} color={colors.accent} />}
       <AppText variant="caption" tone="gold">
-        Mensaje de voz
+        {t('Mensaje de voz')}
       </AppText>
     </Pressable>
   );

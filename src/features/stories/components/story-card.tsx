@@ -14,6 +14,7 @@ import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { GradientOverlay } from '@/components/brand/gradient-overlay';
 import { PressableScale } from '@/components/motion/pressable-scale';
+import { useI18n } from '@/i18n';
 import type { StorySummary } from '@/schemas/iap';
 import { gradients } from '@/theme/gradients';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
@@ -34,18 +35,19 @@ export function storyDateLabel(story: StorySummary): string | null {
 }
 
 export function StoryCard({ story, width, height = 220, style }: StoryCardProps) {
-  const title = story.title || story.event?.name || 'Mi recuerdo';
+  const { t, tc } = useI18n();
+  const title = story.title || story.event?.name || t('Mi recuerdo');
   const eventName = story.title && story.event?.name && story.event.name !== story.title ? story.event.name : null;
   const date = storyDateLabel(story);
   const photos = story.photos.length;
-  const meta = [date, photos > 0 ? `${photos} ${photos === 1 ? 'foto' : 'fotos'}` : null].filter(Boolean).join('  ·  ');
+  const meta = [date, photos > 0 ? tc('{count} foto|{count} fotos', photos) : null].filter(Boolean).join('  ·  ');
 
   return (
     <PressableScale
       onPress={() => router.push(`/stories/${story.public_id}` as Href)}
       accessibilityRole="button"
       accessibilityLabel={[title, eventName, date].filter(Boolean).join(', ')}
-      accessibilityHint="Abre este recuerdo"
+      accessibilityHint={t('Abre este recuerdo')}
       style={[
         {
           width,
@@ -81,7 +83,7 @@ export function StoryCard({ story, width, height = 220, style }: StoryCardProps)
             <View style={{ position: 'absolute', top: spacing.md, left: spacing.md, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <ImagePlus size={15} color={colors.gold} strokeWidth={2} />
               <AppText maxFontSizeMultiplier={1.3} style={{ fontFamily: fontFamily.semibold, fontSize: 12.5, color: colors.goldSoft }}>
-                Agrega tu primera foto
+                {t('Agrega tu primera foto')}
               </AppText>
             </View>
           </>

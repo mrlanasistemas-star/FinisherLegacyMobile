@@ -9,9 +9,11 @@ import { AppText } from '@/components/app-text';
 
 import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 /** Discreet banner while offline; a short toast when connection returns (AGENTS.md §148). */
 export function OfflineBanner() {
+  const { t } = useI18n();
   const network = Network.useNetworkState();
   const insets = useSafeAreaInsets();
   // A ref, not state — this only decides whether to fire a toast (an
@@ -26,9 +28,9 @@ export function OfflineBanner() {
       wasOffline.current = true;
     } else if (wasOffline.current) {
       wasOffline.current = false;
-      showToast('Conexión restaurada', 'success');
+      showToast(t('Conexión restaurada'), 'success');
     }
-  }, [network.isConnected]);
+  }, [network.isConnected, t]);
 
   if (!isOffline) return null;
 
@@ -40,7 +42,7 @@ export function OfflineBanner() {
       <View style={{ backgroundColor: colors.destructive, paddingVertical: spacing.xs, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
         <WifiOff color={colors.white} size={14} />
         <AppText variant="caption" style={{ color: colors.white }}>
-          Sin conexión. Algunas historias pueden no actualizarse.
+          {t('Sin conexión. Algunas historias pueden no actualizarse.')}
         </AppText>
       </View>
     </Animated.View>

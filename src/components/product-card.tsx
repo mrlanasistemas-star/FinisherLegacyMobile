@@ -5,6 +5,7 @@ import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { PressScale } from '@/components/motion/press-scale';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { ProductSummary } from '@/types/models';
 import { formatMoney } from '@/utils/money';
@@ -18,6 +19,7 @@ interface ProductCardProps {
 
 /** Image-first product tile — no box, the product is the design. */
 export const ProductCard = memo(function ProductCard({ product, onPress, featured = false }: ProductCardProps) {
+  const { t } = useI18n();
   const soldOut = product.in_stock === false;
   const price = product.from_price_minor !== null ? formatMoney(product.from_price_minor, product.currency) : null;
 
@@ -25,7 +27,7 @@ export const ProductCard = memo(function ProductCard({ product, onPress, feature
     <PressScale
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}${price ? `, desde ${price}` : ''}${soldOut ? ', agotado' : ''}`}
+      accessibilityLabel={[product.name, price ? t('desde {price}', { price }) : null, soldOut ? t('agotado') : null].filter(Boolean).join(', ')}
       style={{ flex: featured ? undefined : 1 }}>
       <View style={{ gap: spacing.xs }}>
         <View style={{ aspectRatio: featured ? 16 / 10 : 4 / 5, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous', backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.hairline }}>
@@ -45,7 +47,7 @@ export const ProductCard = memo(function ProductCard({ product, onPress, feature
           )}
           {soldOut ? (
             <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(11,11,12,0.8)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: colors.onDark }}>Agotado</AppText>
+              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: colors.onDark }}>{t('Agotado')}</AppText>
             </View>
           ) : null}
         </View>

@@ -19,6 +19,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { useCartCount } from '@/hooks/use-cart';
 import { useDebouncedValue } from '@/hooks/use-social';
 import { useCollections, useProducts } from '@/hooks/use-store-products';
+import { useI18n, type Translate, type TranslateCount } from '@/i18n';
 import type { StoreCollection } from '@/schemas/store';
 import { colors, spacing } from '@/theme/tokens';
 import type { ProductCategoryOption, ProductSummary } from '@/types/models';
@@ -34,27 +35,27 @@ const NAV_HEIGHT = 52;
 const openProduct = (product: ProductSummary) => router.push(`/store/${product.slug}`);
 const openCollection = (collection: StoreCollection) => router.push(`/store/collection/${collection.slug}` as Href);
 
-function collectionItem(collection: StoreCollection): CarouselItem {
+function collectionItem(collection: StoreCollection, t: Translate, tc: TranslateCount): CarouselItem {
   const eyebrow = [collection.discipline, collection.destination].filter(Boolean).join(' · ') || null;
   return {
     key: `c-${collection.slug}`,
     title: collection.name,
     eyebrow,
     subtitle: collection.tagline,
-    cta: collection.products_count ? `Ver ${collection.products_count} ${collection.products_count === 1 ? 'pieza' : 'piezas'}` : 'Ver colección',
+    cta: collection.products_count ? tc('Ver {count} pieza|Ver {count} piezas', collection.products_count) : t('Ver colección'),
     face: tagFaceFrom(collection.tag_design, { name: collection.destination ?? collection.name, discipline: collection.discipline }),
     accent: collection.tag_design?.accent ?? null,
     onPress: () => openCollection(collection),
   };
 }
 
-function tagProductItem(product: ProductSummary): CarouselItem {
+function tagProductItem(product: ProductSummary, t: Translate): CarouselItem {
   return {
     key: `p-${product.uuid}`,
     title: product.name,
     eyebrow: product.category,
     subtitle: null,
-    cta: product.from_price_minor !== null ? `Desde ${formatMoney(product.from_price_minor, product.currency)}` : 'Ver pieza',
+    cta: product.from_price_minor !== null ? t('Desde {price}', { price: formatMoney(product.from_price_minor, product.currency) }) : t('Ver pieza'),
     face: tagFaceFrom(product.tag_design, { name: product.name }),
     accent: product.tag_design?.accent ?? null,
     onPress: () => openProduct(product),
@@ -68,6 +69,7 @@ function tagProductItem(product: ProductSummary): CarouselItem {
  * an empty response is an empty state, never a placeholder product.
  */
 export function StoreHomeScreen() {
+  const { t, tc } = useI18n();
   const [category, setCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const q = useDebouncedValue(search.trim(), 400);
@@ -86,20 +88,20 @@ export function StoreHomeScreen() {
   const carousel = useMemo<CarouselItem[]>(() => {
     if (filtering) return [];
     const published = collections.data ?? [];
-    if (published.length > 0) return published.map(collectionItem);
-    return (tags.data?.pages[0]?.rows ?? []).filter(isTagProduct).slice(0, 10).map(tagProductItem);
-  }, [filtering, collections.data, tags.data]);
+    if (published.length > 0) return published.map((collection) => collectionItem(collection, t, tc));
+    return (tags.data?.pages[0]?.rows ?? []).filter(isTagProduct).slice(0, 10).map((product) => tagProductItem(product, t));
+  }, [filtering, collections.data, tags.data, t, tc]);
 
   const refreshing = (products.isRefetching && !products.isFetchingNextPage) || collections.isRefetching;
 
   const header = (
     <View style={{ gap: spacing.lg, paddingBottom: spacing.md }}>
       <LargeTitle scrollY={scrollY} />
-      <FormInput kind="search" placeholder="Buscar en la tienda" value={search} onChangeText={setSearch} accessibilityLabel="Buscar productos" />
+      <FormInput kind="search" placeholder={t('Buscar en la tienda')} value={search} onChangeText={setSearch} accessibilityLabel={t('Buscar productos')} />
 
       {carousel.length > 0 ? (
         <Reveal delay={60} style={{ gap: spacing.sm }}>
-          <SectionHeader title={collections.data?.length ? 'Colecciones Finisher Legacy Tag' : 'Finisher Legacy Tag'} style={{ marginBottom: 0 }} />
+          <SectionHeader title={collections.data?.length ? t('Colecciones Finisher Legacy Tag') : 'Finisher Legacy Tag'} style={{ marginBottom: 0 }} />
           <CollectionCarousel items={carousel} />
         </Reveal>
       ) : collections.isPending && !filtering ? (
@@ -113,7 +115,7 @@ export function StoreHomeScreen() {
           style={{ marginHorizontal: -spacing.lg }}
           contentContainerStyle={{ gap: spacing.xs, paddingHorizontal: spacing.lg }}
           accessibilityRole="tablist">
-          <Chip label="Todo" selected={category === null} onPress={() => setCategory(null)} />
+          <Chip label={t('Todo')} selected={category === null} onPress={() => setCategory(null)} />
           {categories.map((item) => (
             <Chip key={item.slug} label={item.name} selected={category === item.slug} onPress={() => setCategory(item.slug)} />
           ))}
@@ -121,7 +123,7 @@ export function StoreHomeScreen() {
       ) : null}
 
       {rows.length > 0 ? (
-        <SectionHeader title={filtering ? `${products.data?.pages[0]?.total ?? rows.length} resultados` : 'Todo el catálogo'} style={{ marginBottom: 0 }} />
+        <SectionHeader title={filtering ? tc('{count} resultado|{count} resultados', products.data?.pages[0]?.total ?? rows.length) : t('Todo el catálogo')} style={{ marginBottom: 0 }} />
       ) : null}
     </View>
   );
@@ -132,7 +134,7 @@ export function StoreHomeScreen() {
         <StoreSkeleton top={insets.top + NAV_HEIGHT} />
       ) : products.isError && !products.data ? (
         <View style={{ flex: 1, paddingTop: insets.top + NAV_HEIGHT }}>
-          <ErrorState error={products.error} message="No pudimos cargar la tienda." onRetry={products.refetch} />
+          <ErrorState error={products.error} message={t('No pudimos cargar la tienda.')} onRetry={products.refetch} />
         </View>
       ) : (
         <Animated.FlatList
@@ -171,16 +173,16 @@ export function StoreHomeScreen() {
               <EmptyState
                 compact
                 icon={ShoppingBag}
-                title="Sin resultados"
-                message="Prueba con otra búsqueda o categoría."
-                secondaryLabel="Ver todo"
+                title={t('Sin resultados')}
+                message={t('Prueba con otra búsqueda o categoría.')}
+                secondaryLabel={t('Ver todo')}
                 onSecondary={() => {
                   setCategory(null);
                   setSearch('');
                 }}
               />
             ) : (
-              <EmptyState icon={ShoppingBag} title="Aún no hay productos" message="Cuando la tienda publique piezas aparecerán aquí." />
+              <EmptyState icon={ShoppingBag} title={t('Aún no hay productos')} message={t('Cuando la tienda publique piezas aparecerán aquí.')} />
             )
           }
         />
@@ -188,12 +190,12 @@ export function StoreHomeScreen() {
 
       <ScrollHeader
         scrollY={scrollY}
-        title="Colecciones"
+        title={t('Colecciones')}
         threshold={56}
         right={
           <>
-            <IconButton icon={Receipt} label="Mis pedidos" onPress={() => router.push('/orders')} />
-            <IconButton icon={ShoppingCart} label={cartCount > 0 ? `Carrito, ${cartCount} productos` : 'Carrito'} badge={cartCount} onPress={() => router.push('/cart')} />
+            <IconButton icon={Receipt} label={t('Mis pedidos')} onPress={() => router.push('/orders')} />
+            <IconButton icon={ShoppingCart} label={cartCount > 0 ? tc('Carrito, {count} producto|Carrito, {count} productos', cartCount) : t('Carrito')} badge={cartCount} onPress={() => router.push('/cart')} />
           </>
         }
       />
@@ -207,6 +209,7 @@ export function StoreHomeScreen() {
  * from its leading edge on pull-down.
  */
 function LargeTitle({ scrollY }: { scrollY: SharedValue<number> }) {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const style = useAnimatedStyle(() => {
     const opacity = interpolate(scrollY.value, [0, 48], [1, 0], Extrapolation.CLAMP);
@@ -222,10 +225,10 @@ function LargeTitle({ scrollY }: { scrollY: SharedValue<number> }) {
   return (
     <Animated.View style={[{ gap: 2, transformOrigin: 'left' }, style]}>
       <AppText variant="display" accessibilityRole="header">
-        Colecciones
+        {t('Colecciones')}
       </AppText>
       <AppText variant="body" tone="muted">
-        Finisher Legacy Tag y equipo que guarda tu historia.
+        {t('Finisher Legacy Tag y equipo que guarda tu historia.')}
       </AppText>
     </Animated.View>
   );

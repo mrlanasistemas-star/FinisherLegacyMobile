@@ -9,6 +9,7 @@ import { Avatar } from '@/components/ui/avatar';
 import { useProfile } from '@/hooks/use-profile';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { AthleteSummary } from '@/types/social';
+import { useI18n } from '@/i18n';
 
 interface AthleteRowProps {
   athlete: AthleteSummary;
@@ -18,6 +19,7 @@ interface AthleteRowProps {
 
 /** Avatar + name + @username (+ city) + Seguir — followers, following, search, explore. */
 export const AthleteRow = memo(function AthleteRow({ athlete, showFollow = true, trailing }: AthleteRowProps) {
+  const { t } = useI18n();
   const myUsername = useProfile().data?.profile?.username;
   const username = athlete.username;
   const isMe = !!username && username === myUsername;
@@ -28,7 +30,7 @@ export const AthleteRow = memo(function AthleteRow({ athlete, showFollow = true,
         onPress={() => username && router.push(`/athlete/${username}`)}
         disabled={!username}
         accessibilityRole="button"
-        accessibilityLabel={`Ver perfil de ${athlete.name}`}
+        accessibilityLabel={t('Ver perfil de {name}', { name: athlete.name })}
         style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
         <Avatar uri={athlete.photo_url} name={athlete.name} size={44} />
         <View style={{ flex: 1 }}>

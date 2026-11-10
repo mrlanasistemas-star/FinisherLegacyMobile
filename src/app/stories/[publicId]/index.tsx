@@ -38,13 +38,14 @@ import { useStory } from '@/features/iap/use-photo-expansion';
 import { MediaTile } from '@/features/stories/components/media-tile';
 import { hasRaceData, RaceDataCard } from '@/features/stories/components/race-data-card';
 import { StoryViewer } from '@/features/stories/components/story-viewer';
-import { VisibilitySheet, VISIBILITY_COPY } from '@/features/stories/components/visibility-sheet';
+import { visibilityCopy, VisibilitySheet } from '@/features/stories/components/visibility-sheet';
 import { VoicePlayer } from '@/features/stories/components/voice-player';
 import { isoToDisplayDate } from '@/features/stories/story-form';
 import { summarize, uploadsForStory } from '@/features/stories/upload-queue';
 import { useUploadStore } from '@/features/stories/upload-store';
 import { useEditableStory, useStoryMedia } from '@/features/stories/use-stories';
 import { useResponsive } from '@/hooks/use-responsive';
+import { useI18n } from '@/i18n';
 import type { StoryMedia, StoryVisibility } from '@/schemas/story';
 import { showToast } from '@/stores/toastStore';
 import { gradients } from '@/theme/gradients';
@@ -65,6 +66,7 @@ function dateLabel(value: string | null | undefined): string | null {
 }
 
 export default function StoryScreen() {
+  const { t, tc } = useI18n();
   const { publicId = '' } = useLocalSearchParams<{ publicId?: string }>();
   const insets = useSafeAreaInsets();
   const { width, height } = useResponsive();
@@ -114,7 +116,7 @@ export default function StoryScreen() {
   const firstLocal = gallery.find((item) => item.role === 'photo' && previews[item.uuid]);
   const coverUrl = firstPhoto?.url ?? firstPhoto?.thumb_url ?? fallback?.cover_url ?? editable?.cover_url ?? (firstLocal ? previews[firstLocal.uuid] : null) ?? null;
 
-  const title = editable?.title || fallback?.title || editable?.event_name || fallback?.event?.name || 'Mi recuerdo';
+  const title = editable?.title || fallback?.title || editable?.event_name || fallback?.event?.name || t('Mi recuerdo');
   const eventName = editable?.event_name ?? fallback?.event?.name ?? null;
   const date = dateLabel(editable?.race_date ?? fallback?.event?.date);
   const eyebrow = [eventName && eventName !== title ? eventName : null, date].filter(Boolean).join('  ·  ');
@@ -136,12 +138,12 @@ export default function StoryScreen() {
   async function share() {
     const url = editable?.share_url ?? fallback?.web_url ?? null;
     if (editable?.visibility === 'private') {
-      showToast('Tu recuerdo es privado. Elige quién puede verlo para compartirlo.');
+      showToast(t('Tu recuerdo es privado. Elige quién puede verlo para compartirlo.'));
       setVisibilityOpen(true);
       return;
     }
     if (!url) {
-      showToast('Este recuerdo aún no tiene un enlace para compartir.');
+      showToast(t('Este recuerdo aún no tiene un enlace para compartir.'));
       return;
     }
     haptics.light();
@@ -155,7 +157,7 @@ export default function StoryScreen() {
   function openViewer(item: StoryMedia) {
     const index = viewable.findIndex((candidate) => candidate.uuid === item.uuid);
     if (index >= 0) setViewerIndex(index);
-    else if (item.status === 'processing') showToast('Todavía lo estamos procesando. En un momento podrás abrirlo.');
+    else if (item.status === 'processing') showToast(t('Todavía lo estamos procesando. En un momento podrás abrirlo.'));
   }
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/legacy'));
@@ -167,12 +169,12 @@ export default function StoryScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={{ paddingHorizontal: spacing.sm, minHeight: 52, justifyContent: 'center' }}>
-          <IconButton icon={ChevronLeft} label="Volver" onPress={back} size={26} />
+          <IconButton icon={ChevronLeft} label={t('Volver')} onPress={back} size={26} />
         </View>
         <ErrorState
           error={error}
-          title={missing ? 'Recuerdo no disponible' : undefined}
-          message={missing ? 'No encontramos este recuerdo o ya no tienes acceso a él.' : 'No pudimos abrir este recuerdo.'}
+          title={missing ? t('Recuerdo no disponible') : undefined}
+          message={missing ? t('No encontramos este recuerdo o ya no tienes acceso a él.') : t('No pudimos abrir este recuerdo.')}
           onRetry={missing ? undefined : refresh}
           onBack={back}
         />
@@ -244,19 +246,19 @@ export default function StoryScreen() {
                 scaleTo={0.98}
                 dim
                 accessibilityRole="button"
-                accessibilityLabel={`Quién puede verlo: ${VISIBILITY_COPY[editable.visibility].title}`}
-                accessibilityHint="Abre las opciones de privacidad"
+                accessibilityLabel={t('Quién puede verlo: {audience}', { audience: visibilityCopy(t, editable.visibility).title })}
+                accessibilityHint={t('Abre las opciones de privacidad')}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start', minHeight: 36, marginBottom: -spacing.md }}>
                 <VisibilityIcon size={15} color={colors.accent} strokeWidth={2} />
-                <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14, color: colors.foreground }}>{VISIBILITY_COPY[editable.visibility].label}</AppText>
-                <AppText style={{ fontFamily: fontFamily.regular, fontSize: 14, color: colors.subtle }}>· Cambiar</AppText>
+                <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14, color: colors.foreground }}>{visibilityCopy(t, editable.visibility).label}</AppText>
+                <AppText style={{ fontFamily: fontFamily.regular, fontSize: 14, color: colors.subtle }}>{t('· Cambiar')}</AppText>
               </PressableScale>
             ) : null}
 
             {editingUnavailable && fallback?.is_owner ? (
               <View style={{ padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.goldWash }}>
                 <AppText variant="caption" style={{ color: colors.foreground }}>
-                  Muy pronto podrás editar este recuerdo y subir fotos desde la app. Por ahora puedes hacerlo en finisherlegacy.com.
+                  {t('Muy pronto podrás editar este recuerdo y subir fotos desde la app. Por ahora puedes hacerlo en finisherlegacy.com.')}
                 </AppText>
               </View>
             ) : null}
@@ -267,14 +269,14 @@ export default function StoryScreen() {
                 onPress={() => router.push(`/stories/${publicId}/media` as Href)}
                 scaleTo={0.985}
                 accessibilityRole="button"
-                accessibilityLabel={queue.busy ? `Subiendo archivos, ${queue.progress} por ciento` : 'Hay archivos que no se subieron'}
+                accessibilityLabel={queue.busy ? t('Subiendo archivos, {progress} por ciento', { progress: queue.progress }) : t('Hay archivos que no se subieron')}
                 style={{ padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, gap: spacing.xs }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <AppText variant="bodyStrong">
-                    {queue.busy ? `Subiendo ${queue.waiting} ${queue.waiting === 1 ? 'archivo' : 'archivos'}…` : queue.blocked > 0 ? 'Te quedaste sin espacio' : 'Algunos archivos no se subieron'}
+                    {queue.busy ? tc('Subiendo {count} archivo…|Subiendo {count} archivos…', queue.waiting) : queue.blocked > 0 ? t('Te quedaste sin espacio') : t('Algunos archivos no se subieron')}
                   </AppText>
                   <AppText variant="caption" tone="accent">
-                    Ver
+                    {t('Ver')}
                   </AppText>
                 </View>
                 {queue.busy ? (
@@ -294,9 +296,9 @@ export default function StoryScreen() {
               <EmptyState
                 compact
                 icon={PenLine}
-                title="Agrega los datos de tu carrera"
-                message="Tu tiempo, dorsal, ritmo y posición: lo que quieres recordar de ese día."
-                actionLabel="Completar datos"
+                title={t('Agrega los datos de tu carrera')}
+                message={t('Tu tiempo, dorsal, ritmo y posición: lo que quieres recordar de ese día.')}
+                actionLabel={t('Completar datos')}
                 onAction={() => router.push(`/stories/${publicId}/edit` as Href)}
                 style={{ backgroundColor: colors.card, borderRadius: radius.xl, borderWidth: 1, borderColor: colors.hairline }}
               />
@@ -308,7 +310,7 @@ export default function StoryScreen() {
             {dedication || body ? (
               <View style={{ gap: spacing.md }}>
                 <AppText accessibilityRole="header" style={{ fontFamily: fontFamily.heading, fontSize: 20, letterSpacing: -0.2 }}>
-                  Mi historia
+                  {t('Mi historia')}
                 </AppText>
                 {dedication ? (
                   <View style={{ borderLeftWidth: 2, borderLeftColor: colors.gold, paddingLeft: spacing.md, paddingVertical: 2 }}>
@@ -326,15 +328,15 @@ export default function StoryScreen() {
                 onPress={() => router.push(`/stories/${publicId}/edit` as Href)}
                 scaleTo={0.985}
                 accessibilityRole="button"
-                accessibilityLabel="Escribir mi historia"
+                accessibilityLabel={t('Escribir mi historia')}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
                 <View style={{ width: 36, height: 36, borderRadius: 10, borderCurve: 'continuous', backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
                   <PenLine size={18} color={colors.accent} strokeWidth={1.9} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <AppText variant="bodyStrong">Cuenta tu historia</AppText>
+                  <AppText variant="bodyStrong">{t('Cuenta tu historia')}</AppText>
                   <AppText variant="caption" tone="muted">
-                    Lo que sentiste, a quién se la dedicas, lo que no quieres olvidar.
+                    {t('Lo que sentiste, a quién se la dedicas, lo que no quieres olvidar.')}
                   </AppText>
                 </View>
               </PressableScale>
@@ -346,14 +348,14 @@ export default function StoryScreen() {
             {/* Gallery */}
             <View>
               <SectionHeader
-                title="Fotos y videos"
-                actionLabel={isOwner && gallery.length > 0 ? 'Administrar' : undefined}
+                title={t('Fotos y videos')}
+                actionLabel={isOwner && gallery.length > 0 ? t('Administrar') : undefined}
                 onAction={isOwner ? () => router.push(`/stories/${publicId}/media` as Href) : undefined}
               />
               {gallery.length > 0 ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: GAP }}>
                   {gallery.map((item, index) => (
-                    <PressableScale key={item.uuid} onPress={() => openViewer(item)} scaleTo={0.96} accessibilityRole="imagebutton" accessibilityLabel={`${item.role === 'video' ? 'Video' : 'Foto'} ${index + 1} de ${gallery.length}`}>
+                    <PressableScale key={item.uuid} onPress={() => openViewer(item)} scaleTo={0.96} accessibilityRole="imagebutton" accessibilityLabel={item.role === 'video' ? t('Video {position} de {total}', { position: index + 1, total: gallery.length }) : t('Foto {position} de {total}', { position: index + 1, total: gallery.length })}>
                       <MediaTile item={item} size={tile} previewUri={previews[item.uuid]} />
                     </PressableScale>
                   ))}
@@ -368,14 +370,14 @@ export default function StoryScreen() {
                 <EmptyState
                   compact
                   icon={Images}
-                  title="Aún no hay fotos"
-                  message="Sube las fotos y videos de ese día desde tu teléfono, o agrega las que compraste a los fotógrafos."
-                  actionLabel="Agregar fotos"
+                  title={t('Aún no hay fotos')}
+                  message={t('Sube las fotos y videos de ese día desde tu teléfono, o agrega las que compraste a los fotógrafos.')}
+                  actionLabel={t('Agregar fotos')}
                   onAction={() => router.push(`/stories/${publicId}/media?add=1` as Href)}
                 />
               ) : (
                 <AppText variant="body" tone="muted">
-                  Este recuerdo aún no tiene fotos.
+                  {t('Este recuerdo aún no tiene fotos.')}
                 </AppText>
               )}
             </View>
@@ -401,8 +403,8 @@ export default function StoryScreen() {
             paddingRight: Math.max(insets.right, spacing.lg),
           }}>
           <View style={{ flexDirection: 'row', gap: spacing.sm, width: '100%', maxWidth: 720 - spacing.lg * 2 }}>
-            <AppButton label="Editar" icon={PenLine} variant="secondary" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push(`/stories/${publicId}/edit` as Href)} />
-            <AppButton label="Fotos y videos" icon={ImagePlus} size="md" fullWidth={false} style={{ flex: 1.3 }} onPress={() => router.push(`/stories/${publicId}/media` as Href)} />
+            <AppButton label={t('Editar')} icon={PenLine} variant="secondary" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push(`/stories/${publicId}/edit` as Href)} />
+            <AppButton label={t('Fotos y videos')} icon={ImagePlus} size="md" fullWidth={false} style={{ flex: 1.3 }} onPress={() => router.push(`/stories/${publicId}/media` as Href)} />
           </View>
         </View>
       ) : null}
@@ -411,8 +413,8 @@ export default function StoryScreen() {
         scrollY={scrollY}
         title={title}
         threshold={heroHeight - insets.top - 52}
-        left={<IconButton icon={ChevronLeft} label="Volver" onPress={back} size={26} filled />}
-        right={<IconButton icon={Share2} label="Compartir" onPress={() => void share()} filled />}
+        left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={back} size={26} filled />}
+        right={<IconButton icon={Share2} label={t('Compartir')} onPress={() => void share()} filled />}
       />
 
       {editable ? <VisibilitySheet visible={visibilityOpen} onClose={() => setVisibilityOpen(false)} publicId={publicId} value={editable.visibility} /> : null}

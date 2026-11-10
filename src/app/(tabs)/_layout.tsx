@@ -17,9 +17,11 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
+import { localeScreenLayout } from '@/components/i18n/locale-boundary';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { MiniPlayer } from '@/features/training/components/mini-player';
 import { useCartCount } from '@/hooks/use-cart';
+import { useI18n, type Translate } from '@/i18n';
 import { gradients } from '@/theme/gradients';
 import { colors, fontFamily, springs } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
@@ -38,30 +40,37 @@ import { haptics } from '@/utils/haptics';
  */
 const ACTIVATE_HREF = '/activate' as Href;
 
-const TABS: Record<string, { label: string; icon: LucideIcon; a11y: string }> = {
-  index: { label: 'Inicio', icon: Home, a11y: 'Inicio' },
-  legacy: { label: 'Recuerdos', icon: BookHeart, a11y: 'Mis recuerdos: tus carreras, fotos y equipo' },
-  explore: { label: 'Comunidad', icon: Users, a11y: 'Comunidad: atletas, momentos y eventos' },
-  store: { label: 'Colecciones', icon: ShoppingBag, a11y: 'Colecciones: tienda Finisher Legacy' },
-};
+/** Built with the hook's `t`: the bar lives outside the screens, so it must follow the language by itself. */
+function buildTabs(t: Translate): Record<string, { label: string; icon: LucideIcon; a11y: string }> {
+  return {
+    index: { label: t('Inicio'), icon: Home, a11y: t('Inicio') },
+    legacy: { label: t('Recuerdos'), icon: BookHeart, a11y: t('Mis recuerdos: tus carreras, fotos y equipo') },
+    explore: { label: t('Comunidad'), icon: Users, a11y: t('Comunidad: atletas, momentos y eventos') },
+    store: { label: t('Colecciones'), icon: ShoppingBag, a11y: t('Colecciones: tienda Finisher Legacy') },
+  };
+}
 /** Bar order; `null` = the center Activar action. */
 const ORDER: (string | null)[] = ['index', 'legacy', null, 'explore', 'store'];
 
 const BAR_HEIGHT = 62;
 
 export default function TabsLayout() {
+  const { t } = useI18n();
+
   return (
-    <Tabs tabBar={(props) => <BrandTabBar {...props} />} screenOptions={{ headerShown: false }}>
-      <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
-      <Tabs.Screen name="legacy" options={{ title: 'Recuerdos' }} />
-      <Tabs.Screen name="explore" options={{ title: 'Comunidad' }} />
-      <Tabs.Screen name="store" options={{ title: 'Colecciones' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
+    <Tabs tabBar={(props) => <BrandTabBar {...props} />} screenLayout={localeScreenLayout} screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="index" options={{ title: t('Inicio') }} />
+      <Tabs.Screen name="legacy" options={{ title: t('Recuerdos') }} />
+      <Tabs.Screen name="explore" options={{ title: t('Comunidad') }} />
+      <Tabs.Screen name="store" options={{ title: t('Colecciones') }} />
+      <Tabs.Screen name="profile" options={{ title: t('Perfil') }} />
     </Tabs>
   );
 }
 
 function BrandTabBar({ state, navigation }: BottomTabBarProps) {
+  const { t } = useI18n();
+  const tabs = buildTabs(t);
   const insets = useSafeAreaInsets();
   const cartCount = useCartCount();
   const reduceMotion = useReducedMotion();
@@ -112,7 +121,7 @@ function BrandTabBar({ state, navigation }: BottomTabBarProps) {
             const route = state.routes.find((r) => r.name === name);
             if (!route) return null;
             const focused = activeName === name;
-            const meta = TABS[name];
+            const meta = tabs[name];
             const badge = name === 'store' && cartCount > 0 ? (cartCount > 99 ? '99+' : String(cartCount)) : null;
             return (
               <TabItem
@@ -121,7 +130,7 @@ function BrandTabBar({ state, navigation }: BottomTabBarProps) {
                 icon={meta.icon}
                 focused={focused}
                 badge={badge}
-                accessibilityLabel={badge ? `${meta.a11y}, ${badge} en el carrito` : meta.a11y}
+                accessibilityLabel={badge ? t('{label}, {count} en el carrito', { label: meta.a11y, count: badge }) : meta.a11y}
                 onPress={() => {
                   const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                   haptics.selection();
@@ -207,6 +216,7 @@ function TabItem({ label, icon: Icon, focused, badge, accessibilityLabel, onPres
  * ring — the one action the whole product is built around.
  */
 function ActivateButton() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const breathe = useSharedValue(0);
 
@@ -228,8 +238,8 @@ function ActivateButton() {
           router.push(ACTIVATE_HREF);
         }}
         accessibilityRole="button"
-        accessibilityLabel="Activar mi Finisher Legacy"
-        accessibilityHint="Acerca tu pieza con NFC para activarla"
+        accessibilityLabel={t('Activar mi Finisher Legacy')}
+        accessibilityHint={t('Acerca tu pieza con NFC para activarla')}
         hitSlop={6}
         style={{ alignItems: 'center', marginTop: -22 }}>
         {({ pressed }) => (
@@ -257,7 +267,7 @@ function ActivateButton() {
               </LinearGradient>
             </View>
             <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.bold, fontSize: 10.5, color: colors.accent, marginTop: 3 }}>
-              Activar
+              {t('Activar')}
             </AppText>
           </>
         )}

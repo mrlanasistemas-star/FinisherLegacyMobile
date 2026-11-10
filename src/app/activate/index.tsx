@@ -11,13 +11,14 @@ import { ActivationShell } from '@/components/nfc/activation-shell';
 import { StepButton } from '@/components/nfc/step-button';
 import { TapIllustration, type TapPhase } from '@/components/nfc/tap-illustration';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { failureCopy, PROGRESS_COPY } from '@/features/nfc/activation-copy';
-import { activationCodeForApi, initialWizardState, STEPPER_LABELS, stepperIndex, wizardReducer, type WizardAction, type WizardState } from '@/features/nfc/activation-flow';
+import { failureCopy, progressCopy } from '@/features/nfc/activation-copy';
+import { activationCodeForApi, initialWizardState, stepperIndex, stepperLabels, wizardReducer, type WizardAction, type WizardState } from '@/features/nfc/activation-flow';
 import { isActivationBusy } from '@/features/nfc/activation-session';
 import { nativeNfcDriver } from '@/features/nfc/nfc-driver';
 import { securePendingActivationStore } from '@/features/nfc/pending-activation';
 import { useActivationRunner, webOrigin } from '@/features/nfc/use-activation';
 import { parseHttpUrl } from '@/features/nfc/url-policy';
+import { useI18n, type Translate } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
@@ -37,6 +38,7 @@ function isOwnWebUrl(url: string | null | undefined): url is string {
  * docs/NFC_ACTIVATION.md for the flow and the error matrix.
  */
 export default function ActivateScreen() {
+  const { t } = useI18n();
   const params = useLocalSearchParams<{ code?: string }>();
   const status = useAuthStore((s) => s.status);
   const authenticated = status === 'authenticated';
@@ -142,8 +144,8 @@ export default function ActivateScreen() {
     state.step === 'session'
       ? undefined
       : backable
-        ? { icon: ChevronLeft, label: 'Volver', onPress: () => dispatch({ type: 'back' }) }
-        : { icon: X, label: 'Cerrar', onPress: close };
+        ? { icon: ChevronLeft, label: t('Volver'), onPress: () => dispatch({ type: 'back' }) }
+        : { icon: X, label: t('Cerrar'), onPress: close };
 
   const tapPhase: TapPhase =
     state.step === 'session' ? (state.progress === 'waiting' ? 'searching' : 'working') : state.step === 'error' ? 'error' : 'idle';
@@ -152,18 +154,18 @@ export default function ActivateScreen() {
     <>
       <ActivationShell
         stepKey={state.step}
-        title="Activar mi Finisher Legacy"
+        title={t('Activar mi Finisher Legacy')}
         leading={leading}
-        progress={<ActivationProgress labels={STEPPER_LABELS} index={stepperIndex(state.step)} />}
+        progress={<ActivationProgress labels={stepperLabels(t)} index={stepperIndex(state.step)} />}
         footer={<Footer state={state} dispatch={dispatch} startSession={startSession} retryConfirm={doRetryConfirm} goToAuth={goToAuth} onOverwrite={() => setConfirmOverwrite(true)} />}>
         <StepBody state={state} dispatch={dispatch} tapPhase={tapPhase} onSubmitCode={() => dispatch({ type: 'code_submitted' })} />
       </ActivationShell>
 
       <ConfirmDialog
         visible={confirmOverwrite}
-        title="¿Reemplazar lo que tiene este chip?"
-        description={overwriteDescription(state)}
-        confirmLabel="Reemplazar y activar"
+        title={t('¿Reemplazar lo que tiene este chip?')}
+        description={overwriteDescription(state, t)}
+        confirmLabel={t('Reemplazar y activar')}
         onCancel={() => setConfirmOverwrite(false)}
         onConfirm={() => {
           setConfirmOverwrite(false);
@@ -176,15 +178,18 @@ export default function ActivateScreen() {
   );
 }
 
-function overwriteDescription(state: WizardState): string {
+/** One whole sentence per case (never glued pieces), so each one translates naturally. */
+function overwriteDescription(state: WizardState, t: Translate): string {
   const summary = state.consent?.summary;
-  const what =
-    summary?.kind === 'link'
-      ? `un enlace${summary.host ? ` a ${summary.host}` : ''}`
-      : summary?.kind === 'text'
-        ? 'un texto'
-        : 'datos de otra aplicación';
-  return `Este chip tiene ${what}. Se borrará y quedará solo el enlace permanente de tu Finisher Legacy. No se puede deshacer.`;
+  if (summary?.kind === 'link') {
+    return summary.host
+      ? t('Este chip tiene un enlace a {host}. Se borrará y quedará solo el enlace permanente de tu Finisher Legacy. No se puede deshacer.', { host: summary.host })
+      : t('Este chip tiene un enlace. Se borrará y quedará solo el enlace permanente de tu Finisher Legacy. No se puede deshacer.');
+  }
+  if (summary?.kind === 'text') {
+    return t('Este chip tiene un texto. Se borrará y quedará solo el enlace permanente de tu Finisher Legacy. No se puede deshacer.');
+  }
+  return t('Este chip tiene datos de otra aplicación. Se borrará y quedará solo el enlace permanente de tu Finisher Legacy. No se puede deshacer.');
 }
 
 // ── Bodies ──────────────────────────────────────────────────────────────────
@@ -223,13 +228,15 @@ function StepBody({
   tapPhase: TapPhase;
   onSubmitCode: () => void;
 }) {
+  const { t } = useI18n();
+
   switch (state.step) {
     case 'account':
       return (
         <>
           <Heading
-            title="Tu Finisher Legacy, a tu nombre"
-            body="Inicia sesión o crea tu cuenta. Tu Finisher Legacy quedará conectado a tu historia y solo tú podrás editarla."
+            title={t('Tu Finisher Legacy, a tu nombre')}
+            body={t('Inicia sesión o crea tu cuenta. Tu Finisher Legacy quedará conectado a tu historia y solo tú podrás editarla.')}
           />
           <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
             <TapIllustration phase="idle" platform={PLATFORM} size={180} />
@@ -243,7 +250,7 @@ function StepBody({
     case 'approach':
       return (
         <>
-          <Heading title="Acerca tu Finisher Legacy" body={PLATFORM === 'ios' ? 'Cuando aparezca el aviso, acerca el tag a la parte superior de tu iPhone.' : 'Acerca el tag al centro de la parte trasera de tu teléfono.'} />
+          <Heading title={t('Acerca tu Finisher Legacy')} body={PLATFORM === 'ios' ? t('Cuando aparezca el aviso, acerca el tag a la parte superior de tu iPhone.') : t('Acerca el tag al centro de la parte trasera de tu teléfono.')} />
           <View style={{ alignItems: 'center' }}>
             <TapIllustration phase="idle" platform={PLATFORM} />
           </View>
@@ -252,7 +259,7 @@ function StepBody({
       );
 
     case 'session': {
-      const copy = PROGRESS_COPY[state.progress];
+      const copy = progressCopy(state.progress, t);
       return (
         <View style={{ alignItems: 'center', gap: spacing.md }}>
           <TapIllustration phase={tapPhase} platform={PLATFORM} />
@@ -274,9 +281,9 @@ function StepBody({
           <View style={[styles.iconBadge, { backgroundColor: colors.goldWash }]}>
             <ShieldAlert size={22} color={colors.accent} strokeWidth={1.8} />
           </View>
-          <Heading title="Este chip ya tiene información" body={overwriteDescription(state)} />
+          <Heading title={t('Este chip ya tiene información')} body={overwriteDescription(state, t)} />
           <AppText variant="caption" tone="muted">
-            Si no es tu Finisher Legacy, no lo reemplaces: vuelve y acerca el tag que venía en tu empaque.
+            {t('Si no es tu Finisher Legacy, no lo reemplaces: vuelve y acerca el tag que venía en tu empaque.')}
           </AppText>
         </>
       );
@@ -285,13 +292,15 @@ function StepBody({
       const product = state.already?.product;
       return (
         <>
-          <Eyebrow>YA ACTIVADO</Eyebrow>
+          <Eyebrow>{t('YA ACTIVADO')}</Eyebrow>
           <Heading
-            title={state.existingTagCode ? 'Este Finisher Legacy ya tiene su enlace' : 'Tu Finisher Legacy ya está activado'}
+            title={state.existingTagCode ? t('Este Finisher Legacy ya tiene su enlace') : t('Tu Finisher Legacy ya está activado')}
             body={
               state.existingTagCode
-                ? 'Este chip ya pertenece a un Finisher Legacy. Ábrelo para ver su historia.'
-                : `${product?.name ?? 'Este Finisher Legacy'} ya está conectado a una historia.`
+                ? t('Este chip ya pertenece a un Finisher Legacy. Ábrelo para ver su historia.')
+                : product?.name
+                  ? t('{name} ya está conectado a una historia.', { name: product.name })
+                  : t('Este Finisher Legacy ya está conectado a una historia.')
             }
           />
         </>
@@ -301,8 +310,8 @@ function StepBody({
     case 'confirm_retry':
       return (
         <>
-          <Eyebrow>CASI LISTO</Eyebrow>
-          <Heading title="Tu Finisher Legacy ya quedó escrito" body="Solo falta guardar la activación. Revisa tu conexión y toca Reintentar; no necesitas volver a acercarlo." />
+          <Eyebrow>{t('CASI LISTO')}</Eyebrow>
+          <Heading title={t('Tu Finisher Legacy ya quedó escrito')} body={t('Solo falta guardar la activación. Revisa tu conexión y toca Reintentar; no necesitas volver a acercarlo.')} />
         </>
       );
 
@@ -328,10 +337,11 @@ function StepBody({
 }
 
 function Tips() {
+  const { t } = useI18n();
   const tips =
     PLATFORM === 'ios'
-      ? ['Quita fundas metálicas o con imán.', 'Mantén el tag quieto hasta sentir la vibración.', 'La primera vez puede tardar unos segundos.']
-      : ['Verifica que el NFC esté encendido.', 'Quita fundas metálicas o con imán.', 'Mantén el tag quieto hasta sentir la vibración.'];
+      ? [t('Quita fundas metálicas o con imán.'), t('Mantén el tag quieto hasta sentir la vibración.'), t('La primera vez puede tardar unos segundos.')]
+      : [t('Verifica que el NFC esté encendido.'), t('Quita fundas metálicas o con imán.'), t('Mantén el tag quieto hasta sentir la vibración.')];
   return (
     <View style={{ gap: spacing.xs }}>
       {tips.map((tip) => (
@@ -347,10 +357,11 @@ function Tips() {
 }
 
 function CodeStep({ state, dispatch, onSubmit }: { state: WizardState; dispatch: Dispatch<WizardAction>; onSubmit: () => void }) {
+  const { t } = useI18n();
   const [focused, setFocused] = useState(false);
   return (
     <>
-      <Heading title="Tu código de activación" body="Está en la tarjeta que viene dentro del empaque de tu Finisher Legacy." />
+      <Heading title={t('Tu código de activación')} body={t('Está en la tarjeta que viene dentro del empaque de tu Finisher Legacy.')} />
       <View style={{ gap: spacing.xs }}>
         <View style={[styles.codeField, focused && { borderColor: colors.gold }, state.codeError ? { borderColor: colors.destructive } : null]}>
           <KeyRound size={18} color={colors.accent} strokeWidth={1.8} />
@@ -370,7 +381,7 @@ function CodeStep({ state, dispatch, onSubmit }: { state: WizardState; dispatch:
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             onSubmitEditing={onSubmit}
-            accessibilityLabel="Código de activación, 12 caracteres"
+            accessibilityLabel={t('Código de activación, 12 caracteres')}
             style={styles.codeInput}
           />
         </View>
@@ -380,7 +391,7 @@ function CodeStep({ state, dispatch, onSubmit }: { state: WizardState; dispatch:
           </AppText>
         ) : (
           <AppText variant="caption" tone="muted">
-            12 caracteres. Los guiones se agregan solos.
+            {t('12 caracteres. Los guiones se agregan solos.')}
           </AppText>
         )}
       </View>
@@ -405,50 +416,52 @@ function Footer({
   goToAuth: (screen: '/login' | '/register') => void;
   onOverwrite: () => void;
 }) {
+  const { t } = useI18n();
+
   switch (state.step) {
     case 'account':
       return (
         <>
-          <StepButton label="Iniciar sesión" onPress={() => goToAuth('/login')} />
-          <StepButton label="Crear cuenta" variant="secondary" onPress={() => goToAuth('/register')} />
+          <StepButton label={t('Iniciar sesión')} onPress={() => goToAuth('/login')} />
+          <StepButton label={t('Crear cuenta')} variant="secondary" onPress={() => goToAuth('/register')} />
         </>
       );
     case 'code':
-      return <StepButton label="Continuar" onPress={() => dispatch({ type: 'code_submitted' })} disabled={state.code.replace(/-/g, '').length < 12} />;
+      return <StepButton label={t('Continuar')} onPress={() => dispatch({ type: 'code_submitted' })} disabled={state.code.replace(/-/g, '').length < 12} />;
     case 'approach':
-      return <StepButton label="Estoy listo" accessibilityHint="Activa el lector NFC del teléfono" onPress={() => startSession(state, state.overwriteConsent)} />;
+      return <StepButton label={t('Estoy listo')} accessibilityHint={t('Activa el lector NFC del teléfono')} onPress={() => startSession(state, state.overwriteConsent)} />;
     case 'session':
       return PLATFORM === 'android' && state.progress === 'waiting' ? (
-        <StepButton label="Cancelar" variant="plain" onPress={() => nativeNfcDriver().endSession()} />
+        <StepButton label={t('Cancelar')} variant="plain" onPress={() => nativeNfcDriver().endSession()} />
       ) : null;
     case 'consent':
       return (
         <>
-          <StepButton label="Reemplazar y activar" onPress={onOverwrite} />
-          <StepButton label="No, usar otro chip" variant="plain" onPress={() => dispatch({ type: 'consent_declined' })} />
+          <StepButton label={t('Reemplazar y activar')} onPress={onOverwrite} />
+          <StepButton label={t('No, usar otro chip')} variant="plain" onPress={() => dispatch({ type: 'consent_declined' })} />
         </>
       );
     case 'already':
       return state.existingTagCode ? (
-        <StepButton label="Ver este Finisher Legacy" onPress={() => router.replace(`/nfc/t/${state.existingTagCode}` as Href)} />
+        <StepButton label={t('Ver este Finisher Legacy')} onPress={() => router.replace(`/nfc/t/${state.existingTagCode}` as Href)} />
       ) : (
         <>
-          {isOwnWebUrl(state.already?.story?.url) ? <StepButton label="Ver historia" onPress={() => WebBrowser.openBrowserAsync(state.already!.story!.url)} /> : null}
-          <StepButton label="Ir a mi Legacy" variant="secondary" onPress={() => router.replace('/legacy')} />
+          {isOwnWebUrl(state.already?.story?.url) ? <StepButton label={t('Ver historia')} onPress={() => WebBrowser.openBrowserAsync(state.already!.story!.url)} /> : null}
+          <StepButton label={t('Ir a mi Legacy')} variant="secondary" onPress={() => router.replace('/legacy')} />
         </>
       );
     case 'confirm_retry':
-      return <StepButton label="Reintentar" onPress={retryConfirm} />;
+      return <StepButton label={t('Reintentar')} onPress={retryConfirm} />;
     case 'error': {
       const copy = failureCopy(state.failure ?? { kind: 'unknown' });
       return (
         <>
-          {copy.action === 'retry' ? <StepButton label="Intentar de nuevo" onPress={() => dispatch({ type: 'retry' })} /> : null}
-          {copy.action === 'settings' ? <StepButton label="Abrir ajustes de NFC" onPress={() => nativeNfcDriver().openSettings()} /> : null}
-          {copy.action === 'settings' ? <StepButton label="Ya lo encendí" variant="secondary" onPress={() => dispatch({ type: 'retry' })} /> : null}
-          {copy.action === 'edit_code' ? <StepButton label="Corregir código" onPress={() => dispatch({ type: 'edit_code' })} /> : null}
-          {copy.action === 'login' ? <StepButton label="Iniciar sesión" onPress={() => goToAuth('/login')} /> : null}
-          {copy.action === 'none' ? <StepButton label="Volver" variant="secondary" onPress={() => dispatch({ type: 'edit_code' })} /> : null}
+          {copy.action === 'retry' ? <StepButton label={t('Intentar de nuevo')} onPress={() => dispatch({ type: 'retry' })} /> : null}
+          {copy.action === 'settings' ? <StepButton label={t('Abrir ajustes de NFC')} onPress={() => nativeNfcDriver().openSettings()} /> : null}
+          {copy.action === 'settings' ? <StepButton label={t('Ya lo encendí')} variant="secondary" onPress={() => dispatch({ type: 'retry' })} /> : null}
+          {copy.action === 'edit_code' ? <StepButton label={t('Corregir código')} onPress={() => dispatch({ type: 'edit_code' })} /> : null}
+          {copy.action === 'login' ? <StepButton label={t('Iniciar sesión')} onPress={() => goToAuth('/login')} /> : null}
+          {copy.action === 'none' ? <StepButton label={t('Volver')} variant="secondary" onPress={() => dispatch({ type: 'edit_code' })} /> : null}
         </>
       );
     }

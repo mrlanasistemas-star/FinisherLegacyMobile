@@ -25,6 +25,7 @@ import { isTagProduct, tagFaceFrom } from '@/features/commerce/tag-design';
 import { defaultVariant, isConnectedProduct, isVariantAvailable, maxQuantityFor, stockState } from '@/features/commerce/variant-options';
 import { useAddCartItem, useCartCount } from '@/hooks/use-cart';
 import { useProduct } from '@/hooks/use-store-products';
+import { useI18n } from '@/i18n';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, motion, radius, spacing } from '@/theme/tokens';
 import type { ProductGalleryItem, ProductVariant } from '@/types/models';
@@ -41,6 +42,7 @@ const NAV_HEIGHT = 52;
  * sticky add-to-cart bar above the safe area for both.
  */
 export default function ProductDetailScreen() {
+  const { t } = useI18n();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: product, isPending, isError, error: loadError, refetch } = useProduct(slug);
   const { width } = useWindowDimensions();
@@ -94,10 +96,10 @@ export default function ProductDetailScreen() {
       if (mode === 'buy') {
         router.push('/checkout');
       } else {
-        showToast(`Agregado al carrito${qty > 1 ? ` (${qty})` : ''}`, 'success');
+        showToast(qty > 1 ? t('Agregado al carrito ({count})', { count: qty }) : t('Agregado al carrito'), 'success');
       }
     } catch (caught) {
-      setError(caught instanceof AppError ? describeCommerceError(caught) : 'No pudimos agregarlo al carrito. Intenta otra vez.');
+      setError(caught instanceof AppError ? describeCommerceError(caught) : t('No pudimos agregarlo al carrito. Intenta otra vez.'));
     } finally {
       setIntent(null);
     }
@@ -120,8 +122,8 @@ export default function ProductDetailScreen() {
   if (isError || !product) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
-        <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} />
-        <ErrorState error={loadError} message="No pudimos cargar este producto." onRetry={refetch} />
+        <IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} size={26} />
+        <ErrorState error={loadError} message={t('No pudimos cargar este producto.')} onRetry={refetch} />
       </View>
     );
   }
@@ -174,7 +176,7 @@ export default function ProductDetailScreen() {
 
           {isTag ? (
             <DesignChips
-              label={variant ? `Diseño: ${variant.name}` : 'Elige un diseño'}
+              label={variant ? t('Diseño: {name}', { name: variant.name }) : t('Elige un diseño')}
               options={variants.map((v) => ({ value: v.uuid, label: v.name, disabled: false }))}
               value={variant?.uuid ?? ''}
               onChange={(uuid) => {
@@ -195,7 +197,7 @@ export default function ProductDetailScreen() {
 
           <Grouped>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
-              <AppText variant="body">Precio</AppText>
+              <AppText variant="body">{t('Precio')}</AppText>
               <View style={{ alignItems: 'flex-end', gap: 2 }}>
                 {price ? <AppText style={{ fontFamily: fontFamily.heading, fontSize: 20, color: colors.foreground }}>{price}</AppText> : null}
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }} accessible accessibilityLabel={stock.label}>
@@ -209,10 +211,10 @@ export default function ProductDetailScreen() {
             {showQuantity ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View>
-                  <AppText variant="body">Cantidad</AppText>
+                  <AppText variant="body">{t('Cantidad')}</AppText>
                   {maxQuantity <= 3 ? (
                     <AppText variant="caption" tone="accent">
-                      Máximo {maxQuantity} por ahora
+                      {t('Máximo {max} por ahora', { max: maxQuantity })}
                     </AppText>
                   ) : null}
                 </View>
@@ -221,7 +223,7 @@ export default function ProductDetailScreen() {
             ) : null}
             {product.requires_shipping ? (
               <AppText variant="caption" tone="muted">
-                Producto físico · se entrega o envía después de confirmar tu pago.
+                {t('Producto físico · se entrega o envía después de confirmar tu pago.')}
               </AppText>
             ) : null}
           </Grouped>
@@ -230,7 +232,7 @@ export default function ProductDetailScreen() {
             <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: 14, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
               <Info size={18} color={colors.accent} />
               <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                Cada Legacy Plate se graba con el resultado de un evento. Pídela desde la página del evento en el que corriste.
+                {t('Cada Legacy Plate se graba con el resultado de un evento. Pídela desde la página del evento en el que corriste.')}
               </AppText>
             </View>
           ) : null}
@@ -238,7 +240,7 @@ export default function ProductDetailScreen() {
           {isTag ? <HowItWorksStrip /> : <GearPromise connected={connected} isLegacyPlate={isLegacyPlate} />}
 
           {product.description ? (
-            <Grouped title="Descripción">
+            <Grouped title={t('Descripción')}>
               <AppText variant="body" tone="muted" style={{ lineHeight: 23 }}>
                 {product.description}
               </AppText>
@@ -253,11 +255,11 @@ export default function ProductDetailScreen() {
         scrollY={scrollY}
         title={product.name}
         threshold={heroHeight - 100}
-        left={<IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled={overHero} size={24} />}
+        left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => router.back()} filled={overHero} size={24} />}
         right={
           <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-            <IconButton icon={Share2} label="Compartir producto" onPress={() => Share.share({ message: webUrl, url: webUrl }).catch(() => {})} filled={overHero} size={20} />
-            <IconButton icon={ShoppingCart} label="Carrito" badge={cartCount} onPress={() => router.push('/cart')} filled={overHero} size={20} />
+            <IconButton icon={Share2} label={t('Compartir producto')} onPress={() => Share.share({ message: webUrl, url: webUrl }).catch(() => {})} filled={overHero} size={20} />
+            <IconButton icon={ShoppingCart} label={t('Carrito')} badge={cartCount} onPress={() => router.push('/cart')} filled={overHero} size={20} />
           </View>
         }
       />
@@ -265,13 +267,13 @@ export default function ProductDetailScreen() {
       <StickyFooter>
         <InlineError message={error} />
         {isLegacyPlate ? (
-          <AppButton label="Ver eventos" variant="secondary" onPress={() => router.push('/events')} />
+          <AppButton label={t('Ver eventos')} variant="secondary" onPress={() => router.push('/events')} />
         ) : soldOut ? (
-          <AppButton label="Agotado" variant="secondary" disabled onPress={() => {}} />
+          <AppButton label={t('Agotado')} variant="secondary" disabled onPress={() => {}} />
         ) : (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <AppButton
-              label="Comprar ahora"
+              label={t('Comprar ahora')}
               variant="secondary"
               fullWidth={false}
               style={{ flex: 1 }}
@@ -280,7 +282,7 @@ export default function ProductDetailScreen() {
               onPress={() => add('buy')}
             />
             <AppButton
-              label="Agregar al carrito"
+              label={t('Agregar al carrito')}
               fullWidth={false}
               style={{ flex: 1.3 }}
               loading={intent === 'add'}

@@ -18,10 +18,12 @@ import { showToast } from '@/stores/toastStore';
 import { colors, control, fontFamily, spacing } from '@/theme/tokens';
 import type { MomentComment } from '@/types/social';
 import { webLinks } from '@/utils/links';
+import { useI18n } from '@/i18n';
 
 const MAX_COMMENT = 500;
 
 export default function MomentDetailScreen() {
+  const { t } = useI18n();
   const { uuid, focus } = useLocalSearchParams<{ uuid: string; focus?: string }>();
   const insets = useSafeAreaInsets();
   const moment = useMoment(uuid);
@@ -42,7 +44,7 @@ export default function MomentDetailScreen() {
       await postComment.mutateAsync(body);
       setDraft('');
     } catch (error) {
-      showToast(error instanceof AppError && error.kind !== 'server' ? error.message : 'No pudimos publicar tu mensaje. Intenta otra vez.', 'destructive');
+      showToast(error instanceof AppError && error.kind !== 'server' ? error.message : t('No pudimos publicar tu mensaje. Intenta otra vez.'), 'destructive');
     }
   }
 
@@ -50,7 +52,7 @@ export default function MomentDetailScreen() {
     try {
       await deleteComment.mutateAsync(commentUuid);
     } catch {
-      showToast('No pudimos borrar el mensaje. Intenta otra vez.', 'destructive');
+      showToast(t('No pudimos borrar el mensaje. Intenta otra vez.'), 'destructive');
     }
   }
 
@@ -59,7 +61,7 @@ export default function MomentDetailScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title="Momento" right={<IconButton icon={Share2} label="Compartir momento" onPress={() => Share.share({ message: shareUrl, url: shareUrl })} />} />
+        <TopBar title={t('Momento')} right={<IconButton icon={Share2} label={t('Compartir momento')} onPress={() => Share.share({ message: shareUrl, url: shareUrl })} />} />
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={insets.top + 52}>
@@ -71,7 +73,7 @@ export default function MomentDetailScreen() {
         ) : moment.isError || !moment.data ? (
           <ErrorState
             error={moment.error}
-            message="Este momento ya no está disponible o no tienes acceso a él."
+            message={t('Este momento ya no está disponible o no tienes acceso a él.')}
             onRetry={moment.error instanceof AppError && moment.error.kind === 'not_found' ? undefined : moment.refetch}
           />
         ) : (
@@ -86,7 +88,7 @@ export default function MomentDetailScreen() {
                 <MomentCard moment={moment.data} detail />
                 <View style={{ height: 1, backgroundColor: colors.hairline, marginHorizontal: spacing.lg }} />
                 <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xs }}>
-                  Mensajes de apoyo{moment.data.comments_count > 0 ? ` · ${moment.data.comments_count}` : ''}
+                  {moment.data.comments_count > 0 ? t('Mensajes de apoyo · {count}', { count: moment.data.comments_count }) : t('Mensajes de apoyo')}
                 </AppText>
               </View>
             }
@@ -110,7 +112,7 @@ export default function MomentDetailScreen() {
                 <View style={{ alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs }}>
                   <MessageCircleHeart size={28} color={colors.accent} />
                   <AppText variant="body" tone="muted" align="center">
-                    Sé el primero en dejar un mensaje de apoyo.
+                    {t('Sé el primero en dejar un mensaje de apoyo.')}
                   </AppText>
                 </View>
               )
@@ -135,13 +137,13 @@ export default function MomentDetailScreen() {
               ref={inputRef}
               value={draft}
               onChangeText={setDraft}
-              placeholder="Escribe un mensaje de apoyo…"
+              placeholder={t('Escribe un mensaje de apoyo…')}
               placeholderTextColor={colors.subtle}
               autoFocus={focus === 'comment'}
               multiline
               maxLength={MAX_COMMENT}
               selectionColor={colors.accent}
-              accessibilityLabel="Escribe un mensaje de apoyo"
+              accessibilityLabel={t('Escribe un mensaje de apoyo')}
               style={{
                 flex: 1,
                 minHeight: control.compactHeight,
@@ -162,7 +164,7 @@ export default function MomentDetailScreen() {
               onPress={send}
               disabled={!canSend}
               accessibilityRole="button"
-              accessibilityLabel="Enviar mensaje"
+              accessibilityLabel={t('Enviar mensaje')}
               style={{
                 width: 44,
                 height: 44,

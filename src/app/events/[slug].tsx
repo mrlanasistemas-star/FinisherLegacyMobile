@@ -20,10 +20,12 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useEvent } from '@/hooks/use-events';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
+import { useI18n } from '@/i18n';
 
 const HERO_HEIGHT = 320;
 
 export default function EventDetailScreen() {
+  const { t } = useI18n();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: event, isPending, isError, error, refetch } = useEvent(slug);
   const insets = useSafeAreaInsets();
@@ -47,7 +49,7 @@ export default function EventDetailScreen() {
   const shareButton = event ? (
     <IconButton
       icon={Share2}
-      label="Compartir evento"
+      label={t('Compartir evento')}
       filled={overHero}
       color={colors.foreground}
       onPress={() => Share.share({ message: `https://finisherlegacy.com/events/${event.slug}` })}
@@ -58,7 +60,7 @@ export default function EventDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={{ paddingHorizontal: spacing.sm, minHeight: 52, justifyContent: 'center' }}>
-          <IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />
+          <IconButton icon={ChevronLeft} label={t('Volver')} onPress={goBack} size={26} />
         </View>
         {isPending ? (
           <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md }}>
@@ -67,7 +69,7 @@ export default function EventDetailScreen() {
             <Skeleton height={16} width="40%" />
           </View>
         ) : (
-          <ErrorState error={error} message="No pudimos cargar este evento." onRetry={refetch} />
+          <ErrorState error={error} message={t('No pudimos cargar este evento.')} onRetry={refetch} />
         )}
       </View>
     );
@@ -98,7 +100,7 @@ export default function EventDetailScreen() {
             </AppText>
             {event.organizer ? (
               <AppText variant="caption" tone="onDarkMuted">
-                Organiza {event.organizer}
+                {t('Organiza {organizer}', { organizer: event.organizer })}
               </AppText>
             ) : null}
           </View>
@@ -109,13 +111,13 @@ export default function EventDetailScreen() {
             <>
               <View style={groupStyle}>
                 <InfoRow icon={CalendarDays} label={edition.name} value={formatLongDate(edition.event_date)} first />
-                {location ? <InfoRow icon={MapPin} label="Lugar" value={location} /> : null}
+                {location ? <InfoRow icon={MapPin} label={t('Lugar')} value={location} /> : null}
               </View>
 
               {edition.races.length > 0 ? (
                 <View style={{ gap: spacing.xs }}>
                   <AppText variant="eyebrow" tone="muted" style={{ marginLeft: spacing.xs }}>
-                    Distancias
+                    {t('Distancias')}
                   </AppText>
                   <View style={groupStyle}>
                     {edition.races.map((race, i) => (
@@ -145,14 +147,14 @@ export default function EventDetailScreen() {
 
               {edition.preregistration_open && edition.races.length > 0 ? (
                 <View style={{ gap: spacing.xs }}>
-                  <AppButton label="Prerregistrarme" onPress={() => setPreregistering(true)} />
+                  <AppButton label={t('Prerregistrarme')} onPress={() => setPreregistering(true)} />
                   <AppText variant="caption" tone="muted" align="center">
-                    Aparta tu lugar en segundos con los datos de tu cuenta.
+                    {t('Aparta tu lugar en segundos con los datos de tu cuenta.')}
                   </AppText>
                 </View>
               ) : (
                 <AppText variant="caption" tone="muted">
-                  El prerregistro para esta edición no está abierto en este momento.
+                  {t('El prerregistro para esta edición no está abierto en este momento.')}
                 </AppText>
               )}
 
@@ -162,14 +164,14 @@ export default function EventDetailScreen() {
             </>
           ) : (
             <AppText variant="body" tone="muted">
-              Este evento aún no tiene una edición activa.
+              {t('Este evento aún no tiene una edición activa.')}
             </AppText>
           )}
 
           {event.description ? (
             <View style={{ gap: spacing.xs }}>
               <AppText variant="eyebrow" tone="muted">
-                Acerca del evento
+                {t('Acerca del evento')}
               </AppText>
               <AppText variant="body">{event.description}</AppText>
             </View>
@@ -184,7 +186,7 @@ export default function EventDetailScreen() {
         left={
           <IconButton
             icon={ChevronLeft}
-            label="Volver"
+            label={t('Volver')}
             onPress={goBack}
             size={26}
             filled={overHero}

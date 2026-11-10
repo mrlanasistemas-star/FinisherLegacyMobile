@@ -1,3 +1,4 @@
+import type { Translate } from '@/i18n';
 import type { NfcResolution, NfcTargetType } from '@/types/nfc';
 
 /**
@@ -19,9 +20,15 @@ export function nfcInAppHref(resolution: NfcResolution, authenticated: boolean):
 }
 
 /** Human label for the kind of thing the athlete just tapped — never "tag", "asset" or "UID". */
-export const NFC_TARGET_LABEL: Record<NfcTargetType, string> = {
-  legacy_plate: 'Legacy Plate',
-  product: 'Producto conectado',
-  profile: 'Perfil de atleta',
-  event: 'Evento',
-};
+export function nfcTargetLabel(type: NfcTargetType, t: Translate): string {
+  switch (type) {
+    case 'legacy_plate':
+      return 'Legacy Plate'; // product name: never translated
+    case 'product':
+      return t('Producto conectado');
+    case 'profile':
+      return t('Perfil de atleta');
+    case 'event':
+      return t('Evento');
+  }
+}

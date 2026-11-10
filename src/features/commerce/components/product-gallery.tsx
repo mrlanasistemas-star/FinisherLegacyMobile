@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
 import { IconButton } from '@/components/ui/icon-button';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { ProductGalleryItem } from '@/types/models';
 
@@ -28,6 +29,7 @@ interface ProductGalleryProps {
  * data cost); the 3D model loads only when asked for.
  */
 export function ProductGallery({ items, productName, width, height, webUrl }: ProductGalleryProps) {
+  const { t } = useI18n();
   const [index, setIndex] = useState(0);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [model, setModel] = useState<ProductGalleryItem | null>(null);
@@ -60,7 +62,7 @@ export function ProductGallery({ items, productName, width, height, webUrl }: Pr
               <Pressable
                 onPress={() => setViewerIndex(Math.max(0, images.indexOf(item)))}
                 accessibilityRole="imagebutton"
-                accessibilityLabel={`${item.alt_text ?? productName}. Toca para ver en pantalla completa`}
+                accessibilityLabel={t('{name}. Toca para ver en pantalla completa', { name: item.alt_text ?? productName })}
                 style={{ flex: 1 }}>
                 <Image source={{ uri: item.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} cachePolicy="memory-disk" />
               </Pressable>
@@ -84,7 +86,7 @@ export function ProductGallery({ items, productName, width, height, webUrl }: Pr
         <Pressable
           onPress={() => setModel(items.find((item) => item.type === 'model_3d') ?? null)}
           accessibilityRole="button"
-          accessibilityLabel="Ver producto en 3D"
+          accessibilityLabel={t('Ver producto en 3D')}
           style={{ position: 'absolute', right: spacing.md, bottom: 36, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, borderRadius: 22, backgroundColor: 'rgba(11,11,12,0.72)', borderWidth: 1, borderColor: 'rgba(201,174,139,0.5)' }}>
           <Box size={16} color={colors.goldSoft} />
           <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 13, color: colors.onDark }}>3D</AppText>
@@ -101,20 +103,22 @@ export function ProductGallery({ items, productName, width, height, webUrl }: Pr
 }
 
 function ModelTile({ item, onOpen }: { item: ProductGalleryItem; onOpen: () => void }) {
+  const { t } = useI18n();
   return (
-    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Ver producto en 3D" style={{ flex: 1 }}>
+    <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={t('Ver producto en 3D')} style={{ flex: 1 }}>
       {item.poster_url ? <Image source={{ uri: item.poster_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : null}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
         <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,11,12,0.66)', borderWidth: 1, borderColor: colors.goldDim }}>
           <Box size={30} color={colors.goldSoft} />
         </View>
-        <AppText style={{ fontFamily: fontFamily.semibold, color: colors.foreground }}>Ver en 3D</AppText>
+        <AppText style={{ fontFamily: fontFamily.semibold, color: colors.foreground }}>{t('Ver en 3D')}</AppText>
       </View>
     </Pressable>
   );
 }
 
 function GalleryVideo({ item }: { item: ProductGalleryItem }) {
+  const { t } = useI18n();
   const [playing, setPlaying] = useState(false);
   const player = useVideoPlayer(playing ? item.url : null, (instance) => {
     instance.loop = true;
@@ -123,7 +127,7 @@ function GalleryVideo({ item }: { item: ProductGalleryItem }) {
 
   if (!playing) {
     return (
-      <Pressable onPress={() => setPlaying(true)} style={{ width: '100%', height: '100%' }} accessibilityRole="button" accessibilityLabel="Reproducir video del producto">
+      <Pressable onPress={() => setPlaying(true)} style={{ width: '100%', height: '100%' }} accessibilityRole="button" accessibilityLabel={t('Reproducir video del producto')}>
         {item.poster_url ? <Image source={{ uri: item.poster_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : null}
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
@@ -138,6 +142,7 @@ function GalleryVideo({ item }: { item: ProductGalleryItem }) {
 }
 
 function ImageViewer({ images, startIndex, onClose, productName }: { images: ProductGalleryItem[]; startIndex: number; onClose: () => void; productName: string }) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [current, setCurrent] = useState(startIndex);
@@ -175,7 +180,7 @@ function ImageViewer({ images, startIndex, onClose, productName }: { images: Pro
         ) : null}
 
         <View style={{ position: 'absolute', top: insets.top + spacing.xs, left: spacing.sm, right: spacing.lg, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <IconButton icon={X} label="Cerrar" onPress={onClose} filled />
+          <IconButton icon={X} label={t('Cerrar')} onPress={onClose} filled />
           {images.length > 1 ? (
             <AppText variant="caption" tone="muted">
               {current + 1} / {images.length}

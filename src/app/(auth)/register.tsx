@@ -20,10 +20,12 @@ import { useAuthStore } from '@/stores/authStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 import { legalLinks } from '@/utils/links';
+import { useI18n } from '@/i18n';
 
 const FIELD_NAMES = ['first_name', 'last_name', 'email', 'password', 'password_confirmation'] as const;
 
 export default function RegisterScreen() {
+  const { t } = useI18n();
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,7 +68,7 @@ export default function RegisterScreen() {
         }
         setFormError(error.message);
       } else {
-        setFormError('Algo salió mal. Intenta nuevamente.');
+        setFormError(t('Algo salió mal. Intenta nuevamente.'));
       }
     } finally {
       setSubmitting(false);
@@ -75,17 +77,17 @@ export default function RegisterScreen() {
 
   return (
     <AuthShell
-      eyebrow="Crea tu cuenta"
-      title="Empieza tu legado."
-      subtitle="Una cuenta para activar tus piezas, guardar cada carrera y compartirla con tu comunidad."
+      eyebrow={t('Crea tu cuenta')}
+      title={t('Empieza tu legado.')}
+      subtitle={t('Una cuenta para activar tus piezas, guardar cada carrera y compartirla con tu comunidad.')}
       footer={
         <>
-          <AppButton label="Crear mi cuenta" onPress={handleSubmit(onSubmit)} loading={submitting} />
+          <AppButton label={t('Crear mi cuenta')} onPress={handleSubmit(onSubmit)} loading={submitting} />
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.xxs, flexWrap: 'wrap' }}>
             <AppText variant="body" tone="muted">
-              ¿Ya tienes cuenta?
+              {t('¿Ya tienes cuenta?')}
             </AppText>
-            <AppLink label="Inicia sesión" onPress={() => router.replace('/login')} />
+            <AppLink label={t('Inicia sesión')} onPress={() => router.replace('/login')} />
           </View>
         </>
       }>
@@ -99,7 +101,7 @@ export default function RegisterScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Nombre"
+                label={t('Nombre')}
                 kind="name"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -118,7 +120,7 @@ export default function RegisterScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Apellido"
+                label={t('Apellido')}
                 kind="name"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -137,7 +139,7 @@ export default function RegisterScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Correo electrónico"
+                label={t('Correo electrónico')}
                 kind="email"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -152,14 +154,14 @@ export default function RegisterScreen() {
       </Reveal>
 
       <Reveal delay={180}>
-        <FieldGroup footer="Usa al menos 8 caracteres.">
+        <FieldGroup footer={t('Usa al menos 8 caracteres.')}>
           <Controller
             control={control}
             name="password"
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Contraseña"
+                label={t('Contraseña')}
                 kind="new-password"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -176,7 +178,7 @@ export default function RegisterScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label="Confirmar contraseña"
+                label={t('Confirmar contraseña')}
                 kind="new-password"
                 value={field.value}
                 onChangeText={field.onChange}
@@ -207,17 +209,17 @@ export default function RegisterScreen() {
                   hitSlop={10}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: field.value }}
-                  accessibilityLabel="Acepto los Términos y condiciones, las reglas de la comunidad y el Aviso de privacidad"
+                  accessibilityLabel={t('Acepto los Términos y condiciones, las reglas de la comunidad y el Aviso de privacidad')}
                   style={{ width: 24, height: 24, marginTop: 2, borderRadius: 6, borderWidth: 2, borderColor: field.value ? colors.gold : colors.muted, backgroundColor: field.value ? colors.gold : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
                   {field.value ? <Check size={15} color={colors.black} strokeWidth={3} /> : null}
                 </Pressable>
                 <View style={{ flex: 1, gap: spacing.xxs }}>
                   <AppText variant="body" style={{ fontFamily: fontFamily.medium }}>
-                    Acepto los Términos y condiciones (incluidas las reglas de la comunidad: no se tolera contenido ofensivo ni abusivo) y el Aviso de privacidad.
+                    {t('Acepto los Términos y condiciones (incluidas las reglas de la comunidad: no se tolera contenido ofensivo ni abusivo) y el Aviso de privacidad.')}
                   </AppText>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
-                    <AppLink label="Leer Términos" small onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms).catch(() => {})} />
-                    <AppLink label="Leer Aviso de privacidad" small onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy).catch(() => {})} />
+                    <AppLink label={t('Leer Términos')} small onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms).catch(() => {})} />
+                    <AppLink label={t('Leer Aviso de privacidad')} small onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy).catch(() => {})} />
                   </View>
                 </View>
               </View>

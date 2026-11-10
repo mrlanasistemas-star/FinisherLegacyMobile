@@ -8,6 +8,7 @@ import { PressableScale } from '@/components/motion/pressable-scale';
 import { Skeleton } from '@/components/skeleton';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useMyGear } from '@/hooks/use-gear';
+import { useI18n } from '@/i18n';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 /**
@@ -16,14 +17,15 @@ import { colors, radius, spacing } from '@/theme/tokens';
  * that gesture instead of offering a scanner.
  */
 export function MyGearRail() {
+  const { t } = useI18n();
   const gear = useMyGear();
   const items = gear.data ?? [];
 
   return (
     <View>
       <SectionHeader
-        title="Mi equipo"
-        actionLabel={items.length > 0 ? `Ver ${items.length}` : undefined}
+        title={t('Mi equipo')}
+        actionLabel={items.length > 0 ? t('Ver {count}', { count: items.length }) : undefined}
         onAction={() => router.push('/gear')}
         style={{ paddingHorizontal: spacing.lg }}
       />
@@ -36,7 +38,7 @@ export function MyGearRail() {
         <PressableScale
           onPress={() => router.push('/activate' as Href)}
           accessibilityRole="button"
-          accessibilityLabel="Conecta tu equipo: activa tu pieza con NFC"
+          accessibilityLabel={t('Conecta tu equipo: activa tu pieza con NFC')}
           style={{
             marginHorizontal: spacing.lg,
             flexDirection: 'row',
@@ -51,9 +53,9 @@ export function MyGearRail() {
           }}>
           <Nfc size={26} color={colors.accent} />
           <View style={{ flex: 1, gap: 2 }}>
-            <AppText variant="bodyStrong">Conecta tu equipo</AppText>
+            <AppText variant="bodyStrong">{t('Conecta tu equipo')}</AppText>
             <AppText variant="caption" tone="muted">
-              Acerca tu teléfono a tu Tag, Trisuit o Racepack Finisher Legacy. Quedará aquí, unido a tu historia.
+              {t('Acerca tu teléfono a tu Tag, Trisuit o Racepack Finisher Legacy. Quedará aquí, unido a tu historia.')}
             </AppText>
           </View>
           <ChevronRight size={18} color={colors.subtle} />
@@ -65,7 +67,7 @@ export function MyGearRail() {
               key={item.uuid}
               onPress={() => router.push(`/gear/${item.uuid}`)}
               accessibilityRole="button"
-              accessibilityLabel={`${item.product_name}${item.activated_at ? ', producto conectado' : ''}`}
+              accessibilityLabel={item.activated_at ? t('{name}, producto conectado', { name: item.product_name }) : item.product_name}
               style={{
                 width: 124,
                 gap: spacing.xs,
@@ -84,7 +86,7 @@ export function MyGearRail() {
               {item.activated_at ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Nfc size={11} color={colors.accent} />
-                  <AppText style={{ fontSize: 11, color: colors.accent }}>Conectado</AppText>
+                  <AppText style={{ fontSize: 11, color: colors.accent }}>{t('Conectado')}</AppText>
                 </View>
               ) : null}
             </PressableScale>

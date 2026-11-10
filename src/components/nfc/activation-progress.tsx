@@ -3,6 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { AppText } from '@/components/app-text';
+import { useI18n } from '@/i18n';
 import { colors, springs } from '@/theme/tokens';
 
 interface ActivationProgressProps {
@@ -13,6 +14,7 @@ interface ActivationProgressProps {
 
 /** Clean segmented progress: thin hairline track, the filled part springs to the current step. */
 export function ActivationProgress({ labels, index }: ActivationProgressProps) {
+  const { t } = useI18n();
   const total = labels.length;
   const progress = useSharedValue(0);
 
@@ -26,7 +28,7 @@ export function ActivationProgress({ labels, index }: ActivationProgressProps) {
     <View
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={`Paso ${index + 1} de ${total}: ${labels[index] ?? ''}`}
+      accessibilityLabel={t('Paso {step} de {total}: {label}', { step: index + 1, total, label: labels[index] ?? '' })}
       accessibilityValue={{ min: 1, max: total, now: index + 1 }}
       style={styles.wrap}>
       <View style={styles.track}>
@@ -34,7 +36,7 @@ export function ActivationProgress({ labels, index }: ActivationProgressProps) {
       </View>
       <View style={styles.row}>
         <AppText variant="label" style={styles.step}>
-          PASO {index + 1} DE {total}
+          {t('PASO {step} DE {total}', { step: index + 1, total })}
         </AppText>
         <AppText variant="caption" style={styles.name}>
           {labels[index]}

@@ -21,27 +21,38 @@ import { Reveal } from '@/components/motion/reveal';
 import { AppLink } from '@/components/ui/app-link';
 import { colors, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
+import { useI18n, type Translate } from '@/i18n';
 
-const STEPS = [
-  {
-    key: 'brand',
-    eyebrow: 'Make it last',
-    title: 'Finisher Legacy',
-    body: 'Tus carreras convertidas en piezas que se conservan, se reviven y se comparten.',
-  },
-  {
-    key: 'nfc',
-    eyebrow: 'Paso 1',
-    title: 'Acércalo.',
-    body: 'Tu Tag, Trisuit o Racepack tiene un chip NFC. Acércalo a tu teléfono y se activa en segundos.',
-  },
-  {
-    key: 'memory',
-    eyebrow: 'Paso 2',
-    title: 'Revive y comparte.',
-    body: 'Tu resultado, tus fotos y los mensajes de tu comunidad, guardados en un solo recuerdo.',
-  },
-] as const;
+interface Step {
+  key: 'brand' | 'nfc' | 'memory';
+  eyebrow: string;
+  title: string;
+  body: string;
+}
+
+/** Built at render time with the screen's translator, so the copy follows the app language. */
+function buildSteps(t: Translate): Step[] {
+  return [
+    {
+      key: 'brand',
+      eyebrow: 'Make it last',
+      title: 'Finisher Legacy',
+      body: t('Tus carreras convertidas en piezas que se conservan, se reviven y se comparten.'),
+    },
+    {
+      key: 'nfc',
+      eyebrow: t('Paso {number}', { number: 1 }),
+      title: t('Acércalo.'),
+      body: t('Tu Tag, Trisuit o Racepack tiene un chip NFC. Acércalo a tu teléfono y se activa en segundos.'),
+    },
+    {
+      key: 'memory',
+      eyebrow: t('Paso {number}', { number: 2 }),
+      title: t('Revive y comparte.'),
+      body: t('Tu resultado, tus fotos y los mensajes de tu comunidad, guardados en un solo recuerdo.'),
+    },
+  ];
+}
 
 /**
  * Single light welcome: three swipeable panels with animated hero art
@@ -50,6 +61,8 @@ const STEPS = [
  * loops pause when unfocused and are static under Reduce Motion.
  */
 export default function WelcomeScreen() {
+  const { t } = useI18n();
+  const steps = buildSteps(t);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const active = useHeroActive();
@@ -89,7 +102,7 @@ export default function WelcomeScreen() {
         onMomentumScrollEnd={onMomentumEnd}
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingTop: insets.top + spacing.lg }}>
-        {STEPS.map((step, index) => (
+        {steps.map((step, index) => (
           // overflow hidden: each page clips its own art, so parallax never lets a neighbour's art bleed in.
           <View key={step.key} style={{ width, paddingHorizontal: spacing.lg, justifyContent: 'center', overflow: 'hidden' }}>
             <ArtLayer index={index} scrollX={scrollX} width={width} size={artSize}>
@@ -107,12 +120,12 @@ export default function WelcomeScreen() {
       </Animated.ScrollView>
 
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.md, gap: spacing.md }}>
-        <Indicator scrollX={scrollX} width={width} count={STEPS.length} onSelect={goTo} />
+        <Indicator scrollX={scrollX} width={width} count={steps.length} onSelect={goTo} />
         <Reveal delay={200}>
-          <AppButton label="Crear mi cuenta" onPress={() => router.push('/register')} />
+          <AppButton label={t('Crear mi cuenta')} onPress={() => router.push('/register')} />
         </Reveal>
         <Reveal delay={260} style={{ alignItems: 'center' }}>
-          <AppLink label="Ya tengo cuenta" onPress={() => router.push('/login')} />
+          <AppLink label={t('Ya tengo cuenta')} onPress={() => router.push('/login')} />
         </Reveal>
       </View>
     </View>
@@ -143,7 +156,7 @@ function BrandArt({ size, markWidth, active, tilt }: { size: number; markWidth: 
   );
 }
 
-function StepCopy({ step, index, scrollX, width }: { step: (typeof STEPS)[number]; index: number; scrollX: SharedValue<number>; width: number }) {
+function StepCopy({ step, index, scrollX, width }: { step: Step; index: number; scrollX: SharedValue<number>; width: number }) {
   const style = useAnimatedStyle(() => {
     const p = Math.abs(scrollX.value / width - index);
     return {
@@ -175,6 +188,7 @@ function Indicator({ scrollX, width, count, onSelect }: { scrollX: SharedValue<n
 }
 
 function Pill({ index, scrollX, width, onPress }: { index: number; scrollX: SharedValue<number>; width: number; onPress: () => void }) {
+  const { t } = useI18n();
   const style = useAnimatedStyle(() => {
     const d = Math.min(1, Math.abs(scrollX.value / width - index));
     return {
@@ -183,7 +197,7 @@ function Pill({ index, scrollX, width, onPress }: { index: number; scrollX: Shar
     };
   });
   return (
-    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="tab" accessibilityLabel={`Paso ${index + 1}`} style={{ height: 24, justifyContent: 'center' }}>
+    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="tab" accessibilityLabel={t('Paso {number}', { number: index + 1 })} style={{ height: 24, justifyContent: 'center' }}>
       <Animated.View style={[{ height: 7, borderRadius: 4, backgroundColor: colors.foreground }, style]} />
     </Pressable>
   );

@@ -21,7 +21,8 @@ import { campaignOpenId, notificationDestination } from '@/features/notification
 import { useMarkAllNotificationsRead, useMarkNotificationRead, useNotifications } from '@/hooks/use-notifications';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { AppNotification } from '@/types/models';
-import { relativeTime, TIME_BUCKET_LABEL, timeBucket, type TimeBucket } from '@/utils/relative-time';
+import { relativeTime, timeBucket, timeBucketLabel, type TimeBucket } from '@/utils/relative-time';
+import { useI18n } from '@/i18n';
 
 const TYPE_ICON: Record<string, typeof Bell> = {
   new_follower: UserPlus,
@@ -56,6 +57,7 @@ function imageUri(url: string | null | undefined): string | null {
 }
 
 export default function NotificationsScreen() {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useNotifications();
   const markRead = useMarkNotificationRead();
@@ -67,7 +69,7 @@ export default function NotificationsScreen() {
   const sections = useMemo(() => {
     const groups: Record<TimeBucket, AppNotification[]> = { today: [], week: [], earlier: [] };
     for (const n of notifications) groups[timeBucket(n.created_at)].push(n);
-    return (['today', 'week', 'earlier'] as const).filter((k) => groups[k].length > 0).map((k) => ({ key: k, title: TIME_BUCKET_LABEL[k], data: groups[k] }));
+    return (['today', 'week', 'earlier'] as const).filter((k) => groups[k].length > 0).map((k) => ({ key: k, title: timeBucketLabel(k), data: groups[k] }));
   }, [notifications]);
 
   function handlePress(notification: AppNotification) {
@@ -82,8 +84,8 @@ export default function NotificationsScreen() {
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar
-          title="Notificaciones"
-          right={hasUnread ? <IconButton icon={CheckCheck} label="Marcar todas como leídas" onPress={() => markAllRead.mutate()} color={colors.accent} /> : null}
+          title={t('Notificaciones')}
+          right={hasUnread ? <IconButton icon={CheckCheck} label={t('Marcar todas como leídas')} onPress={() => markAllRead.mutate()} color={colors.accent} /> : null}
         />
       </View>
 
@@ -94,7 +96,7 @@ export default function NotificationsScreen() {
           <Skeleton height={56} />
         </View>
       ) : isError ? (
-        <ErrorState error={error} message="No pudimos cargar tus notificaciones." onRetry={refetch} />
+        <ErrorState error={error} message={t('No pudimos cargar tus notificaciones.')} onRetry={refetch} />
       ) : (
         <SectionList
           sections={sections}
@@ -116,16 +118,16 @@ export default function NotificationsScreen() {
           )}
           ListHeaderComponent={
             <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
-              <PushPrimerCard message="Recibe estos avisos aunque no tengas la app abierta." />
+              <PushPrimerCard message={t('Recibe estos avisos aunque no tengas la app abierta.')} />
             </View>
           }
           ListFooterComponent={isFetchingNextPage ? <Skeleton height={56} style={{ margin: spacing.lg }} /> : null}
           ListEmptyComponent={
             <EmptyState
               icon={Bell}
-              title="Todo al día"
-              message="Aquí verás cuando alguien te siga o apoye tus momentos, y novedades de tus pedidos y eventos."
-              actionLabel="Ir a Comunidad"
+              title={t('Todo al día')}
+              message={t('Aquí verás cuando alguien te siga o apoye tus momentos, y novedades de tus pedidos y eventos.')}
+              actionLabel={t('Ir a Comunidad')}
               onAction={() => router.navigate('/explore')}
             />
           }
@@ -136,7 +138,9 @@ export default function NotificationsScreen() {
 }
 
 function NotificationRow({ notification, onPress }: { notification: AppNotification; onPress: () => void }) {
+  const { t } = useI18n();
   const unread = notification.read_at === null;
+  const summary = `${notification.title ?? ''}. ${notification.message ?? ''}`;
   const Icon = TYPE_ICON[notification.type ?? ''] ?? Bell;
 
   return (
@@ -144,7 +148,7 @@ function NotificationRow({ notification, onPress }: { notification: AppNotificat
       onPress={onPress}
       scaleTo={0.985}
       accessibilityRole="button"
-      accessibilityLabel={`${unread ? 'No leída. ' : ''}${notification.title ?? ''}. ${notification.message ?? ''}`}
+      accessibilityLabel={unread ? t('No leída. {summary}', { summary }) : summary}
       style={{
         flexDirection: 'row',
         gap: spacing.sm,

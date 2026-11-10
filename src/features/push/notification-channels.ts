@@ -9,6 +9,7 @@
  */
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { getLocale, t } from '@/i18n';
 
 export const ACCENT_COLOR = '#C9AE8B';
 
@@ -19,21 +20,36 @@ export interface ChannelSpec {
   importance: 'high' | 'default';
 }
 
-export const NOTIFICATION_CHANNELS: readonly ChannelSpec[] = [
-  { id: 'default', name: 'General', description: 'Avisos de tu cuenta y respuestas de soporte.', importance: 'high' },
-  { id: 'pedidos', name: 'Pedidos y Tags', description: 'Pagos, envíos, entregas, reembolsos y activación de tus Tags.', importance: 'high' },
-  { id: 'comunidad', name: 'Comunidad', description: 'Seguidores, reacciones y comentarios en tus momentos.', importance: 'default' },
-  { id: 'entrenamientos', name: 'Entrenamientos', description: 'Mensajes de ánimo de tu equipo de apoyo.', importance: 'high' },
-  { id: 'avisos', name: 'Avisos y novedades', description: 'Resultados, eventos, lanzamientos y promociones.', importance: 'default' },
-];
+/**
+ * A function, not a table: the names the person sees in the system settings
+ * are resolved in the app language active when the channels are created.
+ */
+export function notificationChannels(): readonly ChannelSpec[] {
+  return [
+    { id: 'default', name: t('General'), description: t('Avisos de tu cuenta y respuestas de soporte.'), importance: 'high' },
+    { id: 'pedidos', name: t('Pedidos y Tags'), description: t('Pagos, envíos, entregas, reembolsos y activación de tus Tags.'), importance: 'high' },
+    { id: 'comunidad', name: t('Comunidad'), description: t('Seguidores, reacciones y comentarios en tus momentos.'), importance: 'default' },
+    { id: 'entrenamientos', name: t('Entrenamientos'), description: t('Mensajes de ánimo de tu equipo de apoyo.'), importance: 'high' },
+    { id: 'avisos', name: t('Avisos y novedades'), description: t('Resultados, eventos, lanzamientos y promociones.'), importance: 'default' },
+  ];
+}
 
 let created: Promise<void> | null = null;
+let createdLocale: string | null = null;
 
-/** Idempotent per app run; safe to call from several places. */
+/**
+ * Idempotent per app run and language; safe to call from several places.
+ * After a language change the next call renames the channels (Android keeps
+ * the person's own settings for each channel id).
+ */
 export function ensureNotificationChannels(): Promise<void> {
   if (Platform.OS !== 'android') return Promise.resolve();
+  if (createdLocale !== getLocale()) {
+    created = null;
+    createdLocale = getLocale();
+  }
   created ??= Promise.all(
-    NOTIFICATION_CHANNELS.map((channel) =>
+    notificationChannels().map((channel) =>
       Notifications.setNotificationChannelAsync(channel.id, {
         name: channel.name,
         description: channel.description,

@@ -7,8 +7,19 @@ import { PressableScale } from './motion/pressable-scale';
 
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 const MONTHS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+
+/** Three-letter month for the date badge: the fixed Spanish set, or the active language's own abbreviation. */
+function monthLabel(month: number, regional: string): string {
+  if (regional.startsWith('es')) return MONTHS[month - 1];
+  try {
+    return new Intl.DateTimeFormat(regional, { month: 'short' }).format(new Date(2000, month - 1, 1)).replace('.', '').toUpperCase();
+  } catch {
+    return MONTHS[month - 1];
+  }
+}
 
 interface EventCardProps {
   edition: EventEditionCard;
@@ -17,6 +28,7 @@ interface EventCardProps {
 }
 
 function DateBadge({ isoDate }: { isoDate: string }) {
+  const { regional } = useI18n();
   const [year, month, day] = isoDate.split('-').map(Number);
   if (!year || !month || !day) return null;
 
@@ -36,7 +48,7 @@ function DateBadge({ isoDate }: { isoDate: string }) {
         {String(day).padStart(2, '0')}
       </AppText>
       <AppText variant="label" tone="accent">
-        {MONTHS[month - 1]}
+        {monthLabel(month, regional)}
       </AppText>
     </View>
   );

@@ -14,11 +14,13 @@ import { TopBar } from '@/components/ui/top-bar';
 import { useConnections } from '@/hooks/use-social';
 import { colors, spacing } from '@/theme/tokens';
 import type { AthleteSummary } from '@/types/social';
+import { useI18n } from '@/i18n';
 
 type Kind = 'followers' | 'following';
 
 /** Seguidores / Siguiendo — avatar, @username and a follow button per row. */
 export default function ConnectionsScreen() {
+  const { t } = useI18n();
   const params = useLocalSearchParams<{ username: string; kind?: string }>();
   const username = params.username ?? '';
   const [kind, setKind] = useState<Kind>(params.kind === 'following' ? 'following' : 'followers');
@@ -33,8 +35,8 @@ export default function ConnectionsScreen() {
           value={kind}
           onChange={setKind}
           options={[
-            { value: 'followers', label: 'Seguidores' },
-            { value: 'following', label: 'Siguiendo' },
+            { value: 'followers', label: t('Seguidores') },
+            { value: 'following', label: t('Siguiendo') },
           ]}
         />
       </View>
@@ -46,7 +48,7 @@ export default function ConnectionsScreen() {
           <Skeleton height={48} />
         </View>
       ) : list.isError ? (
-        <ErrorState error={list.error} message="No pudimos cargar esta lista." onRetry={list.refetch} />
+        <ErrorState error={list.error} message={t('No pudimos cargar esta lista.')} onRetry={list.refetch} />
       ) : (
         <FlatList
           data={rows}
@@ -61,8 +63,8 @@ export default function ConnectionsScreen() {
             <EmptyState
               compact
               icon={Users}
-              title={kind === 'followers' ? 'Aún sin seguidores' : 'Aún no sigue a nadie'}
-              message={kind === 'followers' ? 'Cuando alguien siga este Legacy, aparecerá aquí.' : 'Los atletas que siga aparecerán aquí.'}
+              title={kind === 'followers' ? t('Aún sin seguidores') : t('Aún no sigue a nadie')}
+              message={kind === 'followers' ? t('Cuando alguien siga este Legacy, aparecerá aquí.') : t('Los atletas que siga aparecerán aquí.')}
             />
           }
         />

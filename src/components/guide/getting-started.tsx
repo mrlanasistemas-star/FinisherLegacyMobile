@@ -8,6 +8,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { MyProfileResponse } from '@/types/models';
+import { useI18n, type Translate } from '@/i18n';
 
 interface Step {
   id: string;
@@ -18,33 +19,33 @@ interface Step {
 }
 
 /** Derived only from real account data — a step is "done" because it actually happened. */
-export function gettingStartedSteps(profile: MyProfileResponse): Step[] {
+export function gettingStartedSteps(profile: MyProfileResponse, t: Translate): Step[] {
   return [
     {
       id: 'profile',
-      label: 'Completa tu perfil',
-      hint: 'Foto, nombre de usuario y bio.',
+      label: t('Completa tu perfil'),
+      hint: t('Foto, nombre de usuario y bio.'),
       done: !!profile.profile?.username && !!profile.profile?.profile_photo_url,
       href: '/settings/account',
     },
     {
       id: 'medal',
-      label: 'Reclama tu primera medalla',
-      hint: 'Acerca tu pieza Finisher Legacy al teléfono o agrégala a mano.',
+      label: t('Reclama tu primera medalla'),
+      hint: t('Acerca tu pieza Finisher Legacy al teléfono o agrégala a mano.'),
       done: profile.stats.medal_count > 0,
       href: '/medals/create',
     },
     {
       id: 'follow',
-      label: 'Sigue a otros atletas',
-      hint: 'Su actividad aparecerá en tu comunidad.',
+      label: t('Sigue a otros atletas'),
+      hint: t('Su actividad aparecerá en tu comunidad.'),
       done: profile.social.following_count > 0,
       href: '/search',
     },
     {
       id: 'moment',
-      label: 'Comparte tu primer momento',
-      hint: 'Un entrenamiento, una carrera o un recuerdo.',
+      label: t('Comparte tu primer momento'),
+      hint: t('Un entrenamiento, una carrera o un recuerdo.'),
       done: profile.social.moments_count > 0,
       href: '/moments/create',
     },
@@ -56,9 +57,10 @@ export function gettingStartedSteps(profile: MyProfileResponse): Step[] {
  * app come alive. Disappears on its own once everything is done.
  */
 export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
+  const { t } = useI18n();
   const dismissed = useUiStore((s) => s.dismissedGettingStarted);
   const dismiss = useUiStore((s) => s.setDismissedGettingStarted);
-  const steps = gettingStartedSteps(profile);
+  const steps = gettingStartedSteps(profile, t);
   const completed = steps.filter((s) => s.done).length;
 
   if (dismissed || completed === steps.length) return null;
@@ -67,12 +69,12 @@ export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
     <View style={{ borderRadius: 18, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, padding: spacing.md, gap: spacing.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
-          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 17 }}>Primeros pasos</AppText>
+          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 17 }}>{t('Primeros pasos')}</AppText>
           <AppText variant="caption" tone="muted">
-            {completed} de {steps.length} completados
+            {t('{completed} de {total} completados', { completed, total: steps.length })}
           </AppText>
         </View>
-        <IconButton icon={X} label="Ocultar primeros pasos" onPress={() => dismiss(true)} size={18} color={colors.subtle} />
+        <IconButton icon={X} label={t('Ocultar primeros pasos')} onPress={() => dismiss(true)} size={18} color={colors.subtle} />
       </View>
 
       <View
@@ -92,7 +94,7 @@ export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
             disabled={step.done}
             accessibilityRole="button"
             accessibilityState={{ checked: step.done, disabled: step.done }}
-            accessibilityLabel={`${step.label}${step.done ? ', completado' : ''}`}
+            accessibilityLabel={step.done ? t('{label}, completado', { label: step.label }) : step.label}
             style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 52, paddingVertical: spacing.xs }}>
             <View
               style={{

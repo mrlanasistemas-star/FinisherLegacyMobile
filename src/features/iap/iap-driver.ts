@@ -14,8 +14,10 @@
  * finishes (iOS) so the same pack can be bought again for another story.
  */
 
-import { Platform } from 'react-native';
 import type * as ExpoIap from 'expo-iap';
+import { Platform } from 'react-native';
+
+import { t } from '@/i18n';
 
 export type StorePlatform = 'ios' | 'android';
 
@@ -112,7 +114,7 @@ export function classifyStoreError(error: unknown): IapStoreError {
   return {
     kind,
     code,
-    message: typeof record.message === 'string' ? record.message : 'Error de la tienda',
+    message: typeof record.message === 'string' ? record.message : t('Error de la tienda'),
     productId: typeof record.productId === 'string' ? record.productId : null,
   };
 }

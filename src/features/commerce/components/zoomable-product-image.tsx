@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
+import { useI18n } from '@/i18n';
+
 const MAX_SCALE = 4;
 const DOUBLE_TAP_SCALE = 2.5;
 
@@ -29,6 +31,7 @@ export function ZoomableProductImage({ url, alt, width, height, active, onZoomCh
   const savedX = useSharedValue(0);
   const savedY = useSharedValue(0);
 
+  const { t } = useI18n();
   const [zoomed, setZoomed] = useState(false);
   const notify = (next: boolean) => {
     setZoomed(next);
@@ -115,7 +118,7 @@ export function ZoomableProductImage({ url, alt, width, height, active, onZoomCh
 
   return (
     <GestureDetector gesture={gesture}>
-      <Animated.View style={[{ width, height, overflow: 'hidden' }, style]} accessible accessibilityRole="image" accessibilityLabel={alt} accessibilityHint="Pellizca o toca dos veces para acercar">
+      <Animated.View style={[{ width, height, overflow: 'hidden' }, style]} accessible accessibilityRole="image" accessibilityLabel={alt} accessibilityHint={t('Pellizca o toca dos veces para acercar')}>
         <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} contentFit="contain" transition={150} />
       </Animated.View>
     </GestureDetector>

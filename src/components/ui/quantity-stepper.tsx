@@ -4,6 +4,7 @@ import { View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { colors, fontFamily } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface QuantityStepperProps {
   value: number;
@@ -17,6 +18,7 @@ interface QuantityStepperProps {
 }
 
 export function QuantityStepper({ value, onChange, min = 1, max = 20, disabled, onRemove, compact = false }: QuantityStepperProps) {
+  const { t } = useI18n();
   const size = compact ? 32 : 40;
   const atMin = value <= min;
   const DecrementIcon = atMin && onRemove ? Trash2 : Minus;
@@ -47,7 +49,7 @@ export function QuantityStepper({ value, onChange, min = 1, max = 20, disabled, 
 
   return (
     <View
-      accessibilityLabel={`Cantidad ${value}`}
+      accessibilityLabel={t('Cantidad {value}', { value })}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -58,12 +60,12 @@ export function QuantityStepper({ value, onChange, min = 1, max = 20, disabled, 
       }}>
       {button(
         DecrementIcon,
-        atMin && onRemove ? 'Quitar' : 'Disminuir cantidad',
+        atMin && onRemove ? t('Quitar') : t('Disminuir cantidad'),
         () => (atMin && onRemove ? onRemove() : onChange(value - 1)),
         !!disabled || (atMin && !onRemove),
       )}
       <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15, minWidth: 22, textAlign: 'center' }}>{value}</AppText>
-      {button(Plus, 'Aumentar cantidad', () => onChange(value + 1), !!disabled || value >= max)}
+      {button(Plus, t('Aumentar cantidad'), () => onChange(value + 1), !!disabled || value >= max)}
     </View>
   );
 }

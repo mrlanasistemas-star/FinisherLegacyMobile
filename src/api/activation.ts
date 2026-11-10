@@ -9,6 +9,7 @@ import {
   type ActivationStart,
   type TagLookup,
 } from '@/schemas/activation';
+import { t } from '@/i18n';
 
 /**
  * Finisher Legacy Tag activation (native NFC write) — see
@@ -37,19 +38,19 @@ function businessError(status: number, body: unknown): AppError {
       kind: 'business_rule',
       status,
       code: data.code,
-      message: data.message ?? 'No pudimos completar la activación.',
+      message: data.message ?? t('No pudimos completar la activación.'),
     });
   }
   // A real Laravel ValidationException ({message, errors}).
   const message =
     body && typeof body === 'object' && 'message' in body && typeof (body as { message: unknown }).message === 'string'
       ? (body as { message: string }).message
-      : 'Los datos proporcionados no son válidos.';
+      : t('Los datos proporcionados no son válidos.');
   return new AppError({ kind: 'validation', status, message });
 }
 
 function malformed(): AppError {
-  return new AppError({ kind: 'server', message: 'Respuesta inesperada del servidor. Intenta de nuevo.' });
+  return new AppError({ kind: 'server', message: t('Respuesta inesperada del servidor. Intenta de nuevo.') });
 }
 
 function unwrapData(body: unknown): unknown {

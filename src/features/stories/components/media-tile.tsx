@@ -11,6 +11,7 @@ import { CircleAlert, Clock, Play, ShoppingBag } from 'lucide-react-native';
 import { ActivityIndicator, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { useI18n, type Translate } from '@/i18n';
 import type { StoryMedia } from '@/schemas/story';
 import { colors, fontFamily, radius } from '@/theme/tokens';
 
@@ -55,25 +56,31 @@ interface MediaTileProps {
 export function MediaTile({ item, size, position, previewUri }: MediaTileProps) {
   const isVideo = item.role === 'video';
   const uri = (isVideo ? (item.poster_url ?? item.thumb_url) : (item.thumb_url ?? item.url)) ?? previewUri ?? null;
-  const what = isVideo ? 'Video' : 'Foto';
-  const state = item.status === 'processing' ? ', procesando' : item.status === 'failed' ? ', no se pudo procesar' : '';
+  const { t } = useI18n();
+  const what = isVideo ? (position ? t('Video {position}', { position }) : t('Video')) : position ? t('Foto {position}', { position }) : t('Foto');
+  const label =
+    item.status === 'processing'
+      ? t('{media}, procesando', { media: what })
+      : item.status === 'failed'
+        ? t('{media}, no se pudo procesar', { media: what })
+        : what;
 
   return (
-    <Frame size={size} label={`${what}${position ? ` ${position}` : ''}${state}`}>
+    <Frame size={size} label={label}>
       {uri ? <Image source={{ uri }} style={fill} contentFit="cover" transition={180} recyclingKey={item.uuid} accessibilityIgnoresInvertColors /> : null}
 
       {item.status === 'processing' ? (
         <View style={[fill, { backgroundColor: scrim, alignItems: 'center', justifyContent: 'center', gap: 4 }]}>
           <ActivityIndicator color={colors.onDark} size="small" />
           <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: colors.onDark }}>
-            Procesando…
+            {t('Procesando…')}
           </AppText>
         </View>
       ) : item.status === 'failed' ? (
         <View style={[fill, { backgroundColor: scrim, alignItems: 'center', justifyContent: 'center', gap: 4, padding: 4 }]}>
           <CircleAlert color={colors.onDark} size={18} />
           <AppText align="center" maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: colors.onDark }}>
-            No se pudo procesar
+            {t('No se pudo procesar')}
           </AppText>
         </View>
       ) : isVideo ? (
@@ -92,7 +99,7 @@ export function MediaTile({ item, size, position, previewUri }: MediaTileProps) 
 
       {item.source === 'purchased' ? (
         <View
-          accessibilityLabel="Foto comprada"
+          accessibilityLabel={t('Foto comprada')}
           style={{ position: 'absolute', left: 5, top: 5, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
           <ShoppingBag size={11} color={colors.goldSoft} strokeWidth={2.2} />
         </View>
@@ -101,22 +108,35 @@ export function MediaTile({ item, size, position, previewUri }: MediaTileProps) 
   );
 }
 
-const UPLOAD_LABEL: Record<UploadItem['status'], string> = {
-  queued: 'En espera',
-  preparing: 'Preparando…',
-  uploading: 'Subiendo',
-  done: 'Listo',
-  failed: 'No se subió',
-  blocked: 'Sin espacio',
-};
+function uploadLabel(t: Translate, status: UploadItem['status']): string {
+  switch (status) {
+    case 'queued':
+      return t('En espera');
+    case 'preparing':
+      return t('Preparando…');
+    case 'uploading':
+      return t('Subiendo');
+    case 'done':
+      return t('Listo');
+    case 'failed':
+      return t('No se subió');
+    default:
+      return t('Sin espacio');
+  }
+}
 
 /** A file still in the upload queue, drawn in the gallery where it will land. */
 export function UploadTile({ item, size }: { item: UploadItem; size: number }) {
   const trouble = item.status === 'failed' || item.status === 'blocked';
-  const label = item.status === 'uploading' ? `${item.progress}%` : UPLOAD_LABEL[item.status];
+  const { t } = useI18n();
+  const status = uploadLabel(t, item.status);
+  const label = item.status === 'uploading' ? `${item.progress}%` : status;
+  const media = item.role === 'video' ? t('Video') : t('Foto');
+  const spoken =
+    item.status === 'uploading' ? t('{media}: Subiendo {progress} por ciento', { media, progress: item.progress }) : `${media}: ${status}`;
 
   return (
-    <Frame size={size} label={`${item.role === 'video' ? 'Video' : 'Foto'}: ${UPLOAD_LABEL[item.status]}${item.status === 'uploading' ? ` ${item.progress} por ciento` : ''}`}>
+    <Frame size={size} label={spoken}>
       {/* expo-image renders a frame for local videos too, so both kinds get a real thumbnail. */}
       <Image source={{ uri: item.localUri }} style={fill} contentFit="cover" accessibilityIgnoresInvertColors />
       <View style={[fill, { backgroundColor: scrim, alignItems: 'center', justifyContent: 'center', gap: 3, padding: 4 }]}>

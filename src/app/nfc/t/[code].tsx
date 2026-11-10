@@ -12,6 +12,7 @@ import { ActivationShell } from '@/components/nfc/activation-shell';
 import { StepButton } from '@/components/nfc/step-button';
 import { webOrigin } from '@/features/nfc/use-activation';
 import { parseHttpUrl } from '@/features/nfc/url-policy';
+import { useI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, radius, spacing } from '@/theme/tokens';
@@ -28,6 +29,7 @@ function ownUrl(url: string | null | undefined): string | null {
  * (`GET /tags/{code}`), so it works with or without a session.
  */
 export default function TagScreen() {
+  const { t } = useI18n();
   const { code = '' } = useLocalSearchParams<{ code: string }>();
   const status = useAuthStore((s) => s.status);
   const setPendingDeepLink = useUiStore((s) => s.setPendingDeepLink);
@@ -57,32 +59,32 @@ export default function TagScreen() {
     <ActivationShell
       stepKey={query.isPending ? 'loading' : query.isError ? 'error' : 'tag'}
       title="Finisher Legacy"
-      leading={{ icon: X, label: 'Cerrar', onPress: close }}
+      leading={{ icon: X, label: t('Cerrar'), onPress: close }}
       footer={
         tag ? (
           <>
-            {storyUrl ? <StepButton label="Ver historia" onPress={() => WebBrowser.openBrowserAsync(storyUrl)} /> : null}
-            {tag.can_activate ? <StepButton label="Activar mi Finisher Legacy" variant={storyUrl ? 'secondary' : 'primary'} onPress={activate} /> : null}
-            {tag.owned_by_me ? <StepButton label="Ir a mi Legacy" variant="plain" onPress={() => router.replace('/legacy')} /> : null}
+            {storyUrl ? <StepButton label={t('Ver historia')} onPress={() => WebBrowser.openBrowserAsync(storyUrl)} /> : null}
+            {tag.can_activate ? <StepButton label={t('Activar mi Finisher Legacy')} variant={storyUrl ? 'secondary' : 'primary'} onPress={activate} /> : null}
+            {tag.owned_by_me ? <StepButton label={t('Ir a mi Legacy')} variant="plain" onPress={() => router.replace('/legacy')} /> : null}
           </>
         ) : query.isError ? (
-          <StepButton label="Reintentar" variant="secondary" onPress={() => query.refetch()} />
+          <StepButton label={t('Reintentar')} variant="secondary" onPress={() => query.refetch()} />
         ) : null
       }>
       {query.isPending ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.accent} />
           <AppText variant="body" tone="muted">
-            Leyendo tu Finisher Legacy…
+            {t('Leyendo tu Finisher Legacy…')}
           </AppText>
         </View>
       ) : query.isError || !tag ? (
         <View style={{ gap: spacing.xs }}>
           <AppText variant="title" accessibilityRole="header">
-            {notFound ? 'No reconocemos este Finisher Legacy' : 'No pudimos cargarlo'}
+            {notFound ? t('No reconocemos este Finisher Legacy') : t('No pudimos cargarlo')}
           </AppText>
           <AppText variant="body" tone="muted">
-            {notFound ? 'Este chip no está registrado. Si crees que es un error, escríbenos a hola@finisherlegacy.com.' : 'Revisa tu conexión e inténtalo de nuevo.'}
+            {notFound ? t('Este chip no está registrado. Si crees que es un error, escríbenos a hola@finisherlegacy.com.') : t('Revisa tu conexión e inténtalo de nuevo.')}
           </AppText>
         </View>
       ) : (

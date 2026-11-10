@@ -12,6 +12,7 @@ import { forwardRef, type ReactNode } from 'react';
 import { TextInput, View, type TextInputProps } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 
 export function FormGroup({ title, footer, children }: { title?: string; footer?: string; children: ReactNode }) {
@@ -44,11 +45,13 @@ export function FormGroup({ title, footer, children }: { title?: string; footer?
 }
 
 function OfficialBadge() {
+  const { t } = useI18n();
+
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 7, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: colors.goldWash }}>
       <BadgeCheck size={12} color={colors.accent} strokeWidth={2.2} />
       <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.bold, fontSize: 10.5, letterSpacing: 0.6, color: colors.accent }}>
-        Oficial
+        {t('Oficial')}
       </AppText>
     </View>
   );
@@ -64,6 +67,8 @@ interface FormRowProps extends Omit<TextInputProps, 'style'> {
 }
 
 export const FormRow = forwardRef<TextInput, FormRowProps>(function FormRow({ label, error, official = false, last = false, value, ...input }, ref) {
+  const { t } = useI18n();
+
   return (
     <View style={{ borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.hairline, paddingRight: spacing.md }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 50, gap: spacing.sm }}>
@@ -73,7 +78,7 @@ export const FormRow = forwardRef<TextInput, FormRowProps>(function FormRow({ la
         {official ? (
           <View
             accessible
-            accessibilityLabel={`${label}: ${value || 'sin dato'}. Dato oficial, no se puede editar.`}
+            accessibilityLabel={t('{label}: {value}. Dato oficial, no se puede editar.', { label, value: value || t('sin dato') })}
             style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: spacing.xs, paddingVertical: spacing.sm }}>
             <AppText numberOfLines={2} style={{ flexShrink: 1, fontFamily: fontFamily.regular, fontSize: 16, color: colors.muted, textAlign: 'right' }}>
               {value || '—'}
@@ -122,13 +127,14 @@ interface FormAreaProps extends Omit<TextInputProps, 'style'> {
 }
 
 export const FormArea = forwardRef<TextInput, FormAreaProps>(function FormArea({ label, error, official = false, maxLength, minHeight = 120, value = '', ...input }, ref) {
+  const { t } = useI18n();
   const length = value.length;
   const near = length > maxLength * 0.9;
 
   return (
     <View style={{ paddingRight: spacing.md, paddingVertical: spacing.sm }}>
       {official ? (
-        <View accessible accessibilityLabel={`${label}. Dato oficial, no se puede editar.`} style={{ gap: spacing.xs }}>
+        <View accessible accessibilityLabel={t('{label}. Dato oficial, no se puede editar.', { label })} style={{ gap: spacing.xs }}>
           <AppText style={{ fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 24, color: colors.muted }}>{value || '—'}</AppText>
           <OfficialBadge />
         </View>
@@ -161,7 +167,7 @@ export const FormArea = forwardRef<TextInput, FormAreaProps>(function FormArea({
             {error ?? ''}
           </AppText>
           <AppText
-            accessibilityLabel={`${length} de ${maxLength} caracteres`}
+            accessibilityLabel={t('{length} de {max} caracteres', { length, max: maxLength })}
             style={{ fontFamily: fontFamily.medium, fontSize: 12, color: length > maxLength ? colors.destructive : near ? colors.accent : colors.subtle, fontVariant: ['tabular-nums'] }}>
             {length}/{maxLength}
           </AppText>

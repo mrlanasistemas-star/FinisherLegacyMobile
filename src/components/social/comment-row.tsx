@@ -9,6 +9,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { MomentComment } from '@/types/social';
 import { relativeTime } from '@/utils/relative-time';
+import { useI18n } from '@/i18n';
 
 /** One "mensaje de apoyo" — shared by the moment detail and the comments sheet. */
 export const CommentRow = memo(function CommentRow({
@@ -22,12 +23,14 @@ export const CommentRow = memo(function CommentRow({
   onReport: () => void;
   deleting: boolean;
 }) {
+  const { t } = useI18n();
+
   return (
     <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, opacity: deleting ? 0.4 : 1 }}>
       <Pressable
         onPress={() => comment.author.username && router.push(`/athlete/${comment.author.username}`)}
         accessibilityRole="button"
-        accessibilityLabel={`Ver perfil de ${comment.author.name}`}>
+        accessibilityLabel={t('Ver perfil de {name}', { name: comment.author.name })}>
         <Avatar uri={comment.author.photo_url} name={comment.author.name} size={34} />
       </Pressable>
       <View style={{ flex: 1, gap: 2 }}>
@@ -44,9 +47,9 @@ export const CommentRow = memo(function CommentRow({
         </AppText>
       </View>
       {comment.can_delete ? (
-        <IconButton icon={Trash2} label="Borrar mensaje" onPress={onDelete} size={16} color={colors.subtle} disabled={deleting} />
+        <IconButton icon={Trash2} label={t('Borrar mensaje')} onPress={onDelete} size={16} color={colors.subtle} disabled={deleting} />
       ) : (
-        <IconButton icon={Flag} label="Reportar mensaje" onPress={onReport} size={16} color={colors.subtle} />
+        <IconButton icon={Flag} label={t('Reportar mensaje')} onPress={onReport} size={16} color={colors.subtle} />
       )}
     </View>
   );

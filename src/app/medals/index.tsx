@@ -15,6 +15,7 @@ import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { SkeletonCard } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { useMedals } from '@/hooks/use-medals';
+import { useI18n } from '@/i18n';
 import { colors, spacing } from '@/theme/tokens';
 import type { Medal } from '@/types/models';
 
@@ -22,6 +23,7 @@ const NAV_HEIGHT = 52;
 
 /** Medallas — a light gallery of every medal, large title collapsing into the nav bar. */
 export default function MedalsScreen() {
+  const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useScrollY();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useMedals();
@@ -33,11 +35,11 @@ export default function MedalsScreen() {
   const header = (
     <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: 2 }}>
       <AppText variant="display" accessibilityRole="header">
-        Medallas
+        {t('Medallas')}
       </AppText>
       {total > 0 ? (
         <AppText variant="body" tone="muted">
-          {total === 1 ? '1 medalla en tu colección' : `${total} medallas en tu colección`}
+          {tc('{count} medalla en tu colección|{count} medallas en tu colección', total)}
         </AppText>
       ) : null}
     </View>
@@ -78,13 +80,13 @@ export default function MedalsScreen() {
               <SkeletonCard mediaHeight={150} style={{ flex: 1 }} />
             </View>
           ) : isError ? (
-            <ErrorState error={error} message="No pudimos cargar tus medallas." onRetry={refetch} />
+            <ErrorState error={error} message={t('No pudimos cargar tus medallas.')} onRetry={refetch} />
           ) : (
             <EmptyState
               icon={MedalIcon}
-              title="Tu primera medalla"
-              message="Guarda cada medalla con su foto y su historia. Aparecerán aquí, como en una vitrina."
-              actionLabel="Agregar medalla"
+              title={t('Tu primera medalla')}
+              message={t('Guarda cada medalla con su foto y su historia. Aparecerán aquí, como en una vitrina.')}
+              actionLabel={t('Agregar medalla')}
               onAction={() => router.push('/medals/create')}
             />
           )
@@ -93,10 +95,10 @@ export default function MedalsScreen() {
 
       <ScrollHeader
         scrollY={scrollY}
-        title="Medallas"
+        title={t('Medallas')}
         threshold={60}
-        left={<IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />}
-        right={<IconButton icon={Plus} label="Agregar medalla" onPress={() => router.push('/medals/create')} color={colors.accent} />}
+        left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={goBack} size={26} />}
+        right={<IconButton icon={Plus} label={t('Agregar medalla')} onPress={() => router.push('/medals/create')} color={colors.accent} />}
       />
     </View>
   );

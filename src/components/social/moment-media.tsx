@@ -6,6 +6,7 @@ import { FlatList, Pressable, View, useWindowDimensions } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 import type { MomentMedia } from '@/types/social';
+import { useI18n } from '@/i18n';
 
 interface MomentMediaProps {
   media: MomentMedia[];
@@ -26,6 +27,7 @@ function aspectFor(item: MomentMedia): number {
  * one the athlete tapped) — feeds never autoplay.
  */
 export function MomentMediaPager({ media, width: widthProp, interactiveVideo = false, onOpen }: MomentMediaProps) {
+  const { t } = useI18n();
   const { width: screenWidth } = useWindowDimensions();
   const width = widthProp ?? screenWidth;
   const [index, setIndex] = useState(0);
@@ -49,14 +51,14 @@ export function MomentMediaPager({ media, width: widthProp, interactiveVideo = f
               interactiveVideo ? (
                 <InlineVideo url={item.url} />
               ) : (
-                <Pressable onPress={onOpen} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Ver video">
+                <Pressable onPress={onOpen} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel={t('Ver video')}>
                   <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
                     <Play size={24} color={colors.white} fill={colors.white} />
                   </View>
                 </Pressable>
               )
             ) : (
-              <Pressable onPress={onOpen} disabled={!onOpen} style={{ flex: 1 }} accessibilityRole="imagebutton" accessibilityLabel="Foto del momento">
+              <Pressable onPress={onOpen} disabled={!onOpen} style={{ flex: 1 }} accessibilityRole="imagebutton" accessibilityLabel={t('Foto del momento')}>
                 <Image source={{ uri: item.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={180} cachePolicy="memory-disk" recyclingKey={item.url} />
               </Pressable>
             )}
@@ -75,6 +77,7 @@ export function MomentMediaPager({ media, width: widthProp, interactiveVideo = f
 }
 
 function InlineVideo({ url }: { url: string }) {
+  const { t } = useI18n();
   const [playing, setPlaying] = useState(false);
   const player = useVideoPlayer(playing ? url : null, (instance) => {
     instance.loop = false;
@@ -83,7 +86,7 @@ function InlineVideo({ url }: { url: string }) {
 
   if (!playing) {
     return (
-      <Pressable onPress={() => setPlaying(true)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Reproducir video">
+      <Pressable onPress={() => setPlaying(true)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel={t('Reproducir video')}>
         <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
           <Play size={28} color={colors.white} fill={colors.white} />
         </View>

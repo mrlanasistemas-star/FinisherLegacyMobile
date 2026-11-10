@@ -8,6 +8,7 @@ import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 
 import { formatDistance } from '../format';
 import { useTrackingStore } from '../tracking-storage';
+import { useI18n } from '@/i18n';
 
 /**
  * Entry point from a participation ("Iniciar seguimiento"), or — when a
@@ -16,6 +17,7 @@ import { useTrackingStore } from '../tracking-storage';
  * only renders while something is being shared.
  */
 export function LiveTrackingCard({ participantId }: { participantId?: number }) {
+  const { t } = useI18n();
   const record = useTrackingStore((s) => s.record);
   const live = record && (participantId === undefined || record.participantId === participantId) ? record : null;
 
@@ -27,7 +29,7 @@ export function LiveTrackingCard({ participantId }: { participantId?: number }) 
     <PressScale
       onPress={() => router.push(`/tracking/${target}`)}
       accessibilityRole="button"
-      accessibilityLabel={live ? `Seguimiento en vivo activo, ${formatDistance(live.distanceM)}. Abrir` : 'Iniciar seguimiento en vivo'}>
+      accessibilityLabel={live ? t('Seguimiento en vivo activo, {distance}. Abrir', { distance: formatDistance(live.distanceM) }) : t('Iniciar seguimiento en vivo')}>
       <View
         style={{
           flexDirection: 'row',
@@ -43,9 +45,9 @@ export function LiveTrackingCard({ participantId }: { participantId?: number }) 
           {live ? <Radio size={20} color={colors.black} /> : <MapPin size={20} color={colors.accent} />}
         </View>
         <View style={{ flex: 1 }}>
-          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{live ? 'Seguimiento en vivo activo' : 'Iniciar seguimiento'}</AppText>
+          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{live ? t('Seguimiento en vivo activo') : t('Iniciar seguimiento')}</AppText>
           <AppText variant="caption" tone="muted">
-            {live ? `${formatDistance(live.distanceM)} · toca para ver o detener` : 'Tu gente puede seguirte en vivo desde un enlace.'}
+            {live ? t('{distance} · toca para ver o detener', { distance: formatDistance(live.distanceM) }) : t('Tu gente puede seguirte en vivo desde un enlace.')}
           </AppText>
         </View>
         <ChevronRight size={18} color={colors.muted} />

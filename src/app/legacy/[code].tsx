@@ -13,10 +13,12 @@ import { Reveal } from '@/components/motion/reveal';
 import { Screen } from '@/components/screen';
 import { Skeleton } from '@/components/skeleton';
 import { useClaimLegacyCode, useLegacyCodeLookup } from '@/hooks/use-legacy-code';
+import { useI18n } from '@/i18n';
 import { formatLongDate } from '@/utils/dates';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function LegacyCodeLookupScreen() {
+  const { t } = useI18n();
   const { code } = useLocalSearchParams<{ code: string }>();
   const { data, isPending, isError, refetch } = useLegacyCodeLookup(code);
   const claim = useClaimLegacyCode();
@@ -31,14 +33,14 @@ export default function LegacyCodeLookupScreen() {
         params: { code: result.legacy_code, medalUuid: result.medal?.id ?? '' },
       });
     } catch (error) {
-      setClaimError(error instanceof AppError ? error.message : 'No pudimos reclamar este código.');
+      setClaimError(error instanceof AppError ? error.message : t('No pudimos reclamar este código.'));
     }
   }
 
   return (
     <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Volver">
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Volver')}>
           <ChevronLeft color={colors.foreground} size={26} />
         </Pressable>
       </View>
@@ -49,7 +51,7 @@ export default function LegacyCodeLookupScreen() {
           <Skeleton height={100} radius={16} />
         </View>
       ) : isError || !data ? (
-        <ErrorState message="No encontramos este Legacy Code." onRetry={refetch} />
+        <ErrorState message={t('No encontramos este Legacy Code.')} onRetry={refetch} />
       ) : (
         <Reveal style={{ gap: spacing.lg }}>
           {!data.available ? (
@@ -57,7 +59,7 @@ export default function LegacyCodeLookupScreen() {
               <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', marginTop: spacing.xs }}>
                 <ShieldAlert color={colors.destructive} size={20} />
                 <AppText variant="body" style={{ flex: 1 }}>
-                  Este Legacy Code ya no está disponible.
+                  {t('Este Legacy Code ya no está disponible.')}
                 </AppText>
               </View>
             </PlateCard>
@@ -65,9 +67,9 @@ export default function LegacyCodeLookupScreen() {
             <>
               <PlateCard code={data.code} />
               <Card>
-                <AppText variant="bodyStrong">Esta placa ya es parte de tus recuerdos.</AppText>
+                <AppText variant="bodyStrong">{t('Esta placa ya es parte de tus recuerdos.')}</AppText>
                 <AppButton
-                  label="Ver mis medallas"
+                  label={t('Ver mis medallas')}
                   variant="secondary"
                   onPress={() => router.replace('/medals')}
                   style={{ marginTop: spacing.md }}
@@ -78,10 +80,10 @@ export default function LegacyCodeLookupScreen() {
             <>
               <PlateCard code={data.code} />
               <Card>
-                <AppText variant="bodyStrong">Esta placa ya forma parte de otro Legacy.</AppText>
+                <AppText variant="bodyStrong">{t('Esta placa ya forma parte de otro Legacy.')}</AppText>
                 {data.athlete ? (
                   <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
-                    Reclamada por @{data.athlete.username}
+                    {t('Reclamada por @{username}', { username: data.athlete.username })}
                   </AppText>
                 ) : null}
               </Card>
@@ -108,12 +110,12 @@ export default function LegacyCodeLookupScreen() {
                   <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs }}>
                     {data.plate?.official_time ? (
                       <AppText variant="caption" tone="muted">
-                        Tiempo: {data.plate.official_time}
+                        {t('Tiempo: {time}', { time: data.plate.official_time })}
                       </AppText>
                     ) : null}
                     {data.plate?.pace ? (
                       <AppText variant="caption" tone="muted">
-                        Ritmo: {data.plate.pace}
+                        {t('Ritmo: {pace}', { pace: data.plate.pace })}
                       </AppText>
                     ) : null}
                   </View>
@@ -126,7 +128,7 @@ export default function LegacyCodeLookupScreen() {
                 </AppText>
               ) : null}
 
-              <AppButton label="Reclamar este Legacy Code" onPress={handleClaim} loading={claim.isPending} />
+              <AppButton label={t('Reclamar este Legacy Code')} onPress={handleClaim} loading={claim.isPending} />
             </>
           )}
         </Reveal>

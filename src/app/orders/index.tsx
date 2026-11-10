@@ -12,8 +12,9 @@ import { PressableScale } from '@/components/motion/pressable-scale';
 import { StaggerItem } from '@/components/motion/reveal';
 import { SkeletonRow } from '@/components/skeleton';
 import { TopBar } from '@/components/ui/top-bar';
-import { PAYMENT_STATE_LABEL } from '@/features/commerce/order-timeline';
+import { paymentStateLabel } from '@/features/commerce/order-timeline';
 import { useOrders } from '@/hooks/use-orders';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import type { Order } from '@/types/models';
 import { formatLongDate } from '@/utils/dates';
@@ -22,13 +23,14 @@ import { formatMoney } from '@/utils/money';
 const TONE_COLOR = { gold: colors.accent, success: colors.success, destructive: colors.destructive, muted: colors.muted } as const;
 
 export default function OrdersScreen() {
+  const { t } = useI18n();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useOrders();
   const orders = useMemo<Order[]>(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
 
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title="Mis pedidos" />
+        <TopBar title={t('Mis pedidos')} />
       </View>
 
       {isPending ? (
@@ -38,7 +40,7 @@ export default function OrdersScreen() {
           <SkeletonRow />
         </View>
       ) : isError ? (
-        <ErrorState error={error} message="No pudimos cargar tus pedidos." onRetry={refetch} />
+        <ErrorState error={error} message={t('No pudimos cargar tus pedidos.')} onRetry={refetch} />
       ) : (
         <FlatList
           data={orders}
@@ -54,7 +56,7 @@ export default function OrdersScreen() {
             </StaggerItem>
           )}
           ListEmptyComponent={
-            <EmptyState icon={Receipt} title="Aún no tienes pedidos" message="Cuando compres algo en la tienda, aquí podrás seguir su estado." actionLabel="Ver colecciones" onAction={() => router.replace('/store')} />
+            <EmptyState icon={Receipt} title={t('Aún no tienes pedidos')} message={t('Cuando compres algo en la tienda, aquí podrás seguir su estado.')} actionLabel={t('Ver colecciones')} onAction={() => router.replace('/store')} />
           }
         />
       )}
@@ -63,8 +65,9 @@ export default function OrdersScreen() {
 }
 
 function OrderRow({ order }: { order: Order }) {
-  const state = PAYMENT_STATE_LABEL[order.payment_state] ?? PAYMENT_STATE_LABEL.pending;
-  const label = order.status === 'cancelled' && order.payment_state !== 'paid' ? 'Cancelado' : order.fulfillment_status === 'fulfilled' ? 'Entregado' : state.label;
+  const { t, tc } = useI18n();
+  const state = paymentStateLabel(order.payment_state) ?? paymentStateLabel('pending');
+  const label = order.status === 'cancelled' && order.payment_state !== 'paid' ? t('Cancelado') : order.fulfillment_status === 'fulfilled' ? t('Entregado') : state.label;
   const tone = order.status === 'cancelled' && order.payment_state !== 'paid' ? 'muted' : order.fulfillment_status === 'fulfilled' ? 'success' : state.tone;
   const itemCount = order.items?.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -72,7 +75,7 @@ function OrderRow({ order }: { order: Order }) {
     <PressableScale
       onPress={() => router.push(`/orders/${order.uuid}`)}
       accessibilityRole="button"
-      accessibilityLabel={`Pedido ${order.order_number}, ${label}, ${formatMoney(order.total_minor, order.currency)}`}
+      accessibilityLabel={t('Pedido {number}, {status}, {total}', { number: order.order_number, status: label, total: formatMoney(order.total_minor, order.currency) })}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -89,7 +92,7 @@ function OrderRow({ order }: { order: Order }) {
         <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>#{order.order_number}</AppText>
         <AppText variant="caption" tone="muted">
           {formatLongDate(order.created_at.slice(0, 10))}
-          {itemCount ? ` · ${itemCount} ${itemCount === 1 ? 'producto' : 'productos'}` : ''}
+          {itemCount ? ` · ${tc('{count} producto|{count} productos', itemCount)}` : ''}
         </AppText>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: TONE_COLOR[tone] }} />

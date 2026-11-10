@@ -6,6 +6,7 @@ import Animated, { FadeInDown, FadeOutDown, useReducedMotion } from 'react-nativ
 
 import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
+import { useI18n } from '@/i18n';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 import { nextTrack, stop, togglePlay } from '../player-controller';
@@ -22,6 +23,7 @@ export const PLAYER_HREF = '/training/player' as Href;
  * appears while paused to dismiss it.
  */
 export function MiniPlayer({ style }: { style?: StyleProp<ViewStyle> }) {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const message = useCurrentMessage();
   const sheetOpen = usePlayerStore((s) => s.sheetOpen);
@@ -31,7 +33,7 @@ export function MiniPlayer({ style }: { style?: StyleProp<ViewStyle> }) {
 
   if (!message || sheetOpen) return null;
   const progress = status.duration > 0 ? Math.min(1, status.position / status.duration) : 0;
-  const subtitle = sessionActive ? 'Modo entrenamiento' : (message.relationship ?? 'Envíame ánimo');
+  const subtitle = sessionActive ? t('Modo entrenamiento') : (message.relationship ?? t('Envíame ánimo'));
 
   return (
     <Animated.View entering={reduceMotion ? undefined : FadeInDown.springify().damping(20)} exiting={reduceMotion ? undefined : FadeOutDown.duration(160)} style={style}>
@@ -39,8 +41,8 @@ export function MiniPlayer({ style }: { style?: StyleProp<ViewStyle> }) {
         onPress={() => router.push(PLAYER_HREF)}
         scaleTo={0.98}
         accessibilityRole="button"
-        accessibilityLabel={`Reproduciendo mensaje de ${message.sender_name}`}
-        accessibilityHint="Abre el reproductor"
+        accessibilityLabel={t('Reproduciendo mensaje de {name}', { name: message.sender_name })}
+        accessibilityHint={t('Abre el reproductor')}
         style={{
           marginHorizontal: spacing.sm,
           marginBottom: spacing.xs,
@@ -59,10 +61,10 @@ export function MiniPlayer({ style }: { style?: StyleProp<ViewStyle> }) {
               {message.sender_name}
             </AppText>
             <AppText variant="caption" tone="subtle" numberOfLines={1} style={{ fontSize: 12.5 }}>
-              {status.error === 'unavailable' ? 'Actualiza la app para escuchar' : subtitle}
+              {status.error === 'unavailable' ? t('Actualiza la app para escuchar') : subtitle}
             </AppText>
           </View>
-          <MiniButton label={status.playing ? 'Pausar' : 'Reproducir'} onPress={togglePlay}>
+          <MiniButton label={status.playing ? t('Pausar') : t('Reproducir')} onPress={togglePlay}>
             {status.playing ? (
               <Pause size={22} color={colors.foreground} fill={colors.foreground} strokeWidth={0} />
             ) : (
@@ -70,11 +72,11 @@ export function MiniPlayer({ style }: { style?: StyleProp<ViewStyle> }) {
             )}
           </MiniButton>
           {status.playing || sessionActive ? (
-            <MiniButton label="Siguiente mensaje" onPress={nextTrack} disabled={!canNext}>
+            <MiniButton label={t('Siguiente mensaje')} onPress={nextTrack} disabled={!canNext}>
               <SkipForward size={20} color={colors.foreground} fill={colors.foreground} strokeWidth={0} />
             </MiniButton>
           ) : (
-            <MiniButton label="Cerrar reproductor" onPress={stop}>
+            <MiniButton label={t('Cerrar reproductor')} onPress={stop}>
               <X size={20} color={colors.muted} />
             </MiniButton>
           )}

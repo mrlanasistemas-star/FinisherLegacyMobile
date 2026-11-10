@@ -24,6 +24,7 @@ import {
   type StoryTextField,
   type StoryVisibility,
 } from '@/schemas/story';
+import { t } from '@/i18n';
 
 export type StoryPatch = Partial<Record<StoryTextField, string | null>> & { visibility?: StoryVisibility };
 
@@ -36,7 +37,7 @@ export interface StoryUploadFile {
 function parsed<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success) {
-    throw new AppError({ kind: 'server', message: 'Respuesta inesperada del servidor.' });
+    throw new AppError({ kind: 'server', message: t('Respuesta inesperada del servidor.') });
   }
   return result.data;
 }
@@ -150,7 +151,7 @@ export async function getPurchasedPhotos(page: number): Promise<PurchasedPhotosP
   try {
     const { data } = await apiClient.get<PageBody>('me/purchased-photos', { params: { page } });
     if (!data || !Array.isArray(data.data)) {
-      throw new AppError({ kind: 'server', message: 'Respuesta inesperada del servidor.' });
+      throw new AppError({ kind: 'server', message: t('Respuesta inesperada del servidor.') });
     }
     const current = typeof data.meta?.current_page === 'number' ? data.meta.current_page : page;
     const last = typeof data.meta?.last_page === 'number' ? data.meta.last_page : null;

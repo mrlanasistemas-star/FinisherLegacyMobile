@@ -10,6 +10,7 @@ import { MAX_BATCH } from './points';
 import { handleLocations, LIVE_TRACKING_TASK } from './tracking-task';
 import { loadTrackingRecord, saveTrackingRecord, updateTrackingRecord, type TrackingRecord } from './tracking-storage';
 import { flushTrackingPoints, setDrainedAfterStopHandler, setSessionClosedHandler, stopWatchingConnectivity, watchConnectivity } from './tracking-uploader';
+import { t } from '@/i18n';
 
 export type TrackingStartError = 'no_consent' | 'permission_denied' | 'services_off' | 'other_active' | 'unavailable' | 'offline';
 
@@ -41,7 +42,8 @@ export async function requestBackgroundAccess(): Promise<boolean> {
 
 let foregroundWatcher: Location.LocationSubscription | null = null;
 
-const TASK_OPTIONS: Location.LocationTaskOptions = {
+/** Built when tracking starts, so the permanent notification is in the app language. */
+const taskOptions = (): Location.LocationTaskOptions => ({
   accuracy: Location.Accuracy.High,
   timeInterval: 5000,
   distanceInterval: 10,
@@ -51,17 +53,17 @@ const TASK_OPTIONS: Location.LocationTaskOptions = {
   pausesUpdatesAutomatically: false,
   showsBackgroundLocationIndicator: true,
   foregroundService: {
-    notificationTitle: 'Seguimiento en vivo activo',
-    notificationBody: 'Tu gente puede seguir tu carrera. Abre la app para detenerlo.',
+    notificationTitle: t('Seguimiento en vivo activo'),
+    notificationBody: t('Tu gente puede seguir tu carrera. Abre la app para detenerlo.'),
     notificationColor: colors.gold,
     killServiceOnDestroy: false,
   },
-};
+});
 
 async function startUpdates(): Promise<'background' | 'foreground'> {
   try {
     if (!(await Location.hasStartedLocationUpdatesAsync(LIVE_TRACKING_TASK))) {
-      await Location.startLocationUpdatesAsync(LIVE_TRACKING_TASK, TASK_OPTIONS);
+      await Location.startLocationUpdatesAsync(LIVE_TRACKING_TASK, taskOptions());
     }
     return 'background';
   } catch {

@@ -1,5 +1,9 @@
-const SHORT = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' });
-const SHORT_YEAR = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+import { t } from '@/i18n';
+
+import { dateFormatter } from './dates';
+
+const SHORT: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+const SHORT_YEAR: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
 
 /** "ahora", "hace 5 min", "hace 3 h", "ayer", "hace 4 d", "12 sep", "12 sep 2025". */
 export function relativeTime(iso: string, now: Date = new Date()): string {
@@ -7,15 +11,15 @@ export function relativeTime(iso: string, now: Date = new Date()): string {
   const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
 
   if (Number.isNaN(seconds)) return '';
-  if (seconds < 60) return 'ahora';
+  if (seconds < 60) return t('ahora');
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `hace ${minutes} min`;
+  if (minutes < 60) return t('hace {minutes} min', { minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `hace ${hours} h`;
+  if (hours < 24) return t('hace {hours} h', { hours });
   const days = Math.floor(hours / 24);
-  if (days === 1) return 'ayer';
-  if (days < 7) return `hace ${days} d`;
-  return date.getFullYear() === now.getFullYear() ? SHORT.format(date) : SHORT_YEAR.format(date);
+  if (days === 1) return t('ayer');
+  if (days < 7) return t('hace {days} d', { days });
+  return date.getFullYear() === now.getFullYear() ? dateFormatter('short', SHORT).format(date) : dateFormatter('short-year', SHORT_YEAR).format(date);
 }
 
 export type TimeBucket = 'today' | 'week' | 'earlier';
@@ -31,8 +35,14 @@ export function timeBucket(iso: string, now: Date = new Date()): TimeBucket {
   return date >= weekAgo ? 'week' : 'earlier';
 }
 
-export const TIME_BUCKET_LABEL: Record<TimeBucket, string> = {
-  today: 'Hoy',
-  week: 'Esta semana',
-  earlier: 'Antes',
-};
+/** Resolved when it is shown, so it follows the app language. */
+export function timeBucketLabel(bucket: TimeBucket): string {
+  switch (bucket) {
+    case 'today':
+      return t('Hoy');
+    case 'week':
+      return t('Esta semana');
+    default:
+      return t('Antes');
+  }
+}

@@ -12,36 +12,42 @@
 import { z } from 'zod';
 
 import type { StoryPatch } from '@/api/stories';
+import { t } from '@/i18n';
 import { STORY_TEXT_FIELDS, type EditableStory, type StoryTextField } from '@/schemas/story';
 
-const optionalText = (max: number, label: string) => z.string().trim().max(max, `${label}: máximo ${max} caracteres.`);
+/** `label` is a function so the message is written in the language active when it is shown. */
+const optionalText = (max: number, label: () => string) =>
+  z
+    .string()
+    .trim()
+    .max(max, { error: () => t('{label}: máximo {max} caracteres.', { label: label(), max }) });
 
 const TIME = /^(\d{1,2}:)?[0-5]?\d:[0-5]\d$/;
 
 export const storyFormSchema = z.object({
-  title: optionalText(120, 'Título'),
-  event_name: optionalText(160, 'Evento'),
-  distance: optionalText(60, 'Distancia'),
+  title: optionalText(120, () => t('Título')),
+  event_name: optionalText(160, () => t('Evento')),
+  distance: optionalText(60, () => t('Distancia')),
   result_time: z
     .string()
     .trim()
-    .refine((value) => value === '' || TIME.test(value), 'Usa el formato h:mm:ss (por ejemplo 1:58:30).'),
+    .refine((value) => value === '' || TIME.test(value), { error: () => t('Usa el formato h:mm:ss (por ejemplo 1:58:30).') }),
   // Positions are free text on purpose: "12", "12 de 340", "3.º".
-  result_position: optionalText(60, 'Posición'),
-  bib_number: optionalText(12, 'Dorsal'),
-  athlete_display_name: optionalText(80, 'Nombre'),
-  pace: optionalText(20, 'Ritmo'),
-  category: optionalText(40, 'Categoría'),
-  category_position: optionalText(20, 'Posición'),
-  gender_position: optionalText(20, 'Posición'),
+  result_position: optionalText(60, () => t('Posición')),
+  bib_number: optionalText(12, () => t('Dorsal')),
+  athlete_display_name: optionalText(80, () => t('Nombre')),
+  pace: optionalText(20, () => t('Ritmo')),
+  category: optionalText(40, () => t('Categoría')),
+  category_position: optionalText(20, () => t('Posición')),
+  gender_position: optionalText(20, () => t('Posición')),
   /** Shown and typed as DD/MM/AAAA. */
   race_date: z
     .string()
     .trim()
-    .refine((value) => value === '' || displayToIsoDate(value) !== null, 'Escribe una fecha válida: día/mes/año.'),
-  location: optionalText(160, 'Lugar'),
-  dedication: optionalText(600, 'Dedicatoria'),
-  body: optionalText(8000, 'Historia'),
+    .refine((value) => value === '' || displayToIsoDate(value) !== null, { error: () => t('Escribe una fecha válida: día/mes/año.') }),
+  location: optionalText(160, () => t('Lugar')),
+  dedication: optionalText(600, () => t('Dedicatoria')),
+  body: optionalText(8000, () => t('Historia')),
 });
 
 export type StoryFormValues = z.infer<typeof storyFormSchema>;

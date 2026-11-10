@@ -39,11 +39,12 @@ import { SortableGrid } from '@/features/stories/components/sortable-grid';
 import { StoryViewer } from '@/features/stories/components/story-viewer';
 import { VoicePlayer } from '@/features/stories/components/voice-player';
 import { pickPhotos, pickVideo, type PickOutcome } from '@/features/stories/media-picker';
-import { kindForRole, kindNoun } from '@/features/stories/quota';
+import { kindForRole, partialFitMessage, uploadingMessage } from '@/features/stories/quota';
 import { pendingCount, uploadsForStory, type UploadItem } from '@/features/stories/upload-queue';
 import { cancelUpload, clearFinishedUploads, resumeBlockedUploads, retryUpload, useUploadStore } from '@/features/stories/upload-store';
 import { useDeleteStoryMedia, useReorderStoryMedia, useStoryMedia } from '@/features/stories/use-stories';
 import { useResponsive } from '@/hooks/use-responsive';
+import { useI18n } from '@/i18n';
 import type { QuotaKind, StoryMedia } from '@/schemas/story';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
@@ -59,6 +60,7 @@ function leave() {
 }
 
 export default function StoryMediaScreen() {
+  const { t } = useI18n();
   const { publicId = '', add } = useLocalSearchParams<{ publicId?: string; add?: string }>();
   const insets = useSafeAreaInsets();
   const { width } = useResponsive();
@@ -140,10 +142,10 @@ export default function StoryMediaScreen() {
       return;
     }
     if (outcome.rejected > 0) {
-      showToast(`Solo ${outcome.count === 1 ? 'cabía' : 'cabían'} ${outcome.count} ${kindNoun(outcome.kind, outcome.count)}. ${outcome.rejected === 1 ? 'La otra no se agregó' : `Las otras ${outcome.rejected} no se agregaron`}.`);
+      showToast(partialFitMessage(outcome.kind, outcome.count, outcome.rejected));
       askForSpace(outcome.kind);
     } else {
-      showToast(outcome.count === 1 ? `Subiendo tu ${kindNoun(outcome.kind, 1)}…` : `Subiendo ${outcome.count} ${kindNoun(outcome.kind, outcome.count)}…`);
+      showToast(uploadingMessage(outcome.kind, outcome.count));
     }
   }
 
@@ -174,7 +176,7 @@ export default function StoryMediaScreen() {
     reorder.mutate(order, {
       onError: (caught) => {
         haptics.error();
-        showToast(caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : 'No pudimos guardar el nuevo orden.', 'destructive');
+        showToast(caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : t('No pudimos guardar el nuevo orden.'), 'destructive');
       },
     });
   }
@@ -190,7 +192,7 @@ export default function StoryMediaScreen() {
       },
       onError: (caught) => {
         setToDelete(null);
-        showToast(caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : 'No pudimos eliminarlo. Intenta de nuevo.', 'destructive');
+        showToast(caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : t('No pudimos eliminarlo. Intenta de nuevo.'), 'destructive');
       },
     });
   }
@@ -204,14 +206,14 @@ export default function StoryMediaScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ paddingLeft: Math.max(insets.left, spacing.md), paddingRight: Math.max(insets.right, spacing.md), borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
-        <TopBar title="Fotos y videos" onBack={leave} right={quota ? <HeaderTextButton label="Agregar" onPress={() => setAddOpen(true)} /> : null} />
+        <TopBar title={t('Fotos y videos')} onBack={leave} right={quota ? <HeaderTextButton label={t('Agregar')} onPress={() => setAddOpen(true)} /> : null} />
       </View>
 
       {media.isError && !media.data ? (
         <ErrorState
           error={media.error}
-          title={missing ? 'Aún no disponible' : undefined}
-          message={missing ? 'Todavía no podemos administrar tus fotos desde la app. Mientras tanto puedes hacerlo en finisherlegacy.com.' : 'No pudimos cargar tus fotos y videos.'}
+          title={missing ? t('Aún no disponible') : undefined}
+          message={missing ? t('Todavía no podemos administrar tus fotos desde la app. Mientras tanto puedes hacerlo en finisherlegacy.com.') : t('No pudimos cargar tus fotos y videos.')}
           onRetry={missing ? undefined : media.refetch}
           onBack={leave}
         />
@@ -245,9 +247,9 @@ export default function StoryMediaScreen() {
                 <EmptyState
                   compact
                   icon={ImagePlus}
-                  title="Empieza por tu mejor foto"
-                  message="Sube fotos y videos desde tu teléfono o agrega las que compraste a los fotógrafos del evento."
-                  actionLabel="Agregar"
+                  title={t('Empieza por tu mejor foto')}
+                  message={t('Sube fotos y videos desde tu teléfono o agrega las que compraste a los fotógrafos del evento.')}
+                  actionLabel={t('Agregar')}
                   onAction={() => setAddOpen(true)}
                 />
               ) : (
@@ -269,7 +271,7 @@ export default function StoryMediaScreen() {
                   />
                   {gallery.length > 1 ? (
                     <AppText variant="caption" tone="subtle" align="center" style={{ fontSize: 13, marginTop: spacing.xxs }}>
-                      Mantén presionada una foto y arrástrala para cambiar el orden. La primera es tu portada.
+                      {t('Mantén presionada una foto y arrástrala para cambiar el orden. La primera es tu portada.')}
                     </AppText>
                   ) : null}
                 </>
@@ -278,13 +280,13 @@ export default function StoryMediaScreen() {
 
             <View style={{ gap: spacing.xs }}>
               <AppText variant="eyebrow" tone="subtle" style={{ marginLeft: spacing.xxs }}>
-                Mensaje de voz
+                {t('Mensaje de voz')}
               </AppText>
               {voice ? (
                 <>
                   <VoicePlayer url={voice.url} durationSeconds={voice.duration_seconds} processing={voice.status === 'processing'} />
-                  <PressableScale onPress={() => setToDelete(voice)} scaleTo={0.96} hitSlop={8} accessibilityRole="button" accessibilityLabel="Eliminar mensaje de voz" style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xxs }}>
-                    <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14, color: colors.destructive }}>Eliminar mensaje de voz</AppText>
+                  <PressableScale onPress={() => setToDelete(voice)} scaleTo={0.96} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('Eliminar mensaje de voz')} style={{ alignSelf: 'flex-start', minHeight: 40, justifyContent: 'center', paddingHorizontal: spacing.xxs }}>
+                    <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14, color: colors.destructive }}>{t('Eliminar mensaje de voz')}</AppText>
                   </PressableScale>
                 </>
               ) : (
@@ -293,7 +295,7 @@ export default function StoryMediaScreen() {
                     <Mic size={18} color={colors.muted} strokeWidth={1.9} />
                   </View>
                   <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                    Por ahora el mensaje de voz se agrega desde finisherlegacy.com. Cuando lo subas, aquí podrás escucharlo.
+                    {t('Por ahora el mensaje de voz se agrega desde finisherlegacy.com. Cuando lo subas, aquí podrás escucharlo.')}
                   </AppText>
                 </View>
               )}
@@ -326,17 +328,19 @@ export default function StoryMediaScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <AppText variant="bodyStrong">
-                  {selected.role === 'video' ? 'Video' : 'Foto'} {selectedIndex + 1} de {gallery.length}
+                  {selected.role === 'video'
+                    ? t('Video {position} de {total}', { position: selectedIndex + 1, total: gallery.length })
+                    : t('Foto {position} de {total}', { position: selectedIndex + 1, total: gallery.length })}
                 </AppText>
                 <AppText variant="caption" tone="subtle">
-                  {selectedIndex === 0 ? 'Es la portada de tu recuerdo' : selected.source === 'purchased' ? 'Foto que compraste' : selected.status === 'processing' ? 'Procesando…' : 'Subida desde tu teléfono'}
+                  {selectedIndex === 0 ? t('Es la portada de tu recuerdo') : selected.source === 'purchased' ? t('Foto que compraste') : selected.status === 'processing' ? t('Procesando…') : t('Subida desde tu teléfono')}
                 </AppText>
               </View>
             </View>
             {selected.status === 'ready' && selected.url ? (
               <SheetActionRow
                 icon={Expand}
-                label="Ver en grande"
+                label={t('Ver en grande')}
                 onPress={() => {
                   const index = viewable.findIndex((item) => item.uuid === selected.uuid);
                   setSelected(null);
@@ -348,7 +352,7 @@ export default function StoryMediaScreen() {
               <>
                 <SheetActionRow
                   icon={ArrowLeftToLine}
-                  label="Usar como portada"
+                  label={t('Usar como portada')}
                   onPress={() => {
                     move(selected, 0);
                     setSelected(null);
@@ -356,7 +360,7 @@ export default function StoryMediaScreen() {
                 />
                 <SheetActionRow
                   icon={ChevronLeft}
-                  label="Mover antes"
+                  label={t('Mover antes')}
                   onPress={() => {
                     move(selected, selectedIndex - 1);
                     setSelected(null);
@@ -367,7 +371,7 @@ export default function StoryMediaScreen() {
             {selectedIndex >= 0 && selectedIndex < gallery.length - 1 ? (
               <SheetActionRow
                 icon={ChevronRight}
-                label="Mover después"
+                label={t('Mover después')}
                 onPress={() => {
                   move(selected, selectedIndex + 1);
                   setSelected(null);
@@ -376,7 +380,7 @@ export default function StoryMediaScreen() {
             ) : null}
             <SheetActionRow
               icon={Trash2}
-              label="Eliminar"
+              label={t('Eliminar')}
               destructive
               onPress={() => {
                 setToDelete(selected);
@@ -393,14 +397,14 @@ export default function StoryMediaScreen() {
           <View>
             <AppText variant="bodyStrong">
               {activeUpload.status === 'failed'
-                ? 'No se pudo subir'
+                ? t('No se pudo subir')
                 : activeUpload.status === 'blocked'
-                  ? 'No cabe en tu recuerdo'
+                  ? t('No cabe en tu recuerdo')
                   : activeUpload.status === 'done'
-                    ? 'Ya se subió'
+                    ? t('Ya se subió')
                     : activeUpload.status === 'uploading'
-                      ? `Subiendo… ${activeUpload.progress}%`
-                      : 'En espera de subir'}
+                      ? t('Subiendo… {progress}%', { progress: activeUpload.progress })
+                      : t('En espera de subir')}
             </AppText>
             {activeUpload.error ? (
               <AppText variant="caption" tone="muted" style={{ marginTop: 2 }}>
@@ -410,7 +414,7 @@ export default function StoryMediaScreen() {
             {activeUpload.status === 'failed' ? (
               <SheetActionRow
                 icon={RotateCw}
-                label="Reintentar"
+                label={t('Reintentar')}
                 onPress={() => {
                   retryUpload(activeUpload.id);
                   setSelectedUpload(null);
@@ -420,7 +424,7 @@ export default function StoryMediaScreen() {
             {activeUpload.status === 'blocked' ? (
               <SheetActionRow
                 icon={ImagePlus}
-                label="Ver cómo tener más espacio"
+                label={t('Ver cómo tener más espacio')}
                 onPress={() => {
                   setSelectedUpload(null);
                   askForSpace(kindForRole(activeUpload.role));
@@ -430,7 +434,7 @@ export default function StoryMediaScreen() {
             {activeUpload.status !== 'done' ? (
               <SheetActionRow
                 icon={X}
-                label={activeUpload.status === 'failed' || activeUpload.status === 'blocked' ? 'Quitar' : 'Cancelar subida'}
+                label={activeUpload.status === 'failed' || activeUpload.status === 'blocked' ? t('Quitar') : t('Cancelar subida')}
                 destructive
                 onPress={() => {
                   cancelUpload(activeUpload.id);
@@ -444,13 +448,13 @@ export default function StoryMediaScreen() {
 
       <ConfirmDialog
         visible={!!toDelete}
-        title={toDelete?.role === 'audio' ? '¿Eliminar el mensaje de voz?' : toDelete?.role === 'video' ? '¿Eliminar este video?' : '¿Eliminar esta foto?'}
+        title={toDelete?.role === 'audio' ? t('¿Eliminar el mensaje de voz?') : toDelete?.role === 'video' ? t('¿Eliminar este video?') : t('¿Eliminar esta foto?')}
         description={
           toDelete?.source === 'purchased'
-            ? 'Se quita de este recuerdo. Sigue en tus fotos compradas y puedes volver a agregarla.'
-            : 'Se quita de tu recuerdo y no se puede recuperar desde aquí.'
+            ? t('Se quita de este recuerdo. Sigue en tus fotos compradas y puedes volver a agregarla.')
+            : t('Se quita de tu recuerdo y no se puede recuperar desde aquí.')
         }
-        confirmLabel="Eliminar"
+        confirmLabel={t('Eliminar')}
         loading={remove.isPending}
         onConfirm={confirmDelete}
         onCancel={() => setToDelete(null)}

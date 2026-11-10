@@ -8,9 +8,11 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GearIconBadge } from '@/components/brand/gear-icon-badge';
 import { GoldGlow } from '@/components/brand/gold-glow';
+import { useI18n } from '@/i18n';
 import { colors, spacing } from '@/theme/tokens';
 
 export default function GearClaimedScreen() {
+  const { t } = useI18n();
   const { uuid, productName, variantName } = useLocalSearchParams<{ uuid: string; productName: string; variantName?: string }>();
 
   const glow = useSharedValue(0);
@@ -45,7 +47,7 @@ export default function GearClaimedScreen() {
 
         <Animated.View style={[{ alignItems: 'center', gap: spacing.xs }, contentStyle]}>
           <AppText variant="title" align="center">
-            Ya forma parte de tu equipo.
+            {t('Ya forma parte de tu equipo.')}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
             {productName}
@@ -56,9 +58,9 @@ export default function GearClaimedScreen() {
 
       <Animated.View style={[{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm }, contentStyle]}>
         {uuid ? (
-          <AppButton label="Compartir con mi comunidad" onPress={() => router.replace(`/moments/create?type=gear&gearUuid=${uuid}`)} />
+          <AppButton label={t('Compartir con mi comunidad')} onPress={() => router.replace(`/moments/create?type=gear&gearUuid=${uuid}`)} />
         ) : null}
-        <AppButton label="Ir a mi equipo" variant={uuid ? 'secondary' : 'primary'} onPress={() => router.replace('/gear')} />
+        <AppButton label={t('Ir a mi equipo')} variant={uuid ? 'secondary' : 'primary'} onPress={() => router.replace('/gear')} />
       </Animated.View>
     </View>
   );

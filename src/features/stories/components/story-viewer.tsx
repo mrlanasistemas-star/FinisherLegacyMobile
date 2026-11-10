@@ -21,6 +21,7 @@ import Animated, { interpolate, runOnJS, useAnimatedStyle, useSharedValue, withS
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
+import { useI18n } from '@/i18n';
 import type { StoryMedia } from '@/schemas/story';
 import { colors, fontFamily, spacing, springs } from '@/theme/tokens';
 
@@ -212,6 +213,7 @@ function PhotoSlide({ item, active, width, height, dismiss, onZoomChange, onClos
 }
 
 function VideoSlide({ item, active, width, height }: SlideProps) {
+  const { t } = useI18n();
   const player = useVideoPlayer(item.url, (instance) => {
     instance.loop = false;
   });
@@ -229,7 +231,7 @@ function VideoSlide({ item, active, width, height }: SlideProps) {
       ) : (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
           <AppText tone="onDarkMuted" align="center">
-            Este video todavía se está procesando.
+            {t('Este video todavía se está procesando.')}
           </AppText>
         </View>
       )}
@@ -259,6 +261,7 @@ function ChromeButton({ icon: Icon, label, onPress }: { icon: typeof X; label: s
 }
 
 export function StoryViewer({ items, initialIndex, onClose, onDelete }: StoryViewerProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const start = Math.min(Math.max(0, initialIndex), Math.max(0, items.length - 1));
@@ -332,17 +335,17 @@ export function StoryViewer({ items, initialIndex, onClose, onDelete }: StoryVie
             },
             chromeStyle,
           ]}>
-          <ChromeButton icon={X} label="Cerrar" onPress={onClose} />
+          <ChromeButton icon={X} label={t('Cerrar')} onPress={onClose} />
           {items.length > 1 ? (
             <View style={{ paddingHorizontal: 12, height: 30, borderRadius: 15, backgroundColor: 'rgba(30,30,33,0.72)', justifyContent: 'center' }}>
               <AppText maxFontSizeMultiplier={1.3} style={{ fontFamily: fontFamily.semibold, fontSize: 13, color: colors.onDark, fontVariant: ['tabular-nums'] }}>
-                {activeIndex + 1} de {items.length}
+                {t('{current} de {total}', { current: activeIndex + 1, total: items.length })}
               </AppText>
             </View>
           ) : (
             <View />
           )}
-          {onDelete && active ? <ChromeButton icon={Trash2} label="Eliminar" onPress={() => onDelete(active)} /> : <View style={{ width: 40 }} />}
+          {onDelete && active ? <ChromeButton icon={Trash2} label={t('Eliminar')} onPress={() => onDelete(active)} /> : <View style={{ width: 40 }} />}
         </Animated.View>
       </GestureHandlerRootView>
     </Modal>

@@ -1,3 +1,4 @@
+import { t, type Translate } from '@/i18n';
 import type { ActivationConfirm, ActivationStart, PendingActivation } from '@/schemas/activation';
 
 import type { ActivationOutcome, ForeignSummary, SessionProgress } from './activation-session';
@@ -45,7 +46,10 @@ export type WizardAction =
   | { type: 'confirm_retry_started' }
   | { type: 'recovered_pending'; pending: PendingActivation };
 
-export const STEPPER_LABELS = ['Cuenta', 'Código', 'Acercar', 'Activar', 'Listo'] as const;
+/** Stepper labels, built with the component's translator (`useI18n()`) so they follow the app language. */
+export function stepperLabels(t: Translate): readonly string[] {
+  return [t('Cuenta'), t('Código'), t('Acercar'), t('Activar'), t('Listo')];
+}
 
 export function stepperIndex(step: WizardStep): number {
   switch (step) {
@@ -89,7 +93,7 @@ export function wizardReducer(state: WizardState, action: WizardAction): WizardS
 
     case 'code_submitted':
       if (!isCompleteActivationCode(state.code)) {
-        return { ...state, codeError: 'Escribe los 12 caracteres de tu tarjeta de activación.' };
+        return { ...state, codeError: t('Escribe los 12 caracteres de tu tarjeta de activación.') };
       }
       return { ...state, step: 'approach', codeError: null, overwriteConsent: null };
 

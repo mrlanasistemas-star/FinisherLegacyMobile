@@ -6,6 +6,7 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 
 import { colors, radius, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -33,6 +34,7 @@ export function ConfirmDialog({
   destructive = true,
   loading = false,
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
   const scale = useSharedValue(0.94);
   const opacity = useSharedValue(0);
 
@@ -73,7 +75,7 @@ export function ConfirmDialog({
           </View>
           <View style={{ gap: spacing.sm }}>
             <AppButton label={confirmLabel} variant={destructive ? 'destructive' : 'primary'} onPress={onConfirm} loading={loading} />
-            <AppButton label="Cancelar" variant="ghost" onPress={onCancel} disabled={loading} />
+            <AppButton label={t('Cancelar')} variant="ghost" onPress={onCancel} disabled={loading} />
           </View>
         </Animated.View>
       </View>

@@ -3,8 +3,9 @@ import { View } from 'react-native';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
-const MONTH = new Intl.DateTimeFormat('es-MX', { month: 'short' });
+const MONTH: Intl.DateTimeFormatOptions = { month: 'short' };
 
 interface RaceRowProps {
   event: string | null;
@@ -17,6 +18,7 @@ interface RaceRowProps {
 
 /** One race in a list: date block · event + distance · official time. */
 export function RaceRow({ event, race, date, time, pace, onPress }: RaceRowProps) {
+  const { t, regional } = useI18n();
   const [year, month, day] = (date ?? '').split('-').map(Number);
   const hasDate = !!year && !!month && !!day;
 
@@ -41,14 +43,14 @@ export function RaceRow({ event, race, date, time, pace, onPress }: RaceRowProps
           <>
             <AppText style={{ fontFamily: fontFamily.bold, fontSize: 20, lineHeight: 22 }}>{day}</AppText>
             <AppText variant="caption" tone="muted" style={{ fontSize: 11, textTransform: 'uppercase' }}>
-              {MONTH.format(new Date(year, month - 1, 1))} {String(year).slice(2)}
+              {new Intl.DateTimeFormat(regional, MONTH).format(new Date(year, month - 1, 1))} {String(year).slice(2)}
             </AppText>
           </>
         ) : null}
       </View>
       <View style={{ flex: 1 }}>
         <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }} numberOfLines={1}>
-          {event ?? 'Carrera'}
+          {event ?? t('Carrera')}
         </AppText>
         {race ? (
           <AppText variant="caption" tone="muted" numberOfLines={1}>

@@ -63,6 +63,7 @@ import { hasNext } from '@/features/training/queue';
 import { formatPlayerTime } from '@/features/training/session-clock';
 import { PLAYBACK_RATES, useTrainingSettings } from '@/features/training/settings-store';
 import { useToggleFavorite } from '@/features/training/use-training';
+import { useI18n } from '@/i18n';
 import { showToast } from '@/stores/toastStore';
 import { gradients } from '@/theme/gradients';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
@@ -71,6 +72,7 @@ const DISMISS_DISTANCE = 140;
 const TRAINING_HREF = '/training' as Href;
 
 export default function TrainingPlayerScreen() {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
@@ -168,19 +170,19 @@ export default function TrainingPlayerScreen() {
               <View style={{ width: 38, height: 5, borderRadius: 3, backgroundColor: colors.border }} />
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <IconButton icon={ChevronDown} label="Cerrar reproductor" onPress={animateClose} size={26} />
+              <IconButton icon={ChevronDown} label={t('Cerrar reproductor')} onPress={animateClose} size={26} />
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <AppText variant="eyebrow">{message?.link?.title ?? 'Envíame ánimo'}</AppText>
+                <AppText variant="eyebrow">{message?.link?.title ?? t('Envíame ánimo')}</AppText>
                 {total > 1 ? (
                   <AppText variant="caption" tone="subtle" style={{ fontSize: 12 }}>
-                    Mensaje {index} de {total}
+                    {t('Mensaje {index} de {total}', { index, total })}
                   </AppText>
                 ) : null}
               </View>
               {message ? (
                 <IconButton
                   icon={Star}
-                  label={message.favorite ? 'Quitar de favoritos' : 'Marcar como favorito'}
+                  label={message.favorite ? t('Quitar de favoritos') : t('Marcar como favorito')}
                   color={message.favorite ? colors.gold : colors.foreground}
                   onPress={() =>
                     toggleFavorite.mutate(
@@ -197,7 +199,7 @@ export default function TrainingPlayerScreen() {
 
           {!message ? (
             <View style={{ flex: 1, justifyContent: 'center' }}>
-              <EmptyState icon={Play} title="Nada en reproducción" message="Elige un mensaje de tu lista para escucharlo." actionLabel="Ver mis mensajes" onAction={() => router.replace(TRAINING_HREF)} />
+              <EmptyState icon={Play} title={t('Nada en reproducción')} message={t('Elige un mensaje de tu lista para escucharlo.')} actionLabel={t('Ver mis mensajes')} onAction={() => router.replace(TRAINING_HREF)} />
             </View>
           ) : (
             <GestureDetector gesture={native}>
@@ -237,12 +239,12 @@ export default function TrainingPlayerScreen() {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.goldWash, borderRadius: radius.md, padding: spacing.md }}>
                     <Smartphone size={20} color={colors.accent} />
                     <AppText variant="caption" style={{ flex: 1 }}>
-                      Actualiza la app para escuchar los audios. Mientras tanto puedes leer los mensajes.
+                      {t('Actualiza la app para escuchar los audios. Mientras tanto puedes leer los mensajes.')}
                     </AppText>
                   </View>
                 ) : hasAudio && status.error && !status.playing && !status.buffering ? (
                   <AppText variant="caption" tone="muted" accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
-                    No pudimos reproducir este audio. Revisa tu conexión y toca reproducir para reintentar.
+                    {t('No pudimos reproducir este audio. Revisa tu conexión y toca reproducir para reintentar.')}
                   </AppText>
                 ) : null}
 
@@ -255,8 +257,8 @@ export default function TrainingPlayerScreen() {
                       seekTo(v * duration);
                     }}
                     disabled={needsUpdate || duration <= 0}
-                    accessibilityLabel="Posición del mensaje"
-                    accessibilityValueText={`${formatPlayerTime(position)} de ${formatPlayerTime(duration)}`}
+                    accessibilityLabel={t('Posición del mensaje')}
+                    accessibilityValueText={t('{position} de {duration}', { position: formatPlayerTime(position), duration: formatPlayerTime(duration) })}
                   />
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     <TimeLabel>{formatPlayerTime(position)}</TimeLabel>
@@ -265,10 +267,10 @@ export default function TrainingPlayerScreen() {
                 </View>
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <ControlButton label="Mensaje anterior" onPress={previousTrack}>
+                  <ControlButton label={t('Mensaje anterior')} onPress={previousTrack}>
                     <SkipBack size={24} color={colors.foreground} fill={colors.foreground} strokeWidth={0} />
                   </ControlButton>
-                  <ControlButton label="Retroceder 15 segundos" onPress={() => skipBy(-15)} disabled={needsUpdate}>
+                  <ControlButton label={t('Retroceder 15 segundos')} onPress={() => skipBy(-15)} disabled={needsUpdate}>
                     <SkipLabel icon={<RotateCcw size={30} color={colors.foreground} strokeWidth={1.6} />} />
                   </ControlButton>
                   <PressableScale
@@ -277,7 +279,7 @@ export default function TrainingPlayerScreen() {
                     haptic="light"
                     scaleTo={0.92}
                     accessibilityRole="button"
-                    accessibilityLabel={status.playing ? 'Pausar' : 'Reproducir'}
+                    accessibilityLabel={status.playing ? t('Pausar') : t('Reproducir')}
                     style={{
                       width: 76,
                       height: 76,
@@ -298,17 +300,17 @@ export default function TrainingPlayerScreen() {
                       <Play size={30} color={colors.gold} fill={colors.gold} strokeWidth={0} style={{ marginLeft: 4 }} />
                     )}
                   </PressableScale>
-                  <ControlButton label="Adelantar 15 segundos" onPress={() => skipBy(15)} disabled={needsUpdate}>
+                  <ControlButton label={t('Adelantar 15 segundos')} onPress={() => skipBy(15)} disabled={needsUpdate}>
                     <SkipLabel icon={<RotateCw size={30} color={colors.foreground} strokeWidth={1.6} />} />
                   </ControlButton>
-                  <ControlButton label="Siguiente mensaje" onPress={nextTrack} disabled={!hasNext(queue)}>
+                  <ControlButton label={t('Siguiente mensaje')} onPress={nextTrack} disabled={!hasNext(queue)}>
                     <SkipForward size={24} color={colors.foreground} fill={colors.foreground} strokeWidth={0} />
                   </ControlButton>
                 </View>
 
                 <View style={{ gap: spacing.xs }}>
                   <AppText variant="eyebrow" tone="subtle" align="center">
-                    Velocidad
+                    {t('Velocidad')}
                   </AppText>
                   <View style={{ flexDirection: 'row', justifyContent: 'center', gap: spacing.xs }}>
                     {PLAYBACK_RATES.map((value) => (
@@ -325,25 +327,25 @@ export default function TrainingPlayerScreen() {
                     onCommit={setVolume}
                     step={0.1}
                     style={{ flex: 1 }}
-                    accessibilityLabel="Volumen"
-                    accessibilityValueText={`${Math.round(volume * 100)} por ciento`}
+                    accessibilityLabel={t('Volumen')}
+                    accessibilityValueText={t('{percent} por ciento', { percent: Math.round(volume * 100) })}
                   />
                   <Volume2 size={18} color={colors.subtle} />
                 </View>
 
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <ToggleButton
-                    label={queue.shuffle ? 'Aleatorio activado' : 'Aleatorio desactivado'}
+                    label={queue.shuffle ? t('Aleatorio activado') : t('Aleatorio desactivado')}
                     active={queue.shuffle}
                     onPress={toggleShuffle}
-                    caption="Aleatorio"
+                    caption={t('Aleatorio')}
                     icon={<Shuffle size={20} color={queue.shuffle ? colors.accent : colors.muted} />}
                   />
                   <ToggleButton
-                    label={queue.repeat === 'off' ? 'Repetir desactivado' : queue.repeat === 'all' ? 'Repetir todos' : 'Repetir este mensaje'}
+                    label={queue.repeat === 'off' ? t('Repetir desactivado') : queue.repeat === 'all' ? t('Repetir todos') : t('Repetir este mensaje')}
                     active={queue.repeat !== 'off'}
                     onPress={cycleRepeat}
-                    caption={queue.repeat === 'one' ? 'Repetir uno' : queue.repeat === 'all' ? 'Repetir todos' : 'Repetir'}
+                    caption={queue.repeat === 'one' ? t('Repetir uno') : queue.repeat === 'all' ? t('Repetir todos') : t('Repetir')}
                     icon={queue.repeat === 'one' ? <Repeat1 size={20} color={colors.accent} /> : <Repeat size={20} color={queue.repeat === 'all' ? colors.accent : colors.muted} />}
                   />
                 </View>
@@ -392,7 +394,9 @@ function ControlButton({ label, onPress, disabled, children }: { label: string; 
 }
 
 function SpeedChip({ value, selected, onPress }: { value: number; selected: boolean; onPress: () => void }) {
-  const label = `${String(value).replace('.', ',')}×`;
+  const { t, locale } = useI18n();
+  // Decimal comma in Spanish (1,5×), decimal point elsewhere.
+  const label = `${locale === 'es' ? String(value).replace('.', ',') : String(value)}×`;
   return (
     <PressableScale
       onPress={onPress}
@@ -400,7 +404,7 @@ function SpeedChip({ value, selected, onPress }: { value: number; selected: bool
       scaleTo={0.92}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={`Velocidad ${label}`}
+      accessibilityLabel={t('Velocidad {speed}', { speed: label })}
       hitSlop={{ top: 6, bottom: 6 }}
       style={{
         minWidth: 52,

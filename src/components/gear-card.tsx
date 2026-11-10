@@ -4,15 +4,25 @@ import { AppText } from '@/components/app-text';
 import { GearIconBadge } from '@/components/brand/gear-icon-badge';
 import { PressScale } from '@/components/motion/press-scale';
 import { Badge } from '@/components/ui/badge';
+import { useI18n, type Translate } from '@/i18n';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { AthleteOwnedProduct, GearStatus } from '@/types/models';
 
-export const GEAR_STATUS_LABEL: Record<GearStatus, string> = {
-  unclaimed: 'Sin reclamar',
-  assigned: 'Asignado',
-  active: 'Activo',
-  revoked: 'Revocado',
-};
+/** A function, not a table: resolved in the language of the translator it is given (the `t` of `useI18n()`). */
+export function gearStatusLabel(status: GearStatus, t: Translate): string {
+  switch (status) {
+    case 'unclaimed':
+      return t('Sin reclamar');
+    case 'assigned':
+      return t('Asignado');
+    case 'active':
+      return t('Activo');
+    case 'revoked':
+      return t('Revocado');
+    default:
+      return status;
+  }
+}
 
 export const GEAR_STATUS_VARIANT: Record<GearStatus, 'neutral' | 'gold' | 'success' | 'destructive'> = {
   unclaimed: 'neutral',
@@ -27,6 +37,7 @@ interface GearCardProps {
 }
 
 export function GearCard({ gear, onPress }: GearCardProps) {
+  const { t, tc } = useI18n();
   const usageCount = gear.usage_history?.length ?? 0;
 
   return (
@@ -59,12 +70,12 @@ export function GearCard({ gear, onPress }: GearCardProps) {
           </AppText>
           {usageCount > 0 ? (
             <AppText variant="caption" tone="gold" style={{ marginTop: 2 }}>
-              {usageCount === 1 ? 'Usado en 1 evento' : `Usado en ${usageCount} eventos`}
+              {tc('Usado en {count} evento|Usado en {count} eventos', usageCount)}
             </AppText>
           ) : null}
         </View>
 
-        <Badge label={GEAR_STATUS_LABEL[gear.status]} variant={GEAR_STATUS_VARIANT[gear.status]} />
+        <Badge label={gearStatusLabel(gear.status, t)} variant={GEAR_STATUS_VARIANT[gear.status]} />
       </View>
     </PressScale>
   );

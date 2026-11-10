@@ -7,7 +7,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { AppText } from '@/components/app-text';
 import { Badge } from '@/components/ui/badge';
-import { NFC_TARGET_LABEL } from '@/features/nfc/nfc-target';
+import { nfcTargetLabel } from '@/features/nfc/nfc-target';
+import { useI18n } from '@/i18n';
 import { colors, palette, radius, shadows, spacing } from '@/theme/tokens';
 import type { NfcTarget } from '@/types/nfc';
 
@@ -25,6 +26,8 @@ interface NfcActivationCardProps {
  * every NFC tap outcome so the moment always looks the same.
  */
 export function NfcActivationCard({ target, status, statusVariant = 'gold', children }: NfcActivationCardProps) {
+  const { t } = useI18n();
+
   return (
     <Animated.View
       entering={FadeInDown.springify().damping(18).stiffness(160)}
@@ -46,11 +49,11 @@ export function NfcActivationCard({ target, status, statusVariant = 'gold', chil
       <View style={{ padding: spacing.lg, gap: spacing.xs }}>
         {target ? (
           <AppText variant="eyebrow">
-            {NFC_TARGET_LABEL[target.type].toUpperCase()}
+            {nfcTargetLabel(target.type, t).toUpperCase()}
           </AppText>
         ) : null}
         <AppText variant="title" style={{ fontSize: 24, lineHeight: 29 }} accessibilityRole="header">
-          {target?.title ?? 'Producto Finisher Legacy'}
+          {target?.title ?? t('Producto Finisher Legacy')}
         </AppText>
         {target?.subtitle ? (
           <AppText variant="body" tone="muted">

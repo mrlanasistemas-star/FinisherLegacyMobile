@@ -25,6 +25,7 @@ import { useExplore, useFeed } from '@/hooks/use-social';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
 import type { AthleteSummary, LegacyMoment } from '@/types/social';
+import { useI18n } from '@/i18n';
 
 type Section = 'following' | 'discover' | 'events';
 
@@ -35,6 +36,7 @@ type Section = 'following' | 'discover' | 'events';
  * what's already on screen.
  */
 export default function ExploreTab() {
+  const { t } = useI18n();
   const [section, setSection] = useState<Section>('following');
   const myProfile = useProfile();
 
@@ -43,14 +45,14 @@ export default function ExploreTab() {
       <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: spacing.xs }}>
           <AppText variant="display" style={{ flex: 1 }} accessibilityRole="header">
-            Comunidad
+            {t('Comunidad')}
           </AppText>
-          <IconButton icon={Search} label="Buscar atletas, eventos y productos" onPress={() => router.push('/search')} />
-          <IconButton icon={Plus} label="Compartir un momento" onPress={() => router.push('/moments/create')} />
+          <IconButton icon={Search} label={t('Buscar atletas, eventos y productos')} onPress={() => router.push('/search')} />
+          <IconButton icon={Plus} label={t('Compartir un momento')} onPress={() => router.push('/moments/create')} />
           <PressableScale
             onPress={() => router.push('/profile')}
             accessibilityRole="button"
-            accessibilityLabel="Mi perfil"
+            accessibilityLabel={t('Mi perfil')}
             scaleTo={0.92}
             hitSlop={6}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -6 }}>
@@ -61,9 +63,9 @@ export default function ExploreTab() {
           value={section}
           onChange={setSection}
           options={[
-            { value: 'following', label: 'Siguiendo' },
-            { value: 'discover', label: 'Descubrir' },
-            { value: 'events', label: 'Eventos' },
+            { value: 'following', label: t('Siguiendo') },
+            { value: 'discover', label: t('Descubrir') },
+            { value: 'events', label: t('Eventos') },
           ]}
         />
       </View>
@@ -78,6 +80,7 @@ export default function ExploreTab() {
 // ---------------------------------------------------------------------------
 
 function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'discover'; onSwitchToDiscover: () => void }) {
+  const { t } = useI18n();
   const feed = useFeed(scope);
   const explore = useExplore();
   const moments = useMemo<LegacyMoment[]>(() => feed.data?.pages.flatMap((p) => p.data) ?? [], [feed.data]);
@@ -109,7 +112,7 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
   }
 
   if (feed.isError && !feed.data) {
-    return <ErrorState error={feed.error} message="No pudimos cargar la comunidad." onRetry={feed.refetch} />;
+    return <ErrorState error={feed.error} message={t('No pudimos cargar la comunidad.')} onRetry={feed.refetch} />;
   }
 
   const showingStale = feed.isError && !!feed.data;
@@ -138,11 +141,11 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
               style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginHorizontal: spacing.lg, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radius.md, backgroundColor: colors.card }}>
               <WifiOff size={16} color={colors.muted} />
               <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                {offline ? 'Sin conexión. Te mostramos lo último que guardamos.' : 'No pudimos actualizar. Te mostramos lo último que guardamos.'}
+                {offline ? t('Sin conexión. Te mostramos lo último que guardamos.') : t('No pudimos actualizar. Te mostramos lo último que guardamos.')}
               </AppText>
               <Pressable onPress={() => feed.refetch()} accessibilityRole="button" hitSlop={8}>
                 <AppText variant="caption" tone="gold">
-                  Reintentar
+                  {t('Reintentar')}
                 </AppText>
               </Pressable>
             </Animated.View>
@@ -158,7 +161,7 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
           </View>
         ) : moments.length > 0 && !feed.hasNextPage ? (
           <AppText variant="caption" align="center" style={{ color: colors.subtle, paddingVertical: spacing.lg }}>
-            Estás al día.
+            {t('Estás al día.')}
           </AppText>
         ) : null
       }
@@ -166,19 +169,19 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
         scope === 'following' ? (
           <EmptyState
             icon={Users}
-            title="Tu comunidad está por empezar"
-            message="Sigue a otros atletas para ver aquí sus carreras, medallas y entrenamientos. Tus propios momentos también aparecen aquí."
-            actionLabel="Ver lo más reciente"
+            title={t('Tu comunidad está por empezar')}
+            message={t('Sigue a otros atletas para ver aquí sus carreras, medallas y entrenamientos. Tus propios momentos también aparecen aquí.')}
+            actionLabel={t('Ver lo más reciente')}
             onAction={onSwitchToDiscover}
-            secondaryLabel="Buscar atletas"
+            secondaryLabel={t('Buscar atletas')}
             onSecondary={() => router.push('/search')}
           />
         ) : (
           <EmptyState
             icon={Compass}
-            title="Aún no hay momentos públicos"
-            message="Sé el primero en compartir un entrenamiento, una carrera o un recuerdo."
-            actionLabel="Compartir un momento"
+            title={t('Aún no hay momentos públicos')}
+            message={t('Sé el primero en compartir un entrenamiento, una carrera o un recuerdo.')}
+            actionLabel={t('Compartir un momento')}
             onAction={() => router.push('/moments/create')}
           />
         )
@@ -188,10 +191,11 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
 }
 
 function AthleteSuggestions({ athletes }: { athletes: AthleteSummary[] }) {
+  const { t } = useI18n();
   return (
     <View style={{ paddingBottom: spacing.md, marginBottom: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
       <AppText variant="eyebrow" tone="subtle" style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.sm }}>
-        Atletas para seguir
+        {t('Atletas para seguir')}
       </AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
         {athletes.map((athlete) => (
@@ -203,6 +207,7 @@ function AthleteSuggestions({ athletes }: { athletes: AthleteSummary[] }) {
 }
 
 const SuggestionCard = memo(function SuggestionCard({ athlete }: { athlete: AthleteSummary }) {
+  const { t } = useI18n();
   const myUsername = useProfile().data?.profile?.username;
   const username = athlete.username as string;
   return (
@@ -210,7 +215,7 @@ const SuggestionCard = memo(function SuggestionCard({ athlete }: { athlete: Athl
       <Pressable
         onPress={() => router.push(`/athlete/${username}`)}
         accessibilityRole="button"
-        accessibilityLabel={`Ver perfil de ${athlete.name}`}
+        accessibilityLabel={t('Ver perfil de {name}', { name: athlete.name })}
         style={{ alignItems: 'center', gap: 6 }}>
         <Avatar uri={athlete.photo_url} name={athlete.name} size={56} ring />
         <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14 }} numberOfLines={1}>
@@ -230,6 +235,7 @@ const SuggestionCard = memo(function SuggestionCard({ athlete }: { athlete: Athl
 // ---------------------------------------------------------------------------
 
 function EventsDiscovery() {
+  const { t } = useI18n();
   const events = useEvents();
   const rows = useMemo<EventEditionCard[]>(() => events.data?.pages.flatMap((p) => p.data) ?? [], [events.data]);
   const today = new Date().toISOString().slice(0, 10);
@@ -244,7 +250,7 @@ function EventsDiscovery() {
     );
   }
   if (events.isError && !events.data) {
-    return <ErrorState error={events.error} message="No pudimos cargar los eventos." onRetry={events.refetch} />;
+    return <ErrorState error={events.error} message={t('No pudimos cargar los eventos.')} onRetry={events.refetch} />;
   }
 
   return (
@@ -265,12 +271,12 @@ function EventsDiscovery() {
       ListHeaderComponent={
         upcoming.length > 0 ? (
           <AppText variant="eyebrow" tone="subtle">
-            Próximas carreras
+            {t('Próximas carreras')}
           </AppText>
         ) : null
       }
       ListFooterComponent={events.isFetchingNextPage ? <Skeleton height={200} radius={16} /> : null}
-      ListEmptyComponent={<EmptyState icon={CalendarDays} title="Sin eventos próximos" message="Vuelve pronto: aquí aparecerán las próximas carreras." compact />}
+      ListEmptyComponent={<EmptyState icon={CalendarDays} title={t('Sin eventos próximos')} message={t('Vuelve pronto: aquí aparecerán las próximas carreras.')} compact />}
     />
   );
 }

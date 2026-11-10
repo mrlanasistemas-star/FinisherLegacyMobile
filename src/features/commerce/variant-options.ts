@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 import type { ProductDetail, ProductSummary, ProductVariant } from '@/types/models';
 
 /** App-side ceiling when the server doesn't send `max_quantity`. The server always revalidates. */
@@ -106,10 +107,10 @@ export function maxQuantityFor(variant: Pick<ProductVariant, 'max_quantity'> | n
 export type StockTone = 'available' | 'low' | 'sold_out';
 
 export function stockState(variant: ProductVariant | null): { tone: StockTone; label: string } {
-  if (!variant || !isVariantAvailable(variant)) return { tone: 'sold_out', label: 'Agotado' };
+  if (!variant || !isVariantAvailable(variant)) return { tone: 'sold_out', label: t('Agotado') };
   const max = variant.max_quantity;
-  if (variant.stock_status === 'low' || (typeof max === 'number' && max > 0 && max <= 3)) return { tone: 'low', label: 'Últimas piezas' };
-  return { tone: 'available', label: 'Disponible' };
+  if (variant.stock_status === 'low' || (typeof max === 'number' && max > 0 && max <= 3)) return { tone: 'low', label: t('Últimas piezas') };
+  return { tone: 'available', label: t('Disponible') };
 }
 
 /** "Producto conectado": NFC flag when the server sends it, the historical capability flag otherwise. */

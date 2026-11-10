@@ -14,7 +14,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
-import { MOMENT_TYPE_LABEL, VISIBILITY_LABEL, momentMetricLine } from '@/features/social/moment-state';
+import { momentMetricLine, momentTypeLabel, visibilityLabel } from '@/features/social/moment-state';
 import { useDeleteMoment } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
@@ -22,6 +22,7 @@ import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import type { LegacyMoment } from '@/types/social';
 import { webLinks } from '@/utils/links';
 import { relativeTime } from '@/utils/relative-time';
+import { useI18n, type Translate } from '@/i18n';
 
 /** Feed cards sit inset from the screen edge (iOS card list); detail stays full-bleed. */
 const CARD_INSET = spacing.md;
@@ -38,6 +39,7 @@ interface MomentCardProps {
  * separated by whitespace and a hairline, media runs full-bleed.
  */
 export const MomentCard = memo(function MomentCard({ moment, detail = false }: MomentCardProps) {
+  const { t } = useI18n();
   const { width: screenWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -72,7 +74,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
       }>
       {/* Author row */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>
-        <Pressable onPress={openAuthor} accessibilityRole="button" accessibilityLabel={`Ver perfil de ${moment.author.name}`} hitSlop={6}>
+        <Pressable onPress={openAuthor} accessibilityRole="button" accessibilityLabel={t('Ver perfil de {name}', { name: moment.author.name })} hitSlop={6}>
           <Avatar uri={moment.author.photo_url} name={moment.author.name} size={40} />
         </Pressable>
         <Pressable onPress={openAuthor} style={{ flex: 1 }} accessibilityRole="button">
@@ -81,19 +83,19 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <AppText variant="caption" tone="muted" numberOfLines={1}>
-              {MOMENT_TYPE_LABEL[moment.type]} · {relativeTime(moment.created_at)}
+              {momentTypeLabel(moment.type)} · {relativeTime(moment.created_at)}
             </AppText>
             {moment.is_owner && moment.visibility !== 'public' ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }} accessibilityLabel={`Visible para: ${VISIBILITY_LABEL[moment.visibility]}`}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }} accessibilityLabel={t('Visible para: {audience}', { audience: visibilityLabel(moment.visibility) })}>
                 {moment.visibility === 'private' ? <Lock size={11} color={colors.subtle} /> : <Users size={11} color={colors.subtle} />}
                 <AppText variant="caption" style={{ color: colors.subtle, fontSize: 12 }}>
-                  {VISIBILITY_LABEL[moment.visibility]}
+                  {visibilityLabel(moment.visibility)}
                 </AppText>
               </View>
             ) : null}
           </View>
         </Pressable>
-        <IconButton icon={MoreHorizontal} label="Más opciones" onPress={() => setMenuOpen(true)} size={20} color={colors.muted} />
+        <IconButton icon={MoreHorizontal} label={t('Más opciones')} onPress={() => setMenuOpen(true)} size={20} color={colors.muted} />
       </View>
 
       {/* Activity: the sporting fact, big and clear */}
@@ -136,7 +138,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
       ) : null}
 
       <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xxs }}>
-        <ReactionBar moment={moment} onComment={detail ? undefined : () => setCommentsOpen(true)} onShare={detail ? undefined : () => shareMoment(moment)} />
+        <ReactionBar moment={moment} onComment={detail ? undefined : () => setCommentsOpen(true)} onShare={detail ? undefined : () => shareMoment(moment, t)} />
       </View>
 
       {menuOpen ? (
@@ -144,7 +146,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
         {moment.is_owner ? (
           <SheetActionRow
             icon={Trash2}
-            label="Eliminar momento"
+            label={t('Eliminar momento')}
             destructive
             onPress={() => {
               setMenuOpen(false);
@@ -154,7 +156,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
         ) : (
           <SheetActionRow
             icon={Flag}
-            label="Reportar momento"
+            label={t('Reportar momento')}
             onPress={() => {
               setMenuOpen(false);
               setReporting(true);
@@ -170,20 +172,20 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
 
       <ConfirmDialog
         visible={confirmDelete}
-        title="¿Eliminar este momento?"
-        description="Se quitará de tu perfil y del feed, junto con sus reacciones y mensajes. Tus fotos de evento no se borran."
-        confirmLabel="Eliminar"
+        title={t('¿Eliminar este momento?')}
+        description={t('Se quitará de tu perfil y del feed, junto con sus reacciones y mensajes. Tus fotos de evento no se borran.')}
+        confirmLabel={t('Eliminar')}
         loading={deleteMoment.isPending}
         onCancel={() => setConfirmDelete(false)}
         onConfirm={async () => {
           try {
             await deleteMoment.mutateAsync(moment.uuid);
             setConfirmDelete(false);
-            showToast('Momento eliminado.', 'default');
+            showToast(t('Momento eliminado.'), 'default');
             if (detail) router.back();
           } catch (error) {
             setConfirmDelete(false);
-            showToast(error instanceof AppError ? error.message : 'No pudimos eliminarlo. Intenta otra vez.', 'destructive');
+            showToast(error instanceof AppError ? error.message : t('No pudimos eliminarlo. Intenta otra vez.'), 'destructive');
           }
         }}
       />
@@ -191,8 +193,8 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
   );
 });
 
-function shareMoment(moment: LegacyMoment) {
+function shareMoment(moment: LegacyMoment, t: Translate) {
   const url = webLinks.moment(moment.uuid);
-  const title = moment.activity?.event ?? moment.metrics?.title ?? 'Un momento en Finisher Legacy';
+  const title = moment.activity?.event ?? moment.metrics?.title ?? t('Un momento en Finisher Legacy');
   Share.share({ message: `${title} — ${url}`, url }).catch(() => {});
 }

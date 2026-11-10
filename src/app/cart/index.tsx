@@ -20,6 +20,7 @@ import { TopBar } from '@/components/ui/top-bar';
 import { CartItemThumb } from '@/features/commerce/components/cart-item-thumb';
 import { DEFAULT_MAX_QUANTITY, maxQuantityFor } from '@/features/commerce/variant-options';
 import { cartItemCount, useApplyCartCoupon, useCart, useRemoveCartCoupon, useRemoveCartItem, useUpdateCartItem } from '@/hooks/use-cart';
+import { useI18n } from '@/i18n';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import type { CartItem } from '@/types/models';
@@ -32,6 +33,7 @@ import { formatMoney } from '@/utils/money';
  * rows can also be swiped away.
  */
 export default function CartScreen() {
+  const { t } = useI18n();
   const { data: cart, isPending, isError, error, refetch } = useCart();
   const applyCoupon = useApplyCartCoupon();
   const removeCoupon = useRemoveCartCoupon();
@@ -45,9 +47,9 @@ export default function CartScreen() {
     try {
       await applyCoupon.mutateAsync(code);
       setCouponCode('');
-      showToast('Cupón aplicado.', 'success');
+      showToast(t('Cupón aplicado.'), 'success');
     } catch (caught) {
-      setCouponError(caught instanceof AppError ? describeCommerceError(caught) : 'No pudimos aplicar el cupón.');
+      setCouponError(caught instanceof AppError ? describeCommerceError(caught) : t('No pudimos aplicar el cupón.'));
     }
   }
 
@@ -57,7 +59,7 @@ export default function CartScreen() {
   return (
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title={count > 0 ? `Carrito (${count})` : 'Carrito'} />
+        <TopBar title={count > 0 ? t('Carrito ({count})', { count }) : t('Carrito')} />
       </View>
 
       {isPending ? (
@@ -67,13 +69,13 @@ export default function CartScreen() {
           <SkeletonRow />
         </View>
       ) : isError || !cart ? (
-        <ErrorState error={error} message="No pudimos cargar tu carrito." onRetry={refetch} />
+        <ErrorState error={error} message={t('No pudimos cargar tu carrito.')} onRetry={refetch} />
       ) : cart.items.length === 0 ? (
         <EmptyState
           icon={ShoppingCart}
-          title="Tu carrito está vacío"
-          message="Equipo, gear y productos que se suman a tu historia."
-          actionLabel="Ver colecciones"
+          title={t('Tu carrito está vacío')}
+          message={t('Equipo, gear y productos que se suman a tu historia.')}
+          actionLabel={t('Ver colecciones')}
           onAction={() => router.replace('/store')}
         />
       ) : (
@@ -99,7 +101,7 @@ export default function CartScreen() {
             </View>
 
             <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.xs }}>
-              <AppText variant="eyebrow" tone="subtle">Cupón</AppText>
+              <AppText variant="eyebrow" tone="subtle">{t('Cupón')}</AppText>
               {cart.coupon ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
                   <Tag size={18} color={colors.accent} />
@@ -114,14 +116,14 @@ export default function CartScreen() {
                     disabled={removeCoupon.isPending}
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel="Quitar cupón"
+                    accessibilityLabel={t('Quitar cupón')}
                     style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
                     <X color={colors.muted} size={18} />
                   </Pressable>
                 </View>
               ) : (
                 <FormInput
-                  placeholder="Código de descuento"
+                  placeholder={t('Código de descuento')}
                   icon={Tag}
                   autoCapitalize="characters"
                   autoCorrect={false}
@@ -135,7 +137,7 @@ export default function CartScreen() {
                   error={couponError ?? undefined}
                   trailing={
                     couponCode.trim() ? (
-                      <AppButton label="Aplicar" size="sm" variant="ghost" fullWidth={false} loading={applyCoupon.isPending} onPress={handleApplyCoupon} />
+                      <AppButton label={t('Aplicar')} size="sm" variant="ghost" fullWidth={false} loading={applyCoupon.isPending} onPress={handleApplyCoupon} />
                     ) : null
                   }
                 />
@@ -143,19 +145,30 @@ export default function CartScreen() {
             </View>
 
             <AppText variant="caption" style={{ color: colors.subtle, paddingHorizontal: spacing.lg, marginTop: spacing.md }}>
-              Los precios y el total los calcula nuestro sistema y se confirman al crear tu pedido.
+              {t('Los precios y el total los calcula nuestro sistema y se confirman al crear tu pedido.')}
             </AppText>
           </ScrollView>
 
           {/* Sticky summary — always visible while the list scrolls. Server-computed values only. */}
           <StickyFooter>
-            <View style={{ gap: 4, paddingBottom: spacing.xs }} accessible accessibilityLabel={`Resumen. Subtotal ${formatMoney(cart.subtotal_minor, cart.currency)}${cart.discount_minor > 0 ? `, descuento ${formatMoney(cart.discount_minor, cart.currency)}` : ''}, total ${formatMoney(cart.total_minor, cart.currency)}`}>
-              <TotalRow label="Subtotal" value={formatMoney(cart.subtotal_minor, cart.currency)} />
-              {cart.discount_minor > 0 ? <TotalRow label={`Descuento${cart.coupon ? ` · ${cart.coupon.code}` : ''}`} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} gold /> : null}
-              <TotalRow label="Total" value={formatMoney(cart.total_minor, cart.currency)} strong />
+            <View style={{ gap: 4, paddingBottom: spacing.xs }} accessible accessibilityLabel={
+                cart.discount_minor > 0
+                  ? t('Resumen. Subtotal {subtotal}, descuento {discount}, total {total}', {
+                      subtotal: formatMoney(cart.subtotal_minor, cart.currency),
+                      discount: formatMoney(cart.discount_minor, cart.currency),
+                      total: formatMoney(cart.total_minor, cart.currency),
+                    })
+                  : t('Resumen. Subtotal {subtotal}, total {total}', {
+                      subtotal: formatMoney(cart.subtotal_minor, cart.currency),
+                      total: formatMoney(cart.total_minor, cart.currency),
+                    })
+              }>
+              <TotalRow label={t('Subtotal')} value={formatMoney(cart.subtotal_minor, cart.currency)} />
+              {cart.discount_minor > 0 ? <TotalRow label={cart.coupon ? t('Descuento · {code}', { code: cart.coupon.code }) : t('Descuento')} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} gold /> : null}
+              <TotalRow label={t('Total')} value={formatMoney(cart.total_minor, cart.currency)} strong />
             </View>
-            {blockingItem ? <InlineError message="Quita o actualiza los productos marcados para continuar." /> : null}
-            <AppButton label="Continuar al pago" icon={Lock} onPress={() => router.push('/checkout')} disabled={blockingItem} />
+            {blockingItem ? <InlineError message={t('Quita o actualiza los productos marcados para continuar.')} /> : null}
+            <AppButton label={t('Continuar al pago')} icon={Lock} onPress={() => router.push('/checkout')} disabled={blockingItem} />
           </StickyFooter>
         </>
       )}
@@ -164,22 +177,23 @@ export default function CartScreen() {
 }
 
 function CartRow({ item, last }: { item: CartItem; last: boolean }) {
+  const { t } = useI18n();
   const updateItem = useUpdateCartItem();
   const removeItem = useRemoveCartItem();
   const busy = updateItem.isPending || removeItem.isPending;
 
   function onError(error: unknown) {
-    showToast(error instanceof AppError ? describeCommerceError(error) : 'No pudimos actualizar tu carrito.', 'destructive');
+    showToast(error instanceof AppError ? describeCommerceError(error) : t('No pudimos actualizar tu carrito.'), 'destructive');
   }
 
   // Stock-limited: the server's cap when it sends one; the server
   // revalidates every change anyway (422 → toast).
   const maxQuantity = maxQuantityFor(item);
   const atMax = item.quantity >= maxQuantity;
-  const sizeColor = [item.color, item.size ? `Talla ${item.size}` : null].filter(Boolean) as string[];
+  const sizeColor = [item.color, item.size ? t('Talla {size}', { size: item.size }) : null].filter(Boolean) as string[];
   const details = [...(sizeColor.length > 0 ? sizeColor : item.variant_name ? [item.variant_name] : []), item.event_edition_name].filter(Boolean) as string[];
 
-  const remove = () => removeItem.mutate(item.id, { onError, onSuccess: () => showToast(`Quitamos ${item.product_name}.`, 'default') });
+  const remove = () => removeItem.mutate(item.id, { onError, onSuccess: () => showToast(t('Quitamos {name}.', { name: item.product_name }), 'default') });
 
   return (
     <ReanimatedSwipeable
@@ -190,16 +204,16 @@ function CartRow({ item, last }: { item: CartItem; last: boolean }) {
         <Pressable
           onPress={remove}
           accessibilityRole="button"
-          accessibilityLabel={`Quitar ${item.product_name}`}
+          accessibilityLabel={t('Quitar {name}', { name: item.product_name })}
           style={{ width: 88, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.destructive }}>
           <Trash2 size={20} color={colors.white} />
           <AppText variant="caption" style={{ color: colors.white, marginTop: 2 }}>
-            Quitar
+            {t('Quitar')}
           </AppText>
         </Pressable>
       )}>
       <View style={{ flexDirection: 'row', gap: spacing.md, padding: spacing.md, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.hairline, backgroundColor: colors.card, opacity: busy ? 0.6 : 1 }}>
-        <Pressable onPress={() => router.push(`/store/${item.product_slug}`)} accessibilityRole="imagebutton" accessibilityLabel={`Ver ${item.product_name}`}>
+        <Pressable onPress={() => router.push(`/store/${item.product_slug}`)} accessibilityRole="imagebutton" accessibilityLabel={t('Ver {name}', { name: item.product_name })}>
           <CartItemThumb item={item} width={76} height={92} />
         </Pressable>
 
@@ -217,22 +231,22 @@ function CartRow({ item, last }: { item: CartItem; last: boolean }) {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Nfc size={12} color={colors.accent} />
                 <AppText variant="caption" tone="gold">
-                  Producto conectado
+                  {t('Producto conectado')}
                 </AppText>
               </View>
             ) : null}
             {item.in_stock && atMax && maxQuantity < DEFAULT_MAX_QUANTITY ? (
               <AppText variant="caption" tone="gold">
-                Máximo disponible: {maxQuantity}
+                {t('Máximo disponible: {max}', { max: maxQuantity })}
               </AppText>
             ) : null}
             {!item.in_stock ? (
               <AppText variant="caption" tone="destructive">
-                Ya no hay existencias.
+                {t('Ya no hay existencias.')}
               </AppText>
             ) : !item.price_available ? (
               <AppText variant="caption" tone="destructive">
-                El precio cambió o ya no está disponible.
+                {t('El precio cambió o ya no está disponible.')}
               </AppText>
             ) : null}
           </View>

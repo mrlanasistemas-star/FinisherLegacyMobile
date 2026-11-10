@@ -8,6 +8,7 @@ import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { IconButton } from '@/components/ui/icon-button';
+import { useI18n } from '@/i18n';
 import { colors, spacing } from '@/theme/tokens';
 
 /**
@@ -59,6 +60,7 @@ interface Product3DViewerProps {
  * and dev builds). If the model fails, the athlete gets the web viewer.
  */
 export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, productName, webUrl }: Product3DViewerProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const webRef = useRef<WebView>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -85,7 +87,7 @@ export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, product
             setSupportMultipleWindows={false}
             style={{ flex: 1, backgroundColor: colors.background }}
             containerStyle={{ backgroundColor: colors.background }}
-            accessibilityLabel={`Modelo 3D de ${productName}. Arrastra para girarlo y pellizca para acercar.`}
+            accessibilityLabel={t('Modelo 3D de {name}. Arrastra para girarlo y pellizca para acercar.', { name: productName })}
           />
         ) : null}
 
@@ -93,7 +95,7 @@ export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, product
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
             <ActivityIndicator color={colors.accent} />
             <AppText variant="caption" tone="muted">
-              Preparando la vista 3D…
+              {t('Preparando la vista 3D…')}
             </AppText>
           </View>
         ) : null}
@@ -102,26 +104,26 @@ export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, product
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background }}>
             <Box size={40} color={colors.accent} strokeWidth={1.4} />
             <AppText variant="subtitle" align="center">
-              No pudimos mostrar el modelo aquí
+              {t('No pudimos mostrar el modelo aquí')}
             </AppText>
             <AppText variant="body" tone="muted" align="center">
-              Puedes verlo en 3D desde la web.
+              {t('Puedes verlo en 3D desde la web.')}
             </AppText>
-            <AppButton label="Ver en 3D en la web" icon={ExternalLink} variant="secondary" fullWidth={false} onPress={() => WebBrowser.openBrowserAsync(webUrl).catch(() => {})} />
+            <AppButton label={t('Ver en 3D en la web')} icon={ExternalLink} variant="secondary" fullWidth={false} onPress={() => WebBrowser.openBrowserAsync(webUrl).catch(() => {})} />
           </View>
         ) : null}
 
         <View style={{ position: 'absolute', top: insets.top + spacing.xs, left: spacing.sm, right: spacing.sm, flexDirection: 'row', justifyContent: 'space-between' }}>
-          <IconButton icon={X} label="Cerrar vista 3D" onPress={onClose} filled />
+          <IconButton icon={X} label={t('Cerrar vista 3D')} onPress={onClose} filled />
           {state === 'ready' ? (
-            <IconButton icon={RotateCcw} label="Restablecer vista" onPress={() => webRef.current?.injectJavaScript('window.__resetCamera && window.__resetCamera(); true;')} filled />
+            <IconButton icon={RotateCcw} label={t('Restablecer vista')} onPress={() => webRef.current?.injectJavaScript('window.__resetCamera && window.__resetCamera(); true;')} filled />
           ) : null}
         </View>
 
         {state === 'ready' ? (
           <View pointerEvents="none" style={{ position: 'absolute', bottom: insets.bottom + spacing.lg, left: 0, right: 0, alignItems: 'center' }}>
             <AppText variant="caption" tone="muted">
-              Arrastra para girar · pellizca para acercar
+              {t('Arrastra para girar · pellizca para acercar')}
             </AppText>
           </View>
         ) : null}

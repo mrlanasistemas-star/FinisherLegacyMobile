@@ -6,6 +6,7 @@ import { View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { PressScale } from '@/components/motion/press-scale';
 import { TagRender, TagStage } from '@/components/tag';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { ProductSummary } from '@/types/models';
 import { formatMoney } from '@/utils/money';
@@ -24,6 +25,7 @@ interface StoreProductTileProps {
 
 /** Image-first product card with the badges that matter (NFC, Nuevo, Últimas piezas, Agotado). */
 export const StoreProductTile = memo(function StoreProductTile({ product, onPress, width, layout = 'grid' }: StoreProductTileProps) {
+  const { t } = useI18n();
   const soldOut = product.in_stock === false || product.stock_status === 'sold_out';
   const low = !soldOut && product.stock_status === 'low';
   const connected = isConnectedProduct(product);
@@ -32,7 +34,7 @@ export const StoreProductTile = memo(function StoreProductTile({ product, onPres
   const tag = isTagProduct(product);
   const face = tag ? tagFaceFrom(product.tag_design, { name: product.name }) : null;
 
-  const label = [product.name, price ? `desde ${price}` : null, connected ? 'producto conectado' : null, soldOut ? 'agotado' : low ? 'últimas piezas' : null]
+  const label = [product.name, price ? t('desde {price}', { price }) : null, connected ? t('producto conectado') : null, soldOut ? t('agotado') : low ? t('últimas piezas') : null]
     .filter(Boolean)
     .join(', ');
 
@@ -62,7 +64,7 @@ export const StoreProductTile = memo(function StoreProductTile({ product, onPres
           {/* Badges sit at the bottom corner: at the top they covered the Tag's loop. */}
           <View style={{ position: 'absolute', bottom: 8, left: 8, right: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             {connected ? <NfcBadge floating /> : null}
-            {soldOut ? <Pill label="Agotado" /> : low ? <Pill label="Últimas piezas" gold /> : product.is_new ? <Pill label="Nuevo" gold /> : null}
+            {soldOut ? <Pill label={t('Agotado')} /> : low ? <Pill label={t('Últimas piezas')} gold /> : product.is_new ? <Pill label={t('Nuevo')} gold /> : null}
           </View>
         </View>
         <View style={{ gap: 1 }}>

@@ -39,22 +39,12 @@ import { buildQueueIds, remainingCount, type QueueMode } from '@/features/traini
 import { elapsedMs, formatClock, INTERVAL_OPTIONS, msUntilNext, type IntervalMinutes } from '@/features/training/session-clock';
 import { useTrainingSettings } from '@/features/training/settings-store';
 import { flattenMessages, useTrainingMessages } from '@/features/training/use-training';
+import { useI18n } from '@/i18n';
 import type { TrainingMessage } from '@/schemas/training';
 import { showToast } from '@/stores/toastStore';
 import { gradients } from '@/theme/gradients';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
-
-const QUEUE_OPTIONS: { value: QueueMode; label: string }[] = [
-  { value: 'unheard_first', label: 'Nuevos primero' },
-  { value: 'favorites', label: 'Favoritos' },
-  { value: 'all', label: 'Todos' },
-];
-
-const MIX_OPTIONS: { value: MixMode; label: string }[] = [
-  { value: 'mix', label: 'Mezclar con mi música' },
-  { value: 'pause', label: 'Pausar mi música' },
-];
 
 /** Max pages pulled into a session queue (keeps a huge inbox from stalling the start). */
 const MAX_PAGES = 10;
@@ -65,6 +55,16 @@ export default function TrainingSessionScreen() {
 }
 
 function SessionSetup() {
+  const { t, tc } = useI18n();
+  const queueOptions: { value: QueueMode; label: string }[] = [
+    { value: 'unheard_first', label: t('Nuevos primero') },
+    { value: 'favorites', label: t('Favoritos') },
+    { value: 'all', label: t('Todos') },
+  ];
+  const mixOptions: { value: MixMode; label: string }[] = [
+    { value: 'mix', label: t('Mezclar con mi música') },
+    { value: 'pause', label: t('Pausar mi música') },
+  ];
   const insets = useSafeAreaInsets();
   const query = useTrainingMessages('all');
   const entries = useOfflineStore((s) => s.entries);
@@ -100,7 +100,7 @@ function SessionSetup() {
     }
     setStarting(false);
     if (!startSession(list, queueMode, intervalMinutes)) {
-      showToast(queueMode === 'favorites' ? 'Aún no tienes favoritos. Elige otra cola.' : 'Aún no tienes mensajes para entrenar.', 'destructive');
+      showToast(queueMode === 'favorites' ? t('Aún no tienes favoritos. Elige otra cola.') : t('Aún no tienes mensajes para entrenar.'), 'destructive');
       return;
     }
     haptics.success();
@@ -111,39 +111,39 @@ function SessionSetup() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: insets.top, paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 120, gap: spacing.lg }}>
-        <TopBar title="Modo entrenamiento" large />
+        <TopBar title={t('Modo entrenamiento')} large />
         <AppText variant="body" tone="muted" style={{ marginTop: -spacing.md }}>
-          Tus mensajes suenan mientras entrenas, incluso con la pantalla bloqueada.
+          {t('Tus mensajes suenan mientras entrenas, incluso con la pantalla bloqueada.')}
         </AppText>
 
         {query.isPending && !offline ? (
           <Skeleton height={120} radius={radius.lg} />
         ) : query.isError && !offline ? (
-          <ErrorState error={query.error} onRetry={() => query.refetch()} message="No pudimos cargar tus mensajes." />
+          <ErrorState error={query.error} onRetry={() => query.refetch()} message={t('No pudimos cargar tus mensajes.')} />
         ) : (
           <>
             {offline ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                 <CloudOff size={16} color={colors.muted} />
                 <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                  Sin conexión · entrenarás con tus mensajes descargados.
+                  {t('Sin conexión · entrenarás con tus mensajes descargados.')}
                 </AppText>
               </View>
             ) : null}
 
             <Reveal style={{ gap: spacing.sm }}>
               <AppText variant="eyebrow" tone="subtle">
-                Cola de mensajes
+                {t('Cola de mensajes')}
               </AppText>
-              <SegmentedControl options={QUEUE_OPTIONS} value={queueMode} onChange={setQueueMode} />
+              <SegmentedControl options={queueOptions} value={queueMode} onChange={setQueueMode} />
               <AppText variant="caption" tone="muted">
-                {count === 0 ? 'No hay mensajes en esta cola.' : `${count} ${count === 1 ? 'mensaje' : 'mensajes'} en tu cola.`}
+                {count === 0 ? t('No hay mensajes en esta cola.') : tc('{count} mensaje en tu cola.|{count} mensajes en tu cola.', count)}
               </AppText>
             </Reveal>
 
             <Reveal delay={60} style={{ gap: spacing.sm }}>
               <AppText variant="eyebrow" tone="subtle">
-                Un mensaje cada
+                {t('Un mensaje cada')}
               </AppText>
               <View style={{ flexDirection: 'row', gap: spacing.xs }}>
                 {INTERVAL_OPTIONS.map((option) => (
@@ -152,23 +152,26 @@ function SessionSetup() {
               </View>
               <AppText variant="caption" tone="muted">
                 {intervalMinutes === null
-                  ? 'Los mensajes suenan uno tras otro.'
-                  : `Suena uno al empezar y luego uno cada ${intervalMinutes} minutos de entrenamiento. Con la pantalla bloqueada la sesión sigue activa en segundo plano (usa un poco más de batería).`}
+                  ? t('Los mensajes suenan uno tras otro.')
+                  : t(
+                      'Suena uno al empezar y luego uno cada {minutes} minutos de entrenamiento. Con la pantalla bloqueada la sesión sigue activa en segundo plano (usa un poco más de batería).',
+                      { minutes: intervalMinutes },
+                    )}
               </AppText>
             </Reveal>
 
             <Reveal delay={110} style={{ gap: spacing.sm }}>
               <AppText variant="eyebrow" tone="subtle">
-                Tu música
+                {t('Tu música')}
               </AppText>
-              <SegmentedControl options={MIX_OPTIONS} value={mixMode} onChange={setMixMode} />
+              <SegmentedControl options={mixOptions} value={mixMode} onChange={setMixMode} />
               <AppText variant="caption" tone="muted">
                 {mixModeCaption(Platform.OS as Os, mixMode)}
               </AppText>
               <ListGroup>
                 <ListRow
-                  label="Mantener pantalla encendida"
-                  description="Para ver el reloj sin desbloquear"
+                  label={t('Mantener pantalla encendida')}
+                  description={t('Para ver el reloj sin desbloquear')}
                   divider={false}
                   trailing={
                     <Switch
@@ -177,7 +180,7 @@ function SessionSetup() {
                       trackColor={{ false: colors.surfaceMuted, true: colors.gold }}
                       thumbColor={colors.white}
                       ios_backgroundColor={colors.surfaceMuted}
-                      accessibilityLabel="Mantener pantalla encendida"
+                      accessibilityLabel={t('Mantener pantalla encendida')}
                     />
                   }
                 />
@@ -200,14 +203,15 @@ function SessionSetup() {
           borderTopWidth: 1,
           borderTopColor: colors.hairline,
         }}>
-        <AppButton label="Empezar entrenamiento" variant="legacy" onPress={start} loading={starting} disabled={count === 0 || query.isPending} />
+        <AppButton label={t('Empezar entrenamiento')} variant="legacy" onPress={start} loading={starting} disabled={count === 0 || query.isPending} />
       </View>
     </View>
   );
 }
 
 function IntervalChip({ value, selected, onPress }: { value: IntervalMinutes; selected: boolean; onPress: () => void }) {
-  const label = value === null ? 'Seguido' : `${value} min`;
+  const { t } = useI18n();
+  const label = value === null ? t('Seguido') : `${value} min`;
   return (
     <PressableScale
       onPress={onPress}
@@ -215,7 +219,7 @@ function IntervalChip({ value, selected, onPress }: { value: IntervalMinutes; se
       scaleTo={0.94}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={value === null ? 'Mensajes seguidos' : `Un mensaje cada ${value} minutos`}
+      accessibilityLabel={value === null ? t('Mensajes seguidos') : t('Un mensaje cada {minutes} minutos', { minutes: value })}
       style={{
         flex: 1,
         height: 44,
@@ -235,6 +239,7 @@ function IntervalChip({ value, selected, onPress }: { value: IntervalMinutes; se
 }
 
 function RunningSession() {
+  const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReducedMotion();
   const session = usePlayerStore((s) => s.session);
@@ -256,12 +261,12 @@ function RunningSession() {
   const waiting = !!session.schedule && !status.playing && !status.buffering;
   const countdown = session.schedule ? formatClock(msUntilNext(session.schedule, elapsed)) : null;
 
-  let statusLine = 'Mensajes seguidos';
-  if (paused) statusLine = 'En pausa';
-  else if (session.exhausted) statusLine = 'Escuchaste todos tus mensajes';
-  else if (status.playing) statusLine = 'Escuchando a tu equipo';
-  else if (waiting && countdown) statusLine = `Próximo mensaje en ${countdown}`;
-  else if (status.ended && remaining === 0) statusLine = 'Escuchaste todos tus mensajes';
+  let statusLine = t('Mensajes seguidos');
+  if (paused) statusLine = t('En pausa');
+  else if (session.exhausted) statusLine = t('Escuchaste todos tus mensajes');
+  else if (status.playing) statusLine = t('Escuchando a tu equipo');
+  else if (waiting && countdown) statusLine = t('Próximo mensaje en {time}', { time: countdown });
+  else if (status.ended && remaining === 0) statusLine = t('Escuchaste todos tus mensajes');
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -269,13 +274,13 @@ function RunningSession() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: insets.top, paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + 180, gap: spacing.lg }}>
-        <TopBar title="Modo entrenamiento" />
+        <TopBar title={t('Modo entrenamiento')} />
 
         <Animated.View entering={reduceMotion ? undefined : FadeIn.duration(300)} style={{ alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.lg }}>
-          <AppText variant="eyebrow">{paused ? 'Pausado' : 'Tiempo de entrenamiento'}</AppText>
+          <AppText variant="eyebrow">{paused ? t('Pausado') : t('Tiempo de entrenamiento')}</AppText>
           <AppText
             accessibilityRole="timer"
-            accessibilityLabel={`Tiempo de entrenamiento ${formatClock(elapsed)}`}
+            accessibilityLabel={t('Tiempo de entrenamiento {time}', { time: formatClock(elapsed) })}
             maxFontSizeMultiplier={1.2}
             adjustsFontSizeToFit
             numberOfLines={1}
@@ -300,7 +305,7 @@ function RunningSession() {
             onPress={() => router.push(PLAYER_HREF)}
             scaleTo={0.98}
             accessibilityRole="button"
-            accessibilityLabel={`Mensaje actual de ${message.sender_name}. Abre el reproductor.`}
+            accessibilityLabel={t('Mensaje actual de {name}. Abre el reproductor.', { name: message.sender_name })}
             style={{ backgroundColor: colors.card, borderRadius: radius.xl, borderCurve: 'continuous', borderWidth: 1, borderColor: status.playing ? colors.gold : colors.hairline, padding: spacing.lg, gap: spacing.md, ...shadows.card }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
               <SenderAvatar name={message.sender_name} icon={message.icon} size={56} highlight={status.playing} />
@@ -309,14 +314,14 @@ function RunningSession() {
                   {message.sender_name}
                 </AppText>
                 <AppText variant="caption" tone="subtle" numberOfLines={1}>
-                  {[message.relationship, remaining > 0 ? `${remaining} más en la cola` : 'Último de la cola'].filter(Boolean).join(' · ')}
+                  {[message.relationship, remaining > 0 ? tc('{count} más en la cola|{count} más en la cola', remaining) : t('Último de la cola')].filter(Boolean).join(' · ')}
                 </AppText>
               </View>
               <PressableScale
                 onPress={togglePlay}
                 scaleTo={0.9}
                 accessibilityRole="button"
-                accessibilityLabel={status.playing ? 'Pausar mensaje' : 'Reproducir mensaje'}
+                accessibilityLabel={status.playing ? t('Pausar mensaje') : t('Reproducir mensaje')}
                 style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.black, alignItems: 'center', justifyContent: 'center' }}>
                 {status.playing ? (
                   <Pause size={20} color={colors.gold} fill={colors.gold} strokeWidth={0} />
@@ -348,7 +353,7 @@ function RunningSession() {
           gap: spacing.sm,
         }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xl, paddingHorizontal: spacing.lg }}>
-          <RoundAction label="Terminar entrenamiento" onPress={() => setConfirmEnd(true)}>
+          <RoundAction label={t('Terminar entrenamiento')} onPress={() => setConfirmEnd(true)}>
             <Square size={20} color={colors.destructive} fill={colors.destructive} strokeWidth={0} />
           </RoundAction>
           <PressableScale
@@ -359,7 +364,7 @@ function RunningSession() {
             }}
             scaleTo={0.92}
             accessibilityRole="button"
-            accessibilityLabel={paused ? 'Reanudar entrenamiento' : 'Pausar entrenamiento'}
+            accessibilityLabel={paused ? t('Reanudar entrenamiento') : t('Pausar entrenamiento')}
             style={{ borderRadius: 44, ...shadows.gold }}>
             <LinearGradient colors={gradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center' }}>
               {paused ? (
@@ -369,7 +374,7 @@ function RunningSession() {
               )}
             </LinearGradient>
           </PressableScale>
-          <RoundAction label="Siguiente mensaje" onPress={nextTrack} disabled={remaining === 0}>
+          <RoundAction label={t('Siguiente mensaje')} onPress={nextTrack} disabled={remaining === 0}>
             <SkipForward size={22} color={colors.foreground} fill={colors.foreground} strokeWidth={0} />
           </RoundAction>
         </View>
@@ -377,15 +382,15 @@ function RunningSession() {
 
       <ConfirmDialog
         visible={confirmEnd}
-        title="¿Terminar entrenamiento?"
-        description={`Llevas ${formatClock(elapsed)}. Los mensajes dejarán de sonar.`}
-        confirmLabel="Terminar"
+        title={t('¿Terminar entrenamiento?')}
+        description={t('Llevas {time}. Los mensajes dejarán de sonar.', { time: formatClock(elapsed) })}
+        confirmLabel={t('Terminar')}
         onCancel={() => setConfirmEnd(false)}
         onConfirm={() => {
           setConfirmEnd(false);
           endSession();
           haptics.success();
-          showToast(`Entrenamiento de ${formatClock(elapsed)} terminado`, 'success');
+          showToast(t('Entrenamiento de {time} terminado', { time: formatClock(elapsed) }), 'success');
         }}
       />
     </View>
@@ -394,10 +399,11 @@ function RunningSession() {
 
 /** "Sesión activa": the workout keeps its audio session alive so messages arrive with the screen locked. */
 function ActiveSessionBadge() {
+  const { t } = useI18n();
   return (
     <View
       accessible
-      accessibilityLabel="Sesión activa. Sigue funcionando con la pantalla bloqueada y usa un poco más de batería."
+      accessibilityLabel={t('Sesión activa. Sigue funcionando con la pantalla bloqueada y usa un poco más de batería.')}
       style={{ alignItems: 'center', gap: 2, marginTop: spacing.xs }}>
       <View
         style={{
@@ -411,11 +417,11 @@ function ActiveSessionBadge() {
         }}>
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
         <AppText variant="caption" style={{ color: colors.success, fontFamily: fontFamily.semibold }}>
-          Sesión activa · puedes bloquear la pantalla
+          {t('Sesión activa · puedes bloquear la pantalla')}
         </AppText>
       </View>
       <AppText variant="caption" tone="subtle">
-        Usa un poco más de batería mientras entrenas.
+        {t('Usa un poco más de batería mientras entrenas.')}
       </AppText>
     </View>
   );

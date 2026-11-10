@@ -14,6 +14,7 @@ import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { createPlayer, isAudioAvailable, type AudioPlayer } from '@/features/training/audio-driver';
 import { GoldSlider } from '@/features/training/components/gold-slider';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 
 import { formatDuration } from '../quota';
@@ -27,7 +28,8 @@ interface VoicePlayerProps {
   title?: string;
 }
 
-export function VoicePlayer({ url, durationSeconds = null, processing = false, title = 'Mensaje de voz' }: VoicePlayerProps) {
+export function VoicePlayer({ url, durationSeconds = null, processing = false, title }: VoicePlayerProps) {
+  const { t } = useI18n();
   const playerRef = useRef<AudioPlayer | null>(null);
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -104,13 +106,13 @@ export function VoicePlayer({ url, durationSeconds = null, processing = false, t
 
   const disabled = processing || !url || !available || failed;
   const note = processing
-    ? 'Procesando tu mensaje…'
+    ? t('Procesando tu mensaje…')
     : !available
-      ? 'Actualiza la app para escuchar este mensaje.'
+      ? t('Actualiza la app para escuchar este mensaje.')
       : failed
-        ? 'No pudimos reproducir este mensaje.'
+        ? t('No pudimos reproducir este mensaje.')
         : !url
-          ? 'El audio no está disponible.'
+          ? t('El audio no está disponible.')
           : null;
   const ratio = duration > 0 ? Math.min(1, position / duration) : 0;
 
@@ -134,7 +136,7 @@ export function VoicePlayer({ url, durationSeconds = null, processing = false, t
         scaleTo={0.92}
         haptic="selection"
         accessibilityRole="button"
-        accessibilityLabel={playing ? 'Pausar mensaje de voz' : 'Reproducir mensaje de voz'}
+        accessibilityLabel={playing ? t('Pausar mensaje de voz') : t('Reproducir mensaje de voz')}
         accessibilityState={{ disabled, busy: loading }}
         style={{
           width: 48,
@@ -158,7 +160,7 @@ export function VoicePlayer({ url, durationSeconds = null, processing = false, t
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: spacing.sm }}>
           <AppText variant="bodyStrong" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {title}
+            {title ?? t('Mensaje de voz')}
           </AppText>
           {duration > 0 && !note ? (
             <AppText maxFontSizeMultiplier={1.3} style={{ fontFamily: fontFamily.medium, fontSize: 13, color: colors.subtle, fontVariant: ['tabular-nums'] }}>
@@ -175,8 +177,8 @@ export function VoicePlayer({ url, durationSeconds = null, processing = false, t
             value={ratio}
             onCommit={seek}
             disabled={!ready || duration <= 0}
-            accessibilityLabel="Posición del mensaje"
-            accessibilityValueText={`${formatDuration(position)} de ${formatDuration(duration)}`}
+            accessibilityLabel={t('Posición del mensaje')}
+            accessibilityValueText={t('{position} de {duration}', { position: formatDuration(position), duration: formatDuration(duration) })}
           />
         )}
       </View>

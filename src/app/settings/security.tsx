@@ -17,8 +17,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 import { fontFamily, spacing } from '@/theme/tokens';
 import { ensureOnline } from '@/utils/network';
+import { useI18n } from '@/i18n';
 
 export default function SecurityScreen() {
+  const { t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const queryClient = useQueryClient();
   const [sendingReset, setSendingReset] = useState(false);
@@ -34,9 +36,9 @@ export default function SecurityScreen() {
     try {
       await ensureOnline();
       await requestPasswordReset(user.email);
-      showToast(`Te enviamos un enlace a ${user.email}.`, 'success');
+      showToast(t('Te enviamos un enlace a {email}.', { email: user.email }), 'success');
     } catch (caught) {
-      showToast(caught instanceof AppError ? caught.message : 'No pudimos enviar el correo. Intenta otra vez.', 'destructive');
+      showToast(caught instanceof AppError ? caught.message : t('No pudimos enviar el correo. Intenta otra vez.'), 'destructive');
     } finally {
       setSendingReset(false);
     }
@@ -45,7 +47,7 @@ export default function SecurityScreen() {
   async function confirmDelete() {
     setError(null);
     if (!secret.trim()) {
-      setError(socialMode ? 'Escribe ELIMINAR para confirmar.' : 'Escribe tu contraseña para confirmar.');
+      setError(socialMode ? t('Escribe {word} para confirmar.', { word: 'ELIMINAR' }) : t('Escribe tu contraseña para confirmar.'));
       return;
     }
     setDeleting(true);
@@ -55,12 +57,12 @@ export default function SecurityScreen() {
       await tokenStorage.clear();
       queryClient.clear();
       useAuthStore.getState().clearSession();
-      showToast('Tu cuenta fue eliminada. Gracias por correr con nosotros.', 'default');
+      showToast(t('Tu cuenta fue eliminada. Gracias por correr con nosotros.'), 'default');
     } catch (caught) {
       const message =
         caught instanceof AppError
           ? (caught.fieldErrors?.password?.[0] ?? caught.fieldErrors?.confirmation?.[0] ?? caught.message)
-          : 'No pudimos eliminar tu cuenta. Intenta otra vez.';
+          : t('No pudimos eliminar tu cuenta. Intenta otra vez.');
       setError(message);
     } finally {
       setDeleting(false);
@@ -69,19 +71,19 @@ export default function SecurityScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <LargeTitleScroll title="Contraseña y cuenta" contentContainerStyle={{ gap: spacing.lg }}>
-        <ListGroup title="Contraseña">
+      <LargeTitleScroll title={t('Contraseña y cuenta')} contentContainerStyle={{ gap: spacing.lg }}>
+        <ListGroup title={t('Contraseña')}>
           <ListRow
             icon={KeyRound}
-            label="Cambiar contraseña"
-            description={`Te enviaremos un enlace seguro a ${user?.email ?? 'tu correo'}.`}
+            label={t('Cambiar contraseña')}
+            description={user?.email ? t('Te enviaremos un enlace seguro a {email}.', { email: user.email }) : t('Te enviaremos un enlace seguro a tu correo.')}
             onPress={sendReset}
             loading={sendingReset}
           />
         </ListGroup>
 
-        <ListGroup title="Zona de riesgo">
-          <ListRow icon={Trash2} label="Eliminar mi cuenta" destructive description="Borra tu perfil, tus momentos y tu actividad social." onPress={() => setDeleteOpen(true)} />
+        <ListGroup title={t('Zona de riesgo')}>
+          <ListRow icon={Trash2} label={t('Eliminar mi cuenta')} destructive description={t('Borra tu perfil, tus momentos y tu actividad social.')} onPress={() => setDeleteOpen(true)} />
         </ListGroup>
       </LargeTitleScroll>
 
@@ -94,17 +96,17 @@ export default function SecurityScreen() {
             setError(null);
           }}>
           <View style={{ gap: spacing.md, paddingBottom: spacing.sm }}>
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 18 }}>¿Eliminar tu cuenta?</AppText>
+            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 18 }}>{t('¿Eliminar tu cuenta?')}</AppText>
             <AppText variant="body" tone="muted">
-              Se borran tu perfil, fotos, momentos, mensajes, reacciones y seguidores, y se cierra tu sesión en todos tus dispositivos. Tus pedidos y resultados oficiales de eventos se conservan de forma anónima. Esto no se puede deshacer.
+              {t('Se borran tu perfil, fotos, momentos, mensajes, reacciones y seguidores, y se cierra tu sesión en todos tus dispositivos. Tus pedidos y resultados oficiales de eventos se conservan de forma anónima. Esto no se puede deshacer.')}
             </AppText>
             {socialMode ? (
-              <FormInput label="Escribe ELIMINAR para confirmar" autoCapitalize="characters" value={secret} onChangeText={setSecret} />
+              <FormInput label={t('Escribe {word} para confirmar', { word: 'ELIMINAR' })} autoCapitalize="characters" value={secret} onChangeText={setSecret} />
             ) : (
-              <FormInput label="Tu contraseña" kind="password" value={secret} onChangeText={setSecret} />
+              <FormInput label={t('Tu contraseña')} kind="password" value={secret} onChangeText={setSecret} />
             )}
             <AppButton
-              label={socialMode ? 'Confirmar con mi contraseña' : 'No tengo contraseña'}
+              label={socialMode ? t('Confirmar con mi contraseña') : t('No tengo contraseña')}
               variant="ghost"
               size="sm"
               onPress={() => {
@@ -114,7 +116,7 @@ export default function SecurityScreen() {
               }}
             />
             <InlineError message={error} />
-            <AppButton label="Eliminar mi cuenta" variant="destructive" size="md" loading={deleting} onPress={confirmDelete} />
+            <AppButton label={t('Eliminar mi cuenta')} variant="destructive" size="md" loading={deleting} onPress={confirmDelete} />
           </View>
         </Sheet>
       ) : null}

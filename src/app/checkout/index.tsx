@@ -18,7 +18,8 @@ import { CartItemThumb } from '@/features/commerce/components/cart-item-thumb';
 import { useCart } from '@/hooks/use-cart';
 import { useOrder } from '@/hooks/use-orders';
 import { usePaymentFlow } from '@/hooks/use-payment-flow';
-import { PAYMENT_PHASE_COPY, phaseFromOrder, type PaymentPhase } from '@/payments/payment-flow';
+import { useI18n } from '@/i18n';
+import { paymentPhaseCopy, phaseFromOrder, type PaymentPhase } from '@/payments/payment-flow';
 import { useAuthStore } from '@/stores/authStore';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
@@ -33,6 +34,7 @@ const BUSY_PHASES: PaymentPhase[] = ['creating_order', 'preparing', 'in_browser'
  * payment keeps being watched until the webhook settles it.
  */
 export default function CheckoutScreen() {
+  const { t } = useI18n();
   const { data: cart, isPending: cartPending } = useCart();
   const user = useAuthStore((s) => s.user);
   const flow = usePaymentFlow();
@@ -60,14 +62,14 @@ export default function CheckoutScreen() {
       return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
           <Header onClose={() => router.back()} />
-          <EmptyState icon={Lock} title="No hay nada que pagar" message="Tu carrito está vacío." actionLabel="Ver colecciones" onAction={() => router.replace('/store')} />
+          <EmptyState icon={Lock} title={t('No hay nada que pagar')} message={t('Tu carrito está vacío.')} actionLabel={t('Ver colecciones')} onAction={() => router.replace('/store')} />
         </SafeAreaView>
       );
     }
 
     return (
       <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
-        <Header onClose={() => router.back()} title="Confirmar y pagar" />
+        <Header onClose={() => router.back()} title={t('Confirmar y pagar')} />
         {cartPending || !cart ? (
           <View style={{ padding: spacing.lg, gap: spacing.md }}>
             <Skeleton height={60} />
@@ -76,29 +78,29 @@ export default function CheckoutScreen() {
         ) : (
           <>
             <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
-              <Section icon={UserRound} title="Tus datos">
-                <AppText variant="body">{user?.name ?? 'Tu cuenta'}</AppText>
+              <Section icon={UserRound} title={t('Tus datos')}>
+                <AppText variant="body">{user?.name ?? t('Tu cuenta')}</AppText>
                 {user?.email ? (
                   <AppText variant="caption" tone="muted">
-                    {user.email} · aquí te enviaremos la confirmación
+                    {t('{email} · aquí te enviaremos la confirmación', { email: user.email })}
                   </AppText>
                 ) : null}
               </Section>
 
-              <Section icon={Truck} title="Entrega">
+              <Section icon={Truck} title={t('Entrega')}>
                 <AppText variant="caption" tone="muted">
-                  Preparamos tu pedido al confirmar el pago y te avisamos cuando esté listo para entregarse o enviarse. Si tu compra es de un evento, la recibes en la entrega de kits.
+                  {t('Preparamos tu pedido al confirmar el pago y te avisamos cuando esté listo para entregarse o enviarse. Si tu compra es de un evento, la recibes en la entrega de kits.')}
                 </AppText>
               </Section>
 
-              <Section icon={CreditCard} title="Pago">
+              <Section icon={CreditCard} title={t('Pago')}>
                 <AppText variant="caption" tone="muted">
-                  Tarjeta de crédito o débito. Se abre una ventana segura; si tu banco pide verificarte, lo haces ahí mismo.
+                  {t('Tarjeta de crédito o débito. Se abre una ventana segura; si tu banco pide verificarte, lo haces ahí mismo.')}
                 </AppText>
               </Section>
 
               <View style={{ gap: spacing.sm, marginTop: spacing.xs, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
-                <AppText variant="eyebrow" tone="subtle">Resumen</AppText>
+                <AppText variant="eyebrow" tone="subtle">{t('Resumen')}</AppText>
                 {cart.items.map((item) => (
                   <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                     <CartItemThumb item={item} width={40} height={48} radius={10} />
@@ -121,22 +123,22 @@ export default function CheckoutScreen() {
               </View>
 
               <View style={{ gap: spacing.xs, paddingTop: spacing.sm, paddingHorizontal: spacing.md }}>
-                <Row label="Subtotal" value={formatMoney(cart.subtotal_minor, cart.currency)} />
-                {cart.discount_minor > 0 ? <Row label={`Descuento${cart.coupon ? ` (${cart.coupon.code})` : ''}`} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} /> : null}
-                <Row label="Total" value={formatMoney(cart.total_minor, cart.currency)} strong />
+                <Row label={t('Subtotal')} value={formatMoney(cart.subtotal_minor, cart.currency)} />
+                {cart.discount_minor > 0 ? <Row label={cart.coupon ? t('Descuento ({code})', { code: cart.coupon.code }) : t('Descuento')} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} /> : null}
+                <Row label={t('Total')} value={formatMoney(cart.total_minor, cart.currency)} strong />
               </View>
 
               <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
                 <ShieldCheck size={18} color={colors.success} />
                 <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                  Pago seguro. Los datos de tu tarjeta se capturan en una ventana protegida y nunca se guardan en la app.
+                  {t('Pago seguro. Los datos de tu tarjeta se capturan en una ventana protegida y nunca se guardan en la app.')}
                 </AppText>
               </View>
             </ScrollView>
 
             <StickyFooter>
               <InlineError message={message} />
-              <AppButton label={`Pagar ${formatMoney(cart.total_minor, cart.currency)}`} variant="legacy" onPress={flow.checkoutAndPay} disabled={cart.items.length === 0} />
+              <AppButton label={t('Pagar {total}', { total: formatMoney(cart.total_minor, cart.currency) })} variant="legacy" onPress={flow.checkoutAndPay} disabled={cart.items.length === 0} />
             </StickyFooter>
           </>
         )}
@@ -146,7 +148,7 @@ export default function CheckoutScreen() {
 
   // ----- In progress -----
   if (busy) {
-    const copy = PAYMENT_PHASE_COPY[phase];
+    const copy = paymentPhaseCopy(phase);
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl }}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -163,7 +165,7 @@ export default function CheckoutScreen() {
   }
 
   // ----- Outcomes -----
-  const copy = PAYMENT_PHASE_COPY[phase];
+  const copy = paymentPhaseCopy(phase);
   const total = shownOrder ? formatMoney(shownOrder.total_minor, shownOrder.currency) : null;
 
   return (
@@ -176,7 +178,7 @@ export default function CheckoutScreen() {
         </AppText>
         {shownOrder ? (
           <AppText variant="body" tone="muted" align="center">
-            Pedido #{shownOrder.order_number}
+            {t('Pedido #{number}', { number: shownOrder.order_number })}
             {total ? ` · ${total}` : ''}
           </AppText>
         ) : null}
@@ -187,7 +189,7 @@ export default function CheckoutScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <ActivityIndicator size="small" color={colors.accent} />
             <AppText variant="caption" tone="muted">
-              Esperando la confirmación…
+              {t('Esperando la confirmación…')}
             </AppText>
           </View>
         ) : null}
@@ -196,21 +198,21 @@ export default function CheckoutScreen() {
       <StickyFooter>
         {phase === 'paid' || phase === 'processing' || phase === 'unavailable' || phase === 'not_app_payable' ? (
           <>
-            {order ? <AppButton label="Ver mi pedido" onPress={() => router.replace(`/orders/${order.uuid}`)} /> : null}
-            <AppButton label="Seguir viendo colecciones" variant="ghost" onPress={() => router.replace('/store')} />
+            {order ? <AppButton label={t('Ver mi pedido')} onPress={() => router.replace(`/orders/${order.uuid}`)} /> : null}
+            <AppButton label={t('Seguir viendo colecciones')} variant="ghost" onPress={() => router.replace('/store')} />
           </>
         ) : phase === 'pending' ? (
           <>
-            <AppButton label="Revisar de nuevo" onPress={flow.checkAgain} />
-            <AppButton label="Intentar de nuevo" icon={Lock} variant="ghost" onPress={flow.payExisting} />
+            <AppButton label={t('Revisar de nuevo')} onPress={flow.checkAgain} />
+            <AppButton label={t('Intentar de nuevo')} icon={Lock} variant="ghost" onPress={flow.payExisting} />
           </>
         ) : phase === 'failed' || phase === 'cancelled' ? (
           <>
-            <AppButton label="Intentar de nuevo" icon={Lock} onPress={flow.payExisting} />
-            {order ? <AppButton label="Pagar después" variant="ghost" onPress={() => router.replace(`/orders/${order.uuid}`)} /> : null}
+            <AppButton label={t('Intentar de nuevo')} icon={Lock} onPress={flow.payExisting} />
+            {order ? <AppButton label={t('Pagar después')} variant="ghost" onPress={() => router.replace(`/orders/${order.uuid}`)} /> : null}
           </>
         ) : (
-          <AppButton label="Volver al carrito" onPress={() => router.replace('/cart')} />
+          <AppButton label={t('Volver al carrito')} onPress={() => router.replace('/cart')} />
         )}
       </StickyFooter>
     </SafeAreaView>
@@ -218,9 +220,10 @@ export default function CheckoutScreen() {
 }
 
 function Header({ onClose, title }: { onClose: () => void; title?: string }) {
+  const { t } = useI18n();
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: spacing.sm }}>
-      <IconButton icon={X} label="Cerrar" onPress={onClose} />
+      <IconButton icon={X} label={t('Cerrar')} onPress={onClose} />
       <AppText accessibilityRole="header" style={{ flex: 1, textAlign: 'center', fontFamily: fontFamily.headingSemibold, fontSize: 16, marginRight: 44 }}>{title ?? ''}</AppText>
     </View>
   );

@@ -12,6 +12,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface SheetProps extends PropsWithChildren {
   visible: boolean;
@@ -28,6 +29,7 @@ const DISMISS_THRESHOLD = 100;
  * backdrop tap, and safe-area bottom padding.
  */
 export function Sheet({ visible, onClose, children }: SheetProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const translateY = useSharedValue(400);
   const backdropOpacity = useSharedValue(0);
@@ -74,7 +76,7 @@ export function Sheet({ visible, onClose, children }: SheetProps) {
           lift above the keyboard instead of hiding under it. */}
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.backdrop }, backdropStyle]}>
-          <Pressable style={{ flex: 1 }} onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar" />
+          <Pressable style={{ flex: 1 }} onPress={close} accessibilityRole="button" accessibilityLabel={t('Cerrar')} />
         </Animated.View>
 
         <GestureDetector gesture={pan}>

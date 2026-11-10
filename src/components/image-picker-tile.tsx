@@ -7,6 +7,7 @@ import { AppText } from './app-text';
 
 import { colors, radius } from '@/theme/tokens';
 import { prepareImageUpload } from '@/utils/media-file';
+import { useI18n } from '@/i18n';
 
 export type PickedImage = { uri: string; name: string; type: string };
 
@@ -20,6 +21,7 @@ interface ImagePickerTileProps {
 }
 
 export function ImagePickerTile({ label, value, existingUrl, onChange, aspect = [1, 1], style }: ImagePickerTileProps) {
+  const { t } = useI18n();
   async function pick() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) return;
@@ -43,7 +45,7 @@ export function ImagePickerTile({ label, value, existingUrl, onChange, aspect = 
     <Pressable
       onPress={pick}
       accessibilityRole="button"
-      accessibilityLabel={previewUri ? `Cambiar ${label.toLowerCase()}` : `Agregar ${label.toLowerCase()}`}
+      accessibilityLabel={previewUri ? t('Cambiar {label}', { label: label.toLowerCase() }) : t('Agregar {label}', { label: label.toLowerCase() })}
       style={[
         {
           aspectRatio: aspect[0] / aspect[1],

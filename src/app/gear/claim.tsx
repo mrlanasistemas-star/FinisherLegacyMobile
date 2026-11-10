@@ -15,6 +15,7 @@ import { InlineError } from '@/components/ui/inline-error';
 import { FormInput } from '@/components/form-input';
 import { Skeleton } from '@/components/skeleton';
 import { useClaimGear, usePublicGear } from '@/hooks/use-gear';
+import { useI18n } from '@/i18n';
 import { colors, radius, spacing } from '@/theme/tokens';
 
 /**
@@ -23,6 +24,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
  * `?code=` (from "Tengo un código impreso") jumps straight to the preview.
  */
 export default function GearClaimScreen() {
+  const { t } = useI18n();
   const params = useLocalSearchParams<{ code?: string }>();
   const [manualCode, setManualCode] = useState('');
   const [detectedCode, setDetectedCode] = useState<string | null>(() => (params.code ? normalizeGearCode(params.code) : null));
@@ -55,7 +57,7 @@ export default function GearClaimScreen() {
         params: { uuid: owned.uuid, productName: owned.product_name, variantName: owned.variant_name ?? '' },
       });
     } catch (error) {
-      setClaimError(error instanceof AppError ? error.message : 'No pudimos reclamar este equipo.');
+      setClaimError(error instanceof AppError ? error.message : t('No pudimos reclamar este equipo.'));
     }
   }
 
@@ -63,7 +65,7 @@ export default function GearClaimScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={{ flexDirection: 'row', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
-          <Pressable onPress={reset} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cancelar">
+          <Pressable onPress={reset} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Cancelar')}>
             <X color={colors.foreground} size={26} />
           </Pressable>
         </View>
@@ -77,12 +79,12 @@ export default function GearClaimScreen() {
           ) : preview.isError || !preview.data ? (
             <View style={{ alignItems: 'center', gap: spacing.sm }}>
               <AppText variant="subtitle" align="center">
-                No encontramos este código
+                {t('No encontramos este código')}
               </AppText>
               <AppText variant="body" tone="muted" align="center">
-                Verifica el código e inténtalo de nuevo.
+                {t('Verifica el código e inténtalo de nuevo.')}
               </AppText>
-              <AppButton label="Probar otro código" variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
+              <AppButton label={t('Probar otro código')} variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
             </View>
           ) : !preview.data.claimable ? (
             <View style={{ alignItems: 'center', gap: spacing.sm }}>
@@ -91,9 +93,9 @@ export default function GearClaimScreen() {
                 {preview.data.product_name}
               </AppText>
               <AppText variant="body" tone="muted" align="center">
-                Este equipo ya fue reclamado por otro Legacy.
+                {t('Este equipo ya fue reclamado por otro Legacy.')}
               </AppText>
-              <AppButton label="Probar otro código" variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
+              <AppButton label={t('Probar otro código')} variant="secondary" onPress={reset} fullWidth={false} style={{ paddingHorizontal: spacing.xl, marginTop: spacing.sm }} />
             </View>
           ) : (
             <View style={{ alignItems: 'center', gap: spacing.sm }}>
@@ -109,8 +111,8 @@ export default function GearClaimScreen() {
 
               <InlineError message={claimError} />
 
-              <AppButton label="Reclamar este equipo" onPress={handleClaim} loading={claim.isPending} style={{ marginTop: spacing.md }} />
-              <AppButton label="Probar otro código" variant="ghost" onPress={reset} disabled={claim.isPending} />
+              <AppButton label={t('Reclamar este equipo')} onPress={handleClaim} loading={claim.isPending} style={{ marginTop: spacing.md }} />
+              <AppButton label={t('Probar otro código')} variant="ghost" onPress={reset} disabled={claim.isPending} />
             </View>
           )}
         </View>
@@ -121,44 +123,44 @@ export default function GearClaimScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
-        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('Cerrar')}>
           <X color={colors.foreground} size={26} />
         </Pressable>
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: spacing.lg, gap: spacing.xl, paddingBottom: insets.bottom + spacing.xl }}>
           <View style={{ gap: spacing.xs }}>
-            <AppText variant="eyebrow">Mi equipo</AppText>
+            <AppText variant="eyebrow">{t('Mi equipo')}</AppText>
             <AppText variant="title" accessibilityRole="header">
-              Conecta tu producto
+              {t('Conecta tu producto')}
             </AppText>
             <AppText variant="body" tone="muted">
-              Escribe el código impreso en la etiqueta de tu prenda o accesorio.
+              {t('Escribe el código impreso en la etiqueta de tu prenda o accesorio.')}
             </AppText>
           </View>
           <View style={{ gap: spacing.sm }}>
             <FormInput
-              label="Código del producto"
+              label={t('Código del producto')}
               icon={KeyRound}
               value={manualCode}
               onChangeText={(text) => setManualCode(text.toUpperCase())}
               autoCapitalize="characters"
               autoCorrect={false}
               autoFocus
-              placeholder="Ej. ASTXXXXXXXXXXXX"
+              placeholder={t('Ej. ASTXXXXXXXXXXXX')}
               returnKeyType="go"
               onSubmitEditing={submitManualCode}
             />
-            <AppButton label="Buscar" onPress={submitManualCode} disabled={manualCode.trim().length < 4} />
+            <AppButton label={t('Buscar')} onPress={submitManualCode} disabled={manualCode.trim().length < 4} />
           </View>
           <PressableScale
             onPress={() => router.replace('/activate' as Href)}
             accessibilityRole="button"
-            accessibilityLabel="¿Tu producto tiene NFC? Actívalo acercando tu teléfono"
+            accessibilityLabel={t('¿Tu producto tiene NFC? Actívalo acercando tu teléfono')}
             style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
             <Nfc size={22} color={colors.accent} />
             <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-              ¿Tu producto tiene NFC? Acerca tu teléfono a la etiqueta y se conectará solo.
+              {t('¿Tu producto tiene NFC? Acerca tu teléfono a la etiqueta y se conectará solo.')}
             </AppText>
             <ChevronRight size={18} color={colors.subtle} />
           </PressableScale>

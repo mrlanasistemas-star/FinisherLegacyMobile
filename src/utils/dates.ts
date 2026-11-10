@@ -1,5 +1,26 @@
-const SHORT_DATE = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
-const LONG_DATE = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+import { getRegionalLocale } from '@/i18n';
+
+const SHORT_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
+const LONG_DATE: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * A date formatter in the app's active language ("es-MX", "en-US"…), built
+ * once per language + shape. Never create `Intl.DateTimeFormat` at module
+ * scope: it would freeze the language the app started in.
+ */
+export function dateFormatter(name: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${getRegionalLocale()}|${name}`;
+  let formatter = formatters.get(key);
+
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(getRegionalLocale(), options);
+    formatters.set(key, formatter);
+  }
+
+  return formatter;
+}
 
 /**
  * Backend dates without a time component (event_date, "YYYY-MM-DD") must
@@ -21,7 +42,7 @@ export function isPastDate(value: string): boolean {
 
 export function formatShortDate(value: string): string {
   try {
-    return SHORT_DATE.format(parseDateOnly(value));
+    return dateFormatter('short-date', SHORT_DATE).format(parseDateOnly(value));
   } catch {
     return value;
   }
@@ -29,19 +50,19 @@ export function formatShortDate(value: string): string {
 
 export function formatLongDate(value: string): string {
   try {
-    return LONG_DATE.format(parseDateOnly(value));
+    return dateFormatter('long-date', LONG_DATE).format(parseDateOnly(value));
   } catch {
     return value;
   }
 }
 
-const DATE_TIME = new Intl.DateTimeFormat('es-MX', {
+const DATE_TIME: Intl.DateTimeFormatOptions = {
   day: 'numeric',
   month: 'short',
   year: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
-});
+};
 
 /**
  * Full ISO8601 timestamps (`created_at`, `read_at`, notification/support
@@ -52,7 +73,7 @@ const DATE_TIME = new Intl.DateTimeFormat('es-MX', {
  */
 export function formatDateTime(value: string): string {
   try {
-    return DATE_TIME.format(new Date(value));
+    return dateFormatter('date-time', DATE_TIME).format(new Date(value));
   } catch {
     return value;
   }

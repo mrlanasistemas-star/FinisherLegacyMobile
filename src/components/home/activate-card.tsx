@@ -18,6 +18,7 @@ import { AppText } from '@/components/app-text';
 import { TiltCard } from '@/components/motion/tilt-card';
 import { gradients } from '@/theme/gradients';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 const ACTIVATE_HREF = '/activate' as Href;
 
@@ -27,11 +28,12 @@ const ACTIVATE_HREF = '/activate' as Href;
  * radiating rings, leans toward your finger on press.
  */
 export function ActivateCard() {
+  const { t } = useI18n();
   return (
     <TiltCard
       onPress={() => router.push(ACTIVATE_HREF)}
-      accessibilityLabel="Activar mi Finisher Legacy"
-      accessibilityHint="Acerca tu pieza con NFC a tu teléfono para activarla"
+      accessibilityLabel={t('Activar mi Finisher Legacy')}
+      accessibilityHint={t('Acerca tu pieza con NFC a tu teléfono para activarla')}
       maxTilt={4}
       style={{ borderRadius: radius.xl, ...shadows.card }}>
       <LinearGradient
@@ -41,17 +43,17 @@ export function ActivateCard() {
         style={{ borderRadius: radius.xl, borderCurve: 'continuous', padding: spacing.lg, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
         <View style={{ flex: 1, gap: spacing.xs }}>
           <AppText variant="eyebrow" style={{ color: colors.gold }}>
-            NFC · Un toque
+            {t('NFC · Un toque')}
           </AppText>
           <AppText variant="subtitle" tone="onDark" style={{ fontSize: 20, lineHeight: 25 }}>
-            Activar mi Finisher Legacy
+            {t('Activar mi Finisher Legacy')}
           </AppText>
           <AppText variant="caption" tone="onDarkMuted">
-            Acerca tu Tag, Trisuit o Racepack a tu teléfono.
+            {t('Acerca tu Tag, Trisuit o Racepack a tu teléfono.')}
           </AppText>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: spacing.xxs }}>
             <AppText variant="caption" style={{ color: colors.goldSoft, fontWeight: '600' }}>
-              Empezar
+              {t('Empezar')}
             </AppText>
             <ChevronRight size={16} color={colors.goldSoft} />
           </View>

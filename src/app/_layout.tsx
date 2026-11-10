@@ -7,13 +7,15 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { localeScreenLayout } from '@/components/i18n/locale-boundary';
 import { OfflineBanner } from '@/components/ui/offline-banner';
 import { ToastHost } from '@/components/ui/toast';
+import { initializeI18n } from '@/i18n';
 import { QueryProvider } from '@/providers/query-provider';
 import { useAuthStore } from '@/stores/authStore';
 import { useDeepLinks } from '@/hooks/use-deep-links';
@@ -45,6 +47,8 @@ function RootNavigator() {
 
   return (
     <Stack
+      // A language change remounts each screen (never the navigator): see LocaleBoundary.
+      screenLayout={localeScreenLayout}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
@@ -108,6 +112,33 @@ function RootNavigator() {
   );
 }
 
+/**
+ * Restores the chosen language (or the phone's) and its catalog before the
+ * first text is drawn. `initializeI18n` never throws, and anything
+ * unexpected still resolves: the app then simply opens in Spanish.
+ */
+function useI18nBootstrap(): boolean {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    initializeI18n()
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) {
+          setReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return ready;
+}
+
 export default function RootLayout() {
   // Manual §4: Manrope (UI/body), Montserrat (headings), Syncopate Bold (brand moments only).
   const [fontsLoaded, fontError] = useFonts({
@@ -121,8 +152,9 @@ export default function RootLayout() {
     Syncopate_700Bold,
   });
   const sessionReady = useSessionBootstrap();
+  const i18nReady = useI18nBootstrap();
   // A font load failure must never brick the app — fall back to system fonts.
-  const appReady = (fontsLoaded || !!fontError) && sessionReady;
+  const appReady = (fontsLoaded || !!fontError) && sessionReady && i18nReady;
 
   useEffect(() => {
     if (appReady) {

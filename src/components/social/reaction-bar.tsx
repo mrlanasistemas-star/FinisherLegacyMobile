@@ -8,6 +8,7 @@ import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { LegacyMoment, ReactionType } from '@/types/social';
 import { showToast } from '@/stores/toastStore';
 import { AppError } from '@/api/errors';
+import { useI18n } from '@/i18n';
 
 interface ReactionBarProps {
   moment: LegacyMoment;
@@ -20,6 +21,7 @@ interface ReactionBarProps {
  * emoji picker. Optimistic, idempotent on the server.
  */
 export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
+  const { t } = useI18n();
   const reaction = useReaction();
 
   function toggle(type: ReactionType) {
@@ -28,7 +30,7 @@ export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
       { uuid: moment.uuid, type, active },
       {
         onError: (error) =>
-          showToast(error instanceof AppError && error.kind === 'network' ? error.message : 'No pudimos guardar tu reacción.', 'destructive'),
+          showToast(error instanceof AppError && error.kind === 'network' ? error.message : t('No pudimos guardar tu reacción.'), 'destructive'),
       },
     );
   }
@@ -39,14 +41,14 @@ export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xxs, marginLeft: -10 }}>
       <ReactionButton
-        label={liked ? 'Quitar me gusta' : 'Me gusta'}
+        label={liked ? t('Quitar me gusta') : t('Me gusta')}
         active={liked}
         count={moment.reactions.like}
         onPress={() => toggle('like')}
         icon={<Heart size={22} color={liked ? colors.destructive : colors.foreground} fill={liked ? colors.destructive : 'transparent'} strokeWidth={1.8} />}
       />
       <ReactionButton
-        label={cheered ? 'Quitar ¡vamos!' : '¡Vamos!'}
+        label={cheered ? t('Quitar ¡vamos!') : t('¡Vamos!')}
         active={cheered}
         count={moment.reactions.cheer}
         onPress={() => toggle('cheer')}
@@ -54,7 +56,7 @@ export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
       />
       {onComment ? (
         <ReactionButton
-          label="Mensajes de apoyo"
+          label={t('Mensajes de apoyo')}
           count={moment.comments_count}
           onPress={onComment}
           icon={<MessageCircle size={21} color={colors.foreground} strokeWidth={1.8} />}
@@ -66,7 +68,7 @@ export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
           scaleTo={0.98}
           onPress={onShare}
           accessibilityRole="button"
-          accessibilityLabel="Compartir momento"
+          accessibilityLabel={t('Compartir momento')}
           style={{ marginLeft: 'auto', minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
           <Share2 size={20} color={colors.foreground} strokeWidth={1.8} />
         </PressableScale>

@@ -16,6 +16,7 @@
  */
 
 import { submitIapPurchase, type SubmitPurchaseBody } from '@/api/iap';
+import { t } from '@/i18n';
 import type { IapPurchaseResult } from '@/schemas/iap';
 
 import { classifyStoreError, createExpoIapDriver, type IapDriver, type IapProduct, type IapPurchase, type IapStoreError } from './iap-driver';
@@ -94,10 +95,10 @@ export class IapService {
 
   async buy(params: { product: IapProduct; storyPublicId: string; accountToken: string | null; onVerifying?: () => void }): Promise<BuyResult> {
     if (this.active) {
-      return { kind: 'store_failed', error: { kind: 'unknown', code: 'busy', message: 'Ya hay una compra en curso.', productId: params.product.id } };
+      return { kind: 'store_failed', error: { kind: 'unknown', code: 'busy', message: t('Ya hay una compra en curso.'), productId: params.product.id } };
     }
     if (!(await this.ensureConnected())) {
-      return { kind: 'store_failed', error: { kind: 'network', code: 'not-connected', message: 'Sin conexión con la tienda', productId: params.product.id } };
+      return { kind: 'store_failed', error: { kind: 'network', code: 'not-connected', message: t('Sin conexión con la tienda'), productId: params.product.id } };
     }
 
     // Remembered BEFORE the store sheet opens: if the app dies mid-purchase,

@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { t } from '@/i18n';
 
 export const manualMedalSchema = z.object({
-  event_name_manual: z.string().min(1, 'Ingresa el nombre del evento.').max(255),
+  event_name_manual: z.string().min(1, { error: () => t('Ingresa el nombre del evento.') }).max(255),
   event_date: z.string().optional().or(z.literal('')),
   city: z.string().max(100).optional().or(z.literal('')),
   country: z.string().max(100).optional().or(z.literal('')),

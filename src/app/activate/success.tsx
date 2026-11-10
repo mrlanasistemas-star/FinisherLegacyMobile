@@ -11,6 +11,7 @@ import { GoldBurst } from '@/components/nfc/gold-burst';
 import { StepButton } from '@/components/nfc/step-button';
 import { webOrigin } from '@/features/nfc/use-activation';
 import { parseHttpUrl } from '@/features/nfc/url-policy';
+import { useI18n } from '@/i18n';
 import { colors, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 
@@ -27,6 +28,7 @@ function formatCode(code: string): string {
 
 /** Step 5 — activated, verified and confirmed by the backend. */
 export default function ActivationSuccessScreen() {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { tagCode = '', storyUrl, editUrl, storyId } = useLocalSearchParams<{ tagCode?: string; storyUrl?: string; editUrl?: string; storyId?: string }>();
   const completeUrl = ownUrl(editUrl) ?? ownUrl(storyUrl);
@@ -59,16 +61,16 @@ export default function ActivationSuccessScreen() {
 
         <Animated.View entering={FadeInDown.delay(180).springify().damping(20)} style={{ gap: spacing.sm, alignItems: 'center' }}>
           <AppText variant="label" style={{ color: colors.accent, letterSpacing: 2.5 }}>
-            ACTIVADO
+            {t('ACTIVADO')}
           </AppText>
           <AppText variant="title" align="center" accessibilityRole="header">
-            Tu Finisher Legacy ya es tuyo
+            {t('Tu Finisher Legacy ya es tuyo')}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
-            Quedó escrito y verificado. Cada vez que alguien lo acerque a su teléfono verá tu historia.
+            {t('Quedó escrito y verificado. Cada vez que alguien lo acerque a su teléfono verá tu historia.')}
           </AppText>
           {tagCode ? (
-            <AppText variant="caption" tone="muted" align="center" accessibilityLabel={`Código ${tagCode.split('').join(' ')}`}>
+            <AppText variant="caption" tone="muted" align="center" accessibilityLabel={t('Código {code}', { code: tagCode.split('').join(' ') })}>
               {formatCode(tagCode)}
             </AppText>
           ) : null}
@@ -76,8 +78,8 @@ export default function ActivationSuccessScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        {nativeStory || completeUrl ? <StepButton label="Completar mi recuerdo" onPress={completeStory} /> : null}
-        <StepButton label="Ir a mi Legacy" variant={nativeStory || completeUrl ? 'plain' : 'primary'} onPress={() => router.replace('/legacy')} />
+        {nativeStory || completeUrl ? <StepButton label={t('Completar mi recuerdo')} onPress={completeStory} /> : null}
+        <StepButton label={t('Ir a mi Legacy')} variant={nativeStory || completeUrl ? 'plain' : 'primary'} onPress={() => router.replace('/legacy')} />
       </View>
     </View>
   );

@@ -14,6 +14,7 @@ import { nativeNfcDriver } from '@/features/nfc/nfc-driver';
 import type { ActivationFailure } from '@/features/nfc/nfc-errors';
 import { webOrigin } from '@/features/nfc/use-activation';
 import { classifyFlUrl } from '@/features/nfc/url-policy';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 
@@ -30,6 +31,7 @@ type ReadNotice = { title: string; body: string; action?: 'activate' | 'settings
  * Printed codes from earlier plates/products still work by typing them.
  */
 export default function ScanScreen() {
+  const { t } = useI18n();
   const [code, setCode] = useState('');
   const [codeError, setCodeError] = useState<string | null>(null);
   const [reading, setReading] = useState(false);
@@ -76,8 +78,8 @@ export default function ScanScreen() {
       setPhase('idle');
       setNotice(
         outcome.blank
-          ? { title: 'Este Finisher Legacy aún no está activado', body: 'Actívalo con el código de la tarjeta que venía en tu empaque.', action: 'activate' }
-          : { title: 'No es un Finisher Legacy', body: 'Este chip tiene información de otra app o servicio. Acerca el tag que venía en tu empaque.' },
+          ? { title: t('Este Finisher Legacy aún no está activado'), body: t('Actívalo con el código de la tarjeta que venía en tu empaque.'), action: 'activate' }
+          : { title: t('No es un Finisher Legacy'), body: t('Este chip tiene información de otra app o servicio. Acerca el tag que venía en tu empaque.') },
       );
     } finally {
       setReading(false);
@@ -87,7 +89,7 @@ export default function ScanScreen() {
   function submitCode() {
     const normalized = extractLegacyCode(code) ?? normalizeManualCode(code);
     if (normalized.length < 4) {
-      setCodeError('Escribe el código completo, tal como aparece impreso.');
+      setCodeError(t('Escribe el código completo, tal como aparece impreso.'));
       return;
     }
     haptics.success();
@@ -99,18 +101,18 @@ export default function ScanScreen() {
   return (
     <ActivationShell
       stepKey="scan"
-      title="Leer mi Finisher Legacy"
-      leading={{ icon: X, label: 'Cerrar', onPress: close }}
+      title={t('Leer mi Finisher Legacy')}
+      leading={{ icon: X, label: t('Cerrar'), onPress: close }}
       footer={
         <>
-          {notice?.action === 'activate' ? <StepButton label="Activar mi Finisher Legacy" onPress={() => router.replace('/activate' as Href)} /> : null}
-          {notice?.action === 'settings' ? <StepButton label="Abrir ajustes de NFC" onPress={() => nativeNfcDriver().openSettings()} /> : null}
+          {notice?.action === 'activate' ? <StepButton label={t('Activar mi Finisher Legacy')} onPress={() => router.replace('/activate' as Href)} /> : null}
+          {notice?.action === 'settings' ? <StepButton label={t('Abrir ajustes de NFC')} onPress={() => nativeNfcDriver().openSettings()} /> : null}
           <StepButton
-            label={reading ? (PLATFORM === 'android' ? 'Cancelar lectura' : 'Buscando…') : 'Leer con NFC'}
+            label={reading ? (PLATFORM === 'android' ? t('Cancelar lectura') : t('Buscando…')) : t('Leer con NFC')}
             variant={notice?.action || reading ? 'secondary' : 'primary'}
             loading={reading && PLATFORM === 'ios'}
             onPress={reading ? () => nativeNfcDriver().endSession() : read}
-            accessibilityHint={reading ? 'Cancela la lectura' : 'Activa el lector NFC del teléfono'}
+            accessibilityHint={reading ? t('Cancela la lectura') : t('Activa el lector NFC del teléfono')}
           />
         </>
       }>
@@ -120,22 +122,22 @@ export default function ScanScreen() {
 
       <View style={{ gap: spacing.xs }} accessibilityLiveRegion="polite">
         <AppText variant="title" accessibilityRole="header">
-          {notice?.title ?? (reading ? 'Acerca tu Finisher Legacy' : 'Acerca tu teléfono al tag')}
+          {notice?.title ?? (reading ? t('Acerca tu Finisher Legacy') : t('Acerca tu teléfono al tag'))}
         </AppText>
         <AppText variant="body" tone="muted">
           {notice?.body ??
             (PLATFORM === 'ios'
-              ? 'Toca “Leer con NFC” y acerca el tag a la parte superior de tu iPhone.'
-              : 'Toca “Leer con NFC” y acerca el tag al centro de la parte trasera del teléfono.')}
+              ? t('Toca “Leer con NFC” y acerca el tag a la parte superior de tu iPhone.')
+              : t('Toca “Leer con NFC” y acerca el tag al centro de la parte trasera del teléfono.'))}
         </AppText>
       </View>
 
       <View style={styles.divider} />
 
       <View style={{ gap: spacing.xs }}>
-        <AppText variant="bodyStrong">¿Tu pieza trae un código impreso?</AppText>
+        <AppText variant="bodyStrong">{t('¿Tu pieza trae un código impreso?')}</AppText>
         <AppText variant="caption" tone="muted">
-          Legacy Plates y productos anteriores se conectan escribiendo su código.
+          {t('Legacy Plates y productos anteriores se conectan escribiendo su código.')}
         </AppText>
         <View style={[styles.field, codeError ? { borderColor: colors.destructive } : null]}>
           <KeyRound size={18} color={colors.accent} strokeWidth={1.8} />
@@ -145,14 +147,14 @@ export default function ScanScreen() {
               setCode(text.toUpperCase());
               if (codeError) setCodeError(null);
             }}
-            placeholder="Ej. Q8K2MX7P"
+            placeholder={t('Ej. Q8K2MX7P')}
             placeholderTextColor={colors.subtle}
             autoCapitalize="characters"
             autoCorrect={false}
             autoComplete="off"
             returnKeyType="go"
             onSubmitEditing={submitCode}
-            accessibilityLabel="Código impreso"
+            accessibilityLabel={t('Código impreso')}
             style={styles.input}
           />
         </View>
@@ -161,7 +163,7 @@ export default function ScanScreen() {
             {codeError}
           </AppText>
         ) : null}
-        <StepButton label="Usar código" variant="secondary" onPress={submitCode} disabled={code.trim().length < 4} />
+        <StepButton label={t('Usar código')} variant="secondary" onPress={submitCode} disabled={code.trim().length < 4} />
       </View>
     </ActivationShell>
   );

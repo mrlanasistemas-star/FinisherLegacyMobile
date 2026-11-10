@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useReducer, useRef } from 'react';
 
 import { getIapOffer, getMyStories, getStory, getStoryQuota, type IapKind } from '@/api/iap';
+import { t } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 
@@ -199,7 +200,7 @@ export function useIapRecovery() {
       service
         .recover()
         .then((outcomes) => {
-          if (grantedCount(outcomes) > 0) showToast('Aplicamos una compra pendiente: tu recuerdo tiene más espacio para fotos.', 'success');
+          if (grantedCount(outcomes) > 0) showToast(t('Aplicamos una compra pendiente: tu recuerdo tiene más espacio para fotos.'), 'success');
         })
         .catch(() => {});
     }

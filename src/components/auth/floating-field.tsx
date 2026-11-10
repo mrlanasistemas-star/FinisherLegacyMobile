@@ -5,6 +5,7 @@ import Animated, { interpolate, interpolateColor, useAnimatedStyle, useReducedMo
 
 import { AppText } from '@/components/app-text';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 type Kind = 'text' | 'email' | 'password' | 'new-password' | 'name';
 
@@ -34,6 +35,7 @@ export const FloatingField = forwardRef<TextInput, FloatingFieldProps>(function 
   { label, error, kind = 'text', value, onFocus, onBlur, editable = true, ...rest },
   ref,
 ) {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(true);
@@ -110,7 +112,7 @@ export const FloatingField = forwardRef<TextInput, FloatingFieldProps>(function 
             hitSlop={8}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -10 }}
             accessibilityRole="button"
-            accessibilityLabel={hidden ? 'Mostrar contraseña' : 'Ocultar contraseña'}>
+            accessibilityLabel={hidden ? t('Mostrar contraseña') : t('Ocultar contraseña')}>
             {hidden ? <EyeOff size={18} color={colors.subtle} /> : <Eye size={18} color={colors.subtle} />}
           </Pressable>
         ) : null}

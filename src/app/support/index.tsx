@@ -23,8 +23,10 @@ import { useCreateSupportSession, useSupportSessions } from '@/hooks/use-support
 import { spacing } from '@/theme/tokens';
 import { describeSupportStatus } from '@/utils/support-status';
 import type { SupportSessionSummary } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 function SessionRow({ session, onPress }: { session: SupportSessionSummary; onPress: () => void }) {
+  const { t } = useI18n();
   const statusCopy = describeSupportStatus(session.status);
 
   return (
@@ -36,15 +38,16 @@ function SessionRow({ session, onPress }: { session: SupportSessionSummary; onPr
         <Badge label={statusCopy.label} variant={statusCopy.variant} />
       </View>
       <AppText variant="caption" tone="muted">
-        {[session.allow_text ? 'Mensajes de texto' : null, session.allow_audio ? 'Mensajes de voz' : null]
+        {[session.allow_text ? t('Mensajes de texto') : null, session.allow_audio ? t('Mensajes de voz') : null]
           .filter(Boolean)
-          .join(' · ') || 'Sin canales activos'}
+          .join(' · ') || t('Sin canales activos')}
       </AppText>
     </Card>
   );
 }
 
 export default function SupportScreen() {
+  const { t } = useI18n();
   const { data, isPending, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useSupportSessions();
   const createSession = useCreateSupportSession();
@@ -58,7 +61,7 @@ export default function SupportScreen() {
   async function handleCreate() {
     setFormError(null);
     if (title.trim().length === 0) {
-      setFormError('Ponle un nombre a tu sesión de apoyo.');
+      setFormError(t('Ponle un nombre a tu sesión de apoyo.'));
       return;
     }
     try {
@@ -67,18 +70,18 @@ export default function SupportScreen() {
       setTitle('');
       router.push(`/support/${session.id}`);
     } catch (error) {
-      setFormError(error instanceof AppError ? error.message : 'No pudimos crear tu sesión de apoyo.');
+      setFormError(error instanceof AppError ? error.message : t('No pudimos crear tu sesión de apoyo.'));
     }
   }
 
   const header = (
     <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm }}>
-      <ScreenHeader title="Mi equipo de apoyo" />
+      <ScreenHeader title={t('Mi equipo de apoyo')} />
       <MascotTip
         id="support-intro"
-        message="Las personas que te apoyan pueden dejarte mensajes que aparecen mientras corres. Comparte tu código con ellas."
+        message={t('Las personas que te apoyan pueden dejarte mensajes que aparecen mientras corres. Comparte tu código con ellas.')}
       />
-      <AppButton label="Nueva sesión de apoyo" icon={Plus} size="md" onPress={() => setCreating(true)} fullWidth={false} />
+      <AppButton label={t('Nueva sesión de apoyo')} icon={Plus} size="md" onPress={() => setCreating(true)} fullWidth={false} />
     </View>
   );
 
@@ -86,22 +89,22 @@ export default function SupportScreen() {
     <Screen edges={['top', 'left', 'right']} padded={false}>
       {isPending ? (
         <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg }}>
-          <ScreenHeader title="Mi equipo de apoyo" />
+          <ScreenHeader title={t('Mi equipo de apoyo')} />
           <Skeleton height={90} radius={16} />
           <Skeleton height={90} radius={16} />
         </View>
       ) : isError ? (
         <View>
           {header}
-          <ErrorState message="No pudimos cargar tu equipo de apoyo." onRetry={refetch} />
+          <ErrorState message={t('No pudimos cargar tu equipo de apoyo.')} onRetry={refetch} />
         </View>
       ) : sessions.length === 0 ? (
         <View>
           {header}
           <EmptyState
             icon={HeartHandshake}
-            title="Aún no tienes sesiones de apoyo"
-            message="Crea una para que tu gente pueda dejarte mensajes durante tu próxima carrera."
+            title={t('Aún no tienes sesiones de apoyo')}
+            message={t('Crea una para que tu gente pueda dejarte mensajes durante tu próxima carrera.')}
           />
         </View>
       ) : (
@@ -124,14 +127,14 @@ export default function SupportScreen() {
 
       <Sheet visible={creating} onClose={() => setCreating(false)}>
         <View style={{ gap: spacing.md, paddingBottom: spacing.md }}>
-          <AppText variant="subtitle">Nueva sesión de apoyo</AppText>
-          <FormInput label="Nombre" value={title} onChangeText={setTitle} placeholder="Ej. Maratón CDMX 2026" />
+          <AppText variant="subtitle">{t('Nueva sesión de apoyo')}</AppText>
+          <FormInput label={t('Nombre')} value={title} onChangeText={setTitle} placeholder={t('Ej. Maratón CDMX 2026')} />
           {formError ? (
             <AppText variant="caption" tone="destructive">
               {formError}
             </AppText>
           ) : null}
-          <AppButton label="Crear" onPress={handleCreate} loading={createSession.isPending} />
+          <AppButton label={t('Crear')} onPress={handleCreate} loading={createSession.isPending} />
         </View>
       </Sheet>
     </Screen>

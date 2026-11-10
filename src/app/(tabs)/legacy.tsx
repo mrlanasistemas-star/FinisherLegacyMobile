@@ -28,6 +28,7 @@ import { useMyGear } from '@/hooks/use-gear';
 import { useProfile } from '@/hooks/use-profile';
 import { colors, spacing } from '@/theme/tokens';
 import type { AthleteHistoryRow } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 type TimelineItem = { kind: 'year'; key: string; year: string } | { kind: 'race'; key: string; row: AthleteHistoryRow; first: boolean };
 
@@ -56,6 +57,7 @@ function toTimeline(rows: AthleteHistoryRow[]): TimelineItem[] {
  * "+" away. Works from cache offline (profile + latest legacy persist).
  */
 export default function RecuerdosScreen() {
+  const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useScrollY();
   const [addOpen, setAddOpen] = useState(false);
@@ -109,16 +111,16 @@ export default function RecuerdosScreen() {
   const header = (
     <View style={{ gap: spacing.xl, paddingBottom: spacing.lg }}>
       <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
-        <AppText variant="eyebrow">Tu historia</AppText>
+        <AppText variant="eyebrow">{t('Tu historia')}</AppText>
         <AppText variant="display" accessibilityRole="header">
-          Mis recuerdos
+          {t('Mis recuerdos')}
         </AppText>
 
         {stats ? (
           <View style={{ flexDirection: 'row', gap: spacing.lg, marginTop: spacing.lg, padding: spacing.md, borderRadius: 16, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
-            <MetricNumber value={stats.event_count} label={stats.event_count === 1 ? 'Carrera' : 'Carreras'} size={30} tone="gold" animate />
-            <MetricNumber value={stats.medal_count} label={stats.medal_count === 1 ? 'Medalla' : 'Medallas'} size={30} animate />
-            {stats.total_distance_km ? <MetricNumber value={Math.round(stats.total_distance_km)} label="Kilómetros" size={30} animate /> : null}
+            <MetricNumber value={stats.event_count} label={tc('Carrera|Carreras', stats.event_count)} size={30} tone="gold" animate />
+            <MetricNumber value={stats.medal_count} label={tc('Medalla|Medallas', stats.medal_count)} size={30} animate />
+            {stats.total_distance_km ? <MetricNumber value={Math.round(stats.total_distance_km)} label={t('Kilómetros')} size={30} animate /> : null}
           </View>
         ) : profile.isPending ? (
           <Skeleton width={220} height={44} style={{ marginTop: spacing.md }} />
@@ -132,8 +134,8 @@ export default function RecuerdosScreen() {
       {medalList.length > 0 ? (
         <View>
           <SectionHeader
-            title="Medallas"
-            actionLabel={stats?.medal_count ? `Ver ${stats.medal_count}` : 'Ver todo'}
+            title={t('Medallas')}
+            actionLabel={stats?.medal_count ? t('Ver {count}', { count: stats.medal_count }) : t('Ver todo')}
             onAction={() => router.push('/medals')}
             style={{ paddingHorizontal: spacing.lg }}
           />
@@ -145,7 +147,7 @@ export default function RecuerdosScreen() {
         </View>
       ) : null}
 
-      {rows.length > 0 ? <SectionHeader title="Tu historia" actionLabel="Lista" onAction={() => router.push('/my-events')} style={{ paddingHorizontal: spacing.lg, marginBottom: -spacing.md }} /> : null}
+      {rows.length > 0 ? <SectionHeader title={t('Tu historia')} actionLabel={t('Lista')} onAction={() => router.push('/my-events')} style={{ paddingHorizontal: spacing.lg, marginBottom: -spacing.md }} /> : null}
     </View>
   );
 
@@ -173,20 +175,20 @@ export default function RecuerdosScreen() {
               <Skeleton height={228} radius={22} />
             </View>
           ) : myEvents.isError && !myEvents.data ? (
-            <ErrorState error={myEvents.error} message="No pudimos cargar tu historia." onRetry={myEvents.refetch} />
+            <ErrorState error={myEvents.error} message={t('No pudimos cargar tu historia.')} onRetry={myEvents.refetch} />
           ) : isEmpty ? (
             <EmptyState
               icon={Sparkles}
-              title="Tus recuerdos empiezan aquí"
-              message="Activa tu pieza Finisher Legacy con NFC o participa en un evento: tus resultados, fotos y equipo aparecerán aquí."
-              actionLabel="Activar mi pieza"
+              title={t('Tus recuerdos empiezan aquí')}
+              message={t('Activa tu pieza Finisher Legacy con NFC o participa en un evento: tus resultados, fotos y equipo aparecerán aquí.')}
+              actionLabel={t('Activar mi pieza')}
               onAction={() => router.push('/activate' as Href)}
-              secondaryLabel="Agregar una medalla"
+              secondaryLabel={t('Agregar una medalla')}
               onSecondary={() => router.push('/medals/create')}
             />
           ) : (
             <AppText variant="body" tone="muted" style={{ paddingHorizontal: spacing.lg }}>
-              Cuando participes en un evento Finisher Legacy, tus resultados aparecerán aquí.
+              {t('Cuando participes en un evento Finisher Legacy, tus resultados aparecerán aquí.')}
             </AppText>
           )
         }
@@ -194,21 +196,21 @@ export default function RecuerdosScreen() {
 
       <ScrollHeader
         scrollY={scrollY}
-        title="Mis recuerdos"
+        title={t('Mis recuerdos')}
         threshold={70}
-        right={<IconButton icon={Plus} label="Agregar a mis recuerdos" onPress={() => setAddOpen(true)} color={colors.accent} />}
+        right={<IconButton icon={Plus} label={t('Agregar a mis recuerdos')} onPress={() => setAddOpen(true)} color={colors.accent} />}
       />
 
       {addOpen ? (
         <Sheet visible onClose={() => setAddOpen(false)}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
-            Agregar a mis recuerdos
+            {t('Agregar a mis recuerdos')}
           </AppText>
-          <SheetActionRow icon={Nfc} label="Activar una pieza con NFC" onPress={() => go('/activate' as Href)} />
-          <SheetActionRow icon={Award} label="Agregar medalla" onPress={() => go('/medals/create')} />
-          <SheetActionRow icon={PenLine} label="Compartir un momento" onPress={() => go('/moments/create')} />
-          <SheetActionRow icon={Flag} label="Ver todas mis carreras" onPress={() => go('/my-events')} />
-          <SheetActionRow icon={KeyRound} label="Tengo un código impreso" onPress={() => go('/legacy/scan')} />
+          <SheetActionRow icon={Nfc} label={t('Activar una pieza con NFC')} onPress={() => go('/activate' as Href)} />
+          <SheetActionRow icon={Award} label={t('Agregar medalla')} onPress={() => go('/medals/create')} />
+          <SheetActionRow icon={PenLine} label={t('Compartir un momento')} onPress={() => go('/moments/create')} />
+          <SheetActionRow icon={Flag} label={t('Ver todas mis carreras')} onPress={() => go('/my-events')} />
+          <SheetActionRow icon={KeyRound} label={t('Tengo un código impreso')} onPress={() => go('/legacy/scan')} />
         </Sheet>
       ) : null}
     </View>

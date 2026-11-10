@@ -1,3 +1,4 @@
+import { getRegionalLocale } from '@/i18n';
 import { parseTagDesign } from '@/schemas/store';
 import { palette } from '@/theme/tokens';
 
@@ -17,9 +18,10 @@ export interface TagFace {
   monogramUrl: string | null;
 }
 
+/** The phrase engraved on the physical piece: part of the product, not interface text — never translated. */
 export const DEFAULT_BACK_LINE = 'TU HISTORIA SIGUE VIVA';
 
-const upper = (value: string) => value.toLocaleUpperCase('es-MX');
+const upper = (value: string) => value.toLocaleUpperCase(getRegionalLocale());
 
 interface TagFaceFallback {
   /** Used for the name line when the product has no `tag_design` (product or collection name). */

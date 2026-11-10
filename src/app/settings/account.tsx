@@ -27,6 +27,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import { prepareImageUpload } from '@/utils/media-file';
+import { useI18n } from '@/i18n';
 
 type ImageSlot = 'avatar' | 'cover';
 /** `undefined` = unchanged, `null` = remove, file = replace. */
@@ -35,6 +36,7 @@ type ImageChange = UploadFile | null | undefined;
 const BIO_MAX = 500;
 
 export default function EditProfileScreen() {
+  const { t } = useI18n();
   const { data, isPending } = useProfile();
   const user = useAuthStore((s) => s.user);
   const insets = useSafeAreaInsets();
@@ -82,7 +84,7 @@ export default function EditProfileScreen() {
     setImageSheet(null);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      showToast('Necesitamos acceso a tus fotos para cambiar la imagen.', 'default');
+      showToast(t('Necesitamos acceso a tus fotos para cambiar la imagen.'), 'default');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -120,7 +122,7 @@ export default function EditProfileScreen() {
       });
       setAvatar(undefined);
       setCover(undefined);
-      showToast('Listo. Tu perfil está actualizado.', 'success');
+      showToast(t('Listo. Tu perfil está actualizado.'), 'success');
       router.back();
     } catch (error) {
       if (error instanceof AppError && error.fieldErrors) {
@@ -130,9 +132,9 @@ export default function EditProfileScreen() {
           }
         }
         const imageError = error.fieldErrors.profile_photo?.[0] ?? error.fieldErrors.cover_photo?.[0];
-        setFormError(imageError ?? 'Revisa los campos marcados.');
+        setFormError(imageError ?? t('Revisa los campos marcados.'));
       } else {
-        setFormError(error instanceof AppError ? error.message : 'No pudimos guardar tu perfil. Intenta otra vez.');
+        setFormError(error instanceof AppError ? error.message : t('No pudimos guardar tu perfil. Intenta otra vez.'));
       }
     }
   }
@@ -141,7 +143,7 @@ export default function EditProfileScreen() {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={{ paddingHorizontal: spacing.lg }}>
-          <TopBar title="Editar perfil" />
+          <TopBar title={t('Editar perfil')} />
         </View>
         <Skeleton height={160} radius={0} />
       </SafeAreaView>
@@ -152,22 +154,22 @@ export default function EditProfileScreen() {
     <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar
-          title="Editar perfil"
-          right={<HeaderTextButton label="Guardar" onPress={handleSubmit(onSubmit)} loading={update.isPending} disabled={!hasChanges} />}
+          title={t('Editar perfil')}
+          right={<HeaderTextButton label={t('Guardar')} onPress={handleSubmit(onSubmit)} loading={update.isPending} disabled={!hasChanges} />}
         />
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
           {/* Cover */}
-          <Pressable onPress={() => setImageSheet('cover')} accessibilityRole="button" accessibilityLabel="Cambiar foto de portada" style={{ height: 160, marginHorizontal: spacing.md, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
+          <Pressable onPress={() => setImageSheet('cover')} accessibilityRole="button" accessibilityLabel={t('Cambiar foto de portada')} style={{ height: 160, marginHorizontal: spacing.md, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
             {coverPreview ? (
               <Image source={{ uri: coverPreview }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} />
             ) : (
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                 <ImagePlus size={24} color={colors.muted} />
                 <AppText variant="caption" tone="muted">
-                  Agregar portada
+                  {t('Agregar portada')}
                 </AppText>
               </View>
             )}
@@ -178,7 +180,7 @@ export default function EditProfileScreen() {
 
           {/* Avatar overlapping the cover */}
           <View style={{ paddingHorizontal: spacing.lg, marginTop: -48, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md }}>
-            <Pressable onPress={() => setImageSheet('avatar')} accessibilityRole="button" accessibilityLabel="Cambiar foto de perfil">
+            <Pressable onPress={() => setImageSheet('avatar')} accessibilityRole="button" accessibilityLabel={t('Cambiar foto de perfil')}>
               <Avatar uri={avatarPreview} name={user?.name} size={96} style={{ borderWidth: 4, borderColor: colors.background }} />
               <View style={{ position: 'absolute', right: 2, bottom: 2, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.background }}>
                 <Camera size={14} color={colors.black} />
@@ -186,7 +188,7 @@ export default function EditProfileScreen() {
             </Pressable>
             <Pressable onPress={() => setImageSheet('avatar')} accessibilityRole="button" style={{ paddingBottom: spacing.sm, minHeight: 44, justifyContent: 'flex-end' }}>
               <AppText variant="bodyStrong" tone="gold">
-                Cambiar foto
+                {t('Cambiar foto')}
               </AppText>
             </Pressable>
           </View>
@@ -199,13 +201,13 @@ export default function EditProfileScreen() {
               name="username"
               render={({ field }) => (
                 <FormInput
-                  label="Nombre de usuario"
+                  label={t('Nombre de usuario')}
                   kind="username"
                   value={field.value}
                   onChangeText={(value) => field.onChange(value.replace(/\s/g, '').toLowerCase())}
                   onBlur={field.onBlur}
                   error={errors.username?.message}
-                  hint={field.value ? `finisherlegacy.com/@${field.value}` : 'Letras, números, punto y guion bajo.'}
+                  hint={field.value ? `finisherlegacy.com/@${field.value}` : t('Letras, números, punto y guion bajo.')}
                   maxLength={30}
                   trailing={null}
                 />
@@ -218,7 +220,7 @@ export default function EditProfileScreen() {
               render={({ field }) => (
                 <FormInput
                   label="Bio"
-                  placeholder="Maratonista, 3 medallas de Boston en la mira…"
+                  placeholder={t('Maratonista, 3 medallas de Boston en la mira…')}
                   value={field.value}
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
@@ -232,7 +234,7 @@ export default function EditProfileScreen() {
 
             {/* Privacy lives only in Configuración › Privacidad (no duplicate toggle here). */}
             <ListGroup>
-              <ListRow icon={MapPin} label="Ubicación" value={locationLabel || 'Agregar'} onPress={() => setLocationOpen(true)} />
+              <ListRow icon={MapPin} label={t('Ubicación')} value={locationLabel || t('Agregar')} onPress={() => setLocationOpen(true)} />
             </ListGroup>
           </View>
         </ScrollView>
@@ -241,11 +243,11 @@ export default function EditProfileScreen() {
       {imageSheet ? (
         <Sheet visible onClose={() => setImageSheet(null)}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
-            {imageSheet === 'avatar' ? 'Foto de perfil' : 'Foto de portada'}
+            {imageSheet === 'avatar' ? t('Foto de perfil') : t('Foto de portada')}
           </AppText>
-          <SheetActionRow icon={ImagePlus} label="Elegir de mis fotos" onPress={() => pick(imageSheet)} />
+          <SheetActionRow icon={ImagePlus} label={t('Elegir de mis fotos')} onPress={() => pick(imageSheet)} />
           {(imageSheet === 'avatar' ? avatarPreview : coverPreview) ? (
-            <SheetActionRow icon={Trash2} label="Quitar foto" destructive onPress={() => remove(imageSheet)} />
+            <SheetActionRow icon={Trash2} label={t('Quitar foto')} destructive onPress={() => remove(imageSheet)} />
           ) : null}
         </Sheet>
       ) : null}
@@ -253,23 +255,23 @@ export default function EditProfileScreen() {
       {locationOpen ? (
         <Sheet visible onClose={() => setLocationOpen(false)}>
           <View style={{ gap: spacing.md, paddingBottom: spacing.sm }}>
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 18 }}>Ubicación</AppText>
+            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 18 }}>{t('Ubicación')}</AppText>
             <Controller
               control={control}
               name="city"
-              render={({ field }) => <FormInput label="Ciudad" kind="name" placeholder="Cuernavaca" value={field.value} onChangeText={field.onChange} error={errors.city?.message} returnKeyType="next" />}
+              render={({ field }) => <FormInput label={t('Ciudad')} kind="name" placeholder="Cuernavaca" value={field.value} onChangeText={field.onChange} error={errors.city?.message} returnKeyType="next" />}
             />
             <Controller
               control={control}
               name="state"
-              render={({ field }) => <FormInput label="Estado" kind="name" placeholder="Morelos" value={field.value} onChangeText={field.onChange} error={errors.state?.message} returnKeyType="next" />}
+              render={({ field }) => <FormInput label={t('Estado')} kind="name" placeholder="Morelos" value={field.value} onChangeText={field.onChange} error={errors.state?.message} returnKeyType="next" />}
             />
             <Controller
               control={control}
               name="country"
-              render={({ field }) => <FormInput label="País" kind="name" placeholder="México" value={field.value} onChangeText={field.onChange} error={errors.country?.message} returnKeyType="done" />}
+              render={({ field }) => <FormInput label={t('País')} kind="name" placeholder="México" value={field.value} onChangeText={field.onChange} error={errors.country?.message} returnKeyType="done" />}
             />
-            <AppButton label="Listo" size="md" onPress={() => setLocationOpen(false)} />
+            <AppButton label={t('Listo')} size="md" onPress={() => setLocationOpen(false)} />
           </View>
         </Sheet>
       ) : null}

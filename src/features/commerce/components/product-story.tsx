@@ -4,16 +4,18 @@ import { Pressable, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { AppText } from '@/components/app-text';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, radius, spacing, springs } from '@/theme/tokens';
 import type { ProductContentSection } from '@/types/models';
 import { haptics } from '@/utils/haptics';
 
 /** "Producto conectado" pill — over media or inline. */
 export function NfcBadge({ floating = false }: { floating?: boolean }) {
+  const { t } = useI18n();
   return (
     <View
       accessible
-      accessibilityLabel="Producto conectado con NFC"
+      accessibilityLabel={t('Producto conectado con NFC')}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -38,17 +40,18 @@ export function NfcBadge({ floating = false }: { floating?: boolean }) {
  * tap-to-open link; everything bought lands in Mi Equipo.
  */
 export function GearPromise({ connected, isLegacyPlate }: { connected: boolean; isLegacyPlate: boolean }) {
+  const { t } = useI18n();
   const rows = [
-    { icon: ShieldCheck, title: 'Queda en Mi Equipo', body: 'Al confirmarse tu pago, el producto aparece en tu equipo con la fecha en que lo recibiste.' },
-    { icon: Sparkles, title: 'Se une a tus carreras', body: 'Márcalo en cada evento en el que lo usaste y forma parte de tu legado.' },
+    { icon: ShieldCheck, title: t('Queda en Mi Equipo'), body: t('Al confirmarse tu pago, el producto aparece en tu equipo con la fecha en que lo recibiste.') },
+    { icon: Sparkles, title: t('Se une a tus carreras'), body: t('Márcalo en cada evento en el que lo usaste y forma parte de tu legado.') },
     ...(connected
       ? [
           {
             icon: Smartphone,
-            title: isLegacyPlate ? 'Acerca tu teléfono' : 'Producto conectado',
+            title: isLegacyPlate ? t('Acerca tu teléfono') : t('Producto conectado'),
             body: isLegacyPlate
-              ? 'Tu Legacy Plate abre tu resultado, tus fotos y tu historia con solo acercar un teléfono.'
-              : 'Tiene NFC: al acercar tu teléfono lo activas y queda vinculado a tu perfil.',
+              ? t('Tu Legacy Plate abre tu resultado, tus fotos y tu historia con solo acercar un teléfono.')
+              : t('Tiene NFC: al acercar tu teléfono lo activas y queda vinculado a tu perfil.'),
           },
         ]
       : []),
@@ -56,7 +59,7 @@ export function GearPromise({ connected, isLegacyPlate }: { connected: boolean; 
 
   return (
     <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
-      <AppText variant="eyebrow">Qué se guarda en tu legado</AppText>
+      <AppText variant="eyebrow">{t('Qué se guarda en tu legado')}</AppText>
       {rows.map(({ icon: Icon, title, body }) => (
         <View key={title} style={{ flexDirection: 'row', gap: spacing.sm }}>
           <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>

@@ -22,7 +22,7 @@ import {
   meterCaption,
   meterRatio,
   meterText,
-  PLAN_EXPIRED_MESSAGE,
+  planExpiredMessage,
   planState,
   slotsLeft,
 } from './quota';
@@ -121,7 +121,7 @@ describe('plans', () => {
   it('asks calmly to renew an expired plan', () => {
     const expired = bucket({ remaining: 0, plan: { billing_period: 'semiannual', expires_at: '2026-01-01', expired: true, renewable: true } });
     expect(planState(expired)).toEqual({ status: 'expired', renewable: true });
-    expect(meterCaption('photos', expired)).toBe(PLAN_EXPIRED_MESSAGE);
+    expect(meterCaption('photos', expired)).toBe(planExpiredMessage());
   });
 
   it('labels the billing period shown next to the store price', () => {

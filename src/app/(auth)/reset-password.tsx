@@ -11,6 +11,7 @@ import { AuthFormError, AuthShell } from '@/components/auth/auth-shell';
 import { FormInput } from '@/components/form-input';
 import { colors, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
+import { useI18n } from '@/i18n';
 
 /**
  * New password from the reset email. Opened by the deep link
@@ -18,6 +19,7 @@ import { haptics } from '@/utils/haptics';
  * token from the email link.
  */
 export default function ResetPasswordScreen() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const params = useLocalSearchParams<{ token?: string; email?: string }>();
   const [email, setEmail] = useState(params.email ?? '');
@@ -33,11 +35,11 @@ export default function ResetPasswordScreen() {
     setError(null);
     setFieldErrors({});
     if (password.length < 8) {
-      setFieldErrors({ password: 'Usa al menos 8 caracteres.' });
+      setFieldErrors({ password: t('Usa al menos 8 caracteres.') });
       return;
     }
     if (password !== confirmation) {
-      setFieldErrors({ password_confirmation: 'Las contraseñas no coinciden.' });
+      setFieldErrors({ password_confirmation: t('Las contraseñas no coinciden.') });
       return;
     }
     setSaving(true);
@@ -50,9 +52,9 @@ export default function ResetPasswordScreen() {
         const mapped: Record<string, string> = {};
         for (const [field, messages] of Object.entries(caught.fieldErrors)) mapped[field] = messages[0];
         setFieldErrors(mapped);
-        if (mapped.email && !mapped.password) setError('El enlace ya no es válido o expiró. Pide uno nuevo.');
+        if (mapped.email && !mapped.password) setError(t('El enlace ya no es válido o expiró. Pide uno nuevo.'));
       } else {
-        setError(caught instanceof AppError ? caught.message : 'No pudimos cambiar tu contraseña. Intenta otra vez.');
+        setError(caught instanceof AppError ? caught.message : t('No pudimos cambiar tu contraseña. Intenta otra vez.'));
       }
     } finally {
       setSaving(false);
@@ -63,10 +65,10 @@ export default function ResetPasswordScreen() {
     return (
       <AuthShell
         back={false}
-        eyebrow="Listo"
-        title="Contraseña actualizada"
-        subtitle="Por seguridad cerramos tu sesión en otros dispositivos. Entra con tu nueva contraseña."
-        footer={<AppButton label="Iniciar sesión" onPress={() => router.replace('/login')} />}>
+        eyebrow={t('Listo')}
+        title={t('Contraseña actualizada')}
+        subtitle={t('Por seguridad cerramos tu sesión en otros dispositivos. Entra con tu nueva contraseña.')}
+        footer={<AppButton label={t('Iniciar sesión')} onPress={() => router.replace('/login')} />}>
         <Animated.View entering={reduceMotion ? FadeIn : ZoomIn.springify().damping(14)} style={{ alignItems: 'center', paddingVertical: spacing.lg }}>
           <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.successWash, alignItems: 'center', justifyContent: 'center' }}>
             <CircleCheck size={40} color={colors.success} strokeWidth={1.6} />
@@ -78,17 +80,17 @@ export default function ResetPasswordScreen() {
 
   return (
     <AuthShell
-      eyebrow="Recuperar acceso"
-      title="Crea una nueva contraseña"
-      footer={<AppButton label="Guardar contraseña" onPress={submit} loading={saving} />}>
+      eyebrow={t('Recuperar acceso')}
+      title={t('Crea una nueva contraseña')}
+      footer={<AppButton label={t('Guardar contraseña')} onPress={submit} loading={saving} />}>
       <AuthFormError message={error} />
-      {!params.email ? <FormInput label="Correo electrónico" kind="email" placeholder="tu@correo.com" value={email} onChangeText={setEmail} error={fieldErrors.email} /> : null}
+      {!params.email ? <FormInput label={t('Correo electrónico')} kind="email" placeholder="tu@correo.com" value={email} onChangeText={setEmail} error={fieldErrors.email} /> : null}
       {!params.token ? (
-        <FormInput label="Código del correo" hint="Está al final del enlace que te enviamos." autoCapitalize="none" autoCorrect={false} value={token} onChangeText={setToken} error={fieldErrors.token} />
+        <FormInput label={t('Código del correo')} hint={t('Está al final del enlace que te enviamos.')} autoCapitalize="none" autoCorrect={false} value={token} onChangeText={setToken} error={fieldErrors.token} />
       ) : null}
-      <FormInput label="Nueva contraseña" icon={Lock} kind="new-password" value={password} onChangeText={setPassword} error={fieldErrors.password} hint="Mínimo 8 caracteres." />
+      <FormInput label={t('Nueva contraseña')} icon={Lock} kind="new-password" value={password} onChangeText={setPassword} error={fieldErrors.password} hint={t('Mínimo 8 caracteres.')} />
       <FormInput
-        label="Confirma tu contraseña"
+        label={t('Confirma tu contraseña')}
         icon={Lock}
         kind="new-password"
         value={confirmation}

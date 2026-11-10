@@ -7,6 +7,7 @@ import { PressableScale } from '@/components/motion/pressable-scale';
 import { formatShortDate } from '@/utils/dates';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { Medal } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 interface MedalHeroTileProps {
   medal: Medal;
@@ -16,7 +17,8 @@ interface MedalHeroTileProps {
 
 /** Medal as a trophy/object, not a miniature icon — used in the Home carousel (AGENTS.md §19/§20). */
 export function MedalHeroTile({ medal, onPress, width = 168 }: MedalHeroTileProps) {
-  const title = medal.title ?? medal.event_name ?? medal.event_name_manual ?? 'Medalla';
+  const { t } = useI18n();
+  const title = medal.title ?? medal.event_name ?? medal.event_name_manual ?? t('Medalla');
 
   return (
     <PressableScale onPress={onPress} haptic accessibilityRole="button" accessibilityLabel={title} style={{ width }}>

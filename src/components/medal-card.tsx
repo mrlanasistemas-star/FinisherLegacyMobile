@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { AppText } from './app-text';
 import { PressableScale } from './motion/pressable-scale';
 
+import { useI18n } from '@/i18n';
 import { formatShortDate } from '@/utils/dates';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { Medal } from '@/types/models';
@@ -17,7 +18,8 @@ interface MedalCardProps {
 
 /** The medal as an object on a warm plinth, with its title on clean white below — light, gallery-like. */
 export function MedalCard({ medal, onPress, aspectRatio = 1 }: MedalCardProps) {
-  const title = medal.title ?? medal.event_name ?? medal.event_name_manual ?? 'Medalla';
+  const { t } = useI18n();
+  const title = medal.title ?? medal.event_name ?? medal.event_name_manual ?? t('Medalla');
 
   return (
     <PressableScale

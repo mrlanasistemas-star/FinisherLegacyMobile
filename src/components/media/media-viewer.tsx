@@ -12,6 +12,7 @@ import { AppText } from '@/components/app-text';
 import { GlassSurface } from '@/components/brand/glass-surface';
 import { colors, spacing } from '@/theme/tokens';
 import type { AthleteEventMedia } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -89,6 +90,7 @@ interface MediaViewerProps {
  * effect (React's documented "resetting state with a key" pattern).
  */
 export function MediaViewer({ visible, items, initialIndex, onClose, onOpenActions }: MediaViewerProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const [activeIndex, setActiveIndex] = useState(initialIndex);
   const listRef = useRef<FlatList<AthleteEventMedia>>(null);
@@ -139,7 +141,7 @@ export function MediaViewer({ visible, items, initialIndex, onClose, onOpenActio
             justifyContent: 'space-between',
           }}>
           <GlassSurface style={{ width: 40, height: 40 }}>
-            <Pressable onPress={onClose} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Cerrar">
+            <Pressable onPress={onClose} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel={t('Cerrar')}>
               <X color={colors.foreground} size={20} />
             </Pressable>
           </GlassSurface>
@@ -149,7 +151,7 @@ export function MediaViewer({ visible, items, initialIndex, onClose, onOpenActio
               <GlassSurface style={{ paddingHorizontal: spacing.sm, height: 32, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Lock color={colors.muted} size={13} />
                 <AppText variant="caption" tone="muted">
-                  Sólo yo
+                  {t('Sólo yo')}
                 </AppText>
               </GlassSurface>
             ) : null}
@@ -160,7 +162,7 @@ export function MediaViewer({ visible, items, initialIndex, onClose, onOpenActio
                   onPress={() => onOpenActions(activeItem)}
                   style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
                   accessibilityRole="button"
-                  accessibilityLabel="Más acciones">
+                  accessibilityLabel={t('Más acciones')}>
                   <MoreVertical color={colors.foreground} size={18} />
                 </Pressable>
               </GlassSurface>

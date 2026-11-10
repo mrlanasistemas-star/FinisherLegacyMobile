@@ -5,8 +5,9 @@ import { Text, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { PressScale } from '@/components/motion/press-scale';
-import { PLATE_STATUS_LABEL } from '@/components/my-event-row';
+import { plateStatusLabel } from '@/components/my-event-row';
 import { Badge } from '@/components/ui/badge';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import type { AthleteHistoryRow } from '@/types/models';
 import { formatLongDate } from '@/utils/dates';
@@ -25,13 +26,18 @@ interface LegacyTimelineCardProps {
  * it goes to the full event story (result, media, gear, Legacy Plate, apoyo).
  */
 export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPress, compact = false }: LegacyTimelineCardProps) {
+  const { t } = useI18n();
   const year = row.event_date ? row.event_date.slice(0, 4) : '';
   const time = row.result?.official_time ?? null;
   const position = row.result?.overall_position ?? null;
-  const plate = row.legacy_plate_status ? (PLATE_STATUS_LABEL[row.legacy_plate_status] ?? null) : null;
+  const plate = row.legacy_plate_status ? plateStatusLabel(row.legacy_plate_status, t) : null;
 
   return (
-    <PressScale onPress={onPress} haptic scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`${row.event ?? 'Evento'}${time ? `, tiempo oficial ${time}` : ''}. Ver la historia completa`}>
+    <PressScale onPress={onPress} haptic scaleTo={0.98} accessibilityRole="button" accessibilityLabel={
+        time
+          ? t('{event}, tiempo oficial {time}. Ver la historia completa', { event: row.event ?? t('Evento'), time })
+          : t('{event}. Ver la historia completa', { event: row.event ?? t('Evento') })
+      }>
       <View style={{ borderRadius: radius.xl, borderCurve: 'continuous', overflow: 'hidden', borderWidth: 1, borderColor: colors.hairline, backgroundColor: colors.card, minHeight: compact ? 0 : 228 }}>
         <LinearGradient
           colors={[colors.card, colors.card, '#FBFAF6']}
@@ -59,14 +65,14 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
         <View style={{ padding: spacing.lg, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <AppText variant="eyebrow" style={{ flex: 1 }} numberOfLines={1}>
-              {row.event_date ? formatLongDate(row.event_date).toUpperCase() : 'TU CARRERA'}
+              {row.event_date ? formatLongDate(row.event_date).toUpperCase() : t('TU CARRERA')}
             </AppText>
             <ChevronRight size={18} color={colors.subtle} />
           </View>
 
           <View style={{ gap: 2 }}>
             <AppText variant="title" style={{ fontSize: compact ? 22 : 26, lineHeight: compact ? 27 : 31 }} numberOfLines={2}>
-              {row.event ?? 'Evento'}
+              {row.event ?? t('Evento')}
             </AppText>
             {[row.race, row.edition].filter(Boolean).length > 0 ? (
               <AppText variant="body" tone="muted" numberOfLines={1}>
@@ -80,7 +86,7 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
               <View>
                 <Text style={{ fontFamily: fontFamily.heading, fontSize: compact ? 32 : 42, lineHeight: compact ? 36 : 46, color: colors.foreground, letterSpacing: -1 }}>{time}</Text>
                 <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
-                  TIEMPO OFICIAL
+                  {t('TIEMPO OFICIAL')}
                 </AppText>
               </View>
               {position ? (
@@ -90,21 +96,21 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
                     <Text style={{ fontFamily: fontFamily.heading, fontSize: 22, color: colors.foreground }}>{position}°</Text>
                   </View>
                   <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
-                    GENERAL
+                    {t('GENERAL')}
                   </AppText>
                 </View>
               ) : null}
             </View>
           ) : (
             <AppText variant="caption" tone="muted">
-              Tu resultado aparecerá aquí en cuanto sea oficial.
+              {t('Tu resultado aparecerá aquí en cuanto sea oficial.')}
             </AppText>
           )}
 
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.xs }}>
-            <Count icon={MedalIcon} count={row.medal_count} label="medallas" />
-            <Count icon={Camera} count={row.media_count} label="recuerdos" />
-            <Count icon={Shirt} count={row.gear_count} label="equipo" />
+            <Count icon={MedalIcon} count={row.medal_count} label={t('{count} medallas', { count: row.medal_count })} />
+            <Count icon={Camera} count={row.media_count} label={t('{count} recuerdos', { count: row.media_count })} />
+            <Count icon={Shirt} count={row.gear_count} label={t('{count} equipo', { count: row.gear_count })} />
             {plate ? <Badge label={`Legacy Plate · ${plate}`} variant="gold" /> : null}
           </View>
         </View>
@@ -116,7 +122,7 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
 function Count({ icon: Icon, count, label }: { icon: typeof MedalIcon; count: number; label: string }) {
   if (count <= 0) return null;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} accessibilityLabel={`${count} ${label}`}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }} accessibilityLabel={label}>
       <Icon color={colors.muted} size={15} />
       <AppText variant="caption" tone="muted">
         {count}

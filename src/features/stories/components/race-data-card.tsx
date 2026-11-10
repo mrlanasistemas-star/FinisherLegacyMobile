@@ -10,6 +10,7 @@ import { BadgeCheck } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { useI18n, type Translate } from '@/i18n';
 import type { EditableStory, StoryTextField } from '@/schemas/story';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 
@@ -24,35 +25,41 @@ function ordinal(value: string | null): string | null {
   return /^\d+$/.test(value) ? `${value}.º` : value;
 }
 
-function cells(story: EditableStory): Cell[] {
+function cells(t: Translate, story: EditableStory): Cell[] {
   const candidates: (Cell | { field: StoryTextField; label: string; value: null })[] = [
-    { field: 'pace', label: 'Ritmo', value: story.pace },
-    { field: 'distance', label: 'Distancia', value: story.distance },
-    { field: 'result_position', label: 'Posición general', value: ordinal(story.result_position) },
-    { field: 'category', label: 'Categoría', value: story.category },
-    { field: 'category_position', label: 'Posición en categoría', value: ordinal(story.category_position) },
-    { field: 'gender_position', label: 'Posición por rama', value: ordinal(story.gender_position) },
+    { field: 'pace', label: t('Ritmo'), value: story.pace },
+    { field: 'distance', label: t('Distancia'), value: story.distance },
+    { field: 'result_position', label: t('Posición general'), value: ordinal(story.result_position) },
+    { field: 'category', label: t('Categoría'), value: story.category },
+    { field: 'category_position', label: t('Posición en categoría'), value: ordinal(story.category_position) },
+    { field: 'gender_position', label: t('Posición por rama'), value: ordinal(story.gender_position) },
   ];
   return candidates.filter((cell): cell is Cell => !!cell.value);
 }
 
+/** Only counts cells: the labels are not shown, so no translation is needed here. */
+const untranslated: Translate = (source) => source;
+
 export function hasRaceData(story: EditableStory): boolean {
-  return !!(story.result_time || story.bib_number || story.athlete_display_name || cells(story).length > 0);
+  return !!(story.result_time || story.bib_number || story.athlete_display_name || cells(untranslated, story).length > 0);
 }
 
 function OfficialMark() {
+  const { t } = useI18n();
+
   return (
-    <View accessible accessibilityLabel="Dato oficial" style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+    <View accessible accessibilityLabel={t('Dato oficial')} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
       <BadgeCheck size={13} color={colors.accent} strokeWidth={2.1} />
       <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.bold, fontSize: 10, letterSpacing: 1, color: colors.accent, textTransform: 'uppercase' }}>
-        Oficial
+        {t('Oficial')}
       </AppText>
     </View>
   );
 }
 
 export function RaceDataCard({ story }: { story: EditableStory }) {
-  const grid = cells(story);
+  const { t } = useI18n();
+  const grid = cells(t, story);
   const official = (field: StoryTextField) => story.official[field] === true;
   const anyOfficial = Object.keys(story.official).length > 0;
 
@@ -79,10 +86,10 @@ export function RaceDataCard({ story }: { story: EditableStory }) {
           {story.bib_number ? (
             <View
               accessible
-              accessibilityLabel={`Dorsal ${story.bib_number}`}
+              accessibilityLabel={t('Dorsal {number}', { number: story.bib_number })}
               style={{ alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderCurve: 'continuous', backgroundColor: colors.black, minWidth: 64 }}>
               <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.bold, fontSize: 8.5, letterSpacing: 1.6, color: colors.gold, textTransform: 'uppercase' }}>
-                Dorsal
+                {t('Dorsal')}
               </AppText>
               <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.headingBlack, fontSize: 18, lineHeight: 22, color: colors.onDark, fontVariant: ['tabular-nums'] }}>
                 {story.bib_number}
@@ -96,7 +103,7 @@ export function RaceDataCard({ story }: { story: EditableStory }) {
         <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <AppText variant="eyebrow" tone="subtle">
-              Tiempo
+              {t('Tiempo')}
             </AppText>
             {official('result_time') ? <OfficialMark /> : null}
           </View>
@@ -104,7 +111,7 @@ export function RaceDataCard({ story }: { story: EditableStory }) {
             adjustsFontSizeToFit
             numberOfLines={1}
             maxFontSizeMultiplier={1.15}
-            accessibilityLabel={`Tiempo ${story.result_time}`}
+            accessibilityLabel={t('Tiempo {time}', { time: story.result_time })}
             style={{ fontFamily: fontFamily.headingBlack, fontSize: 52, lineHeight: 58, letterSpacing: -1.5, color: colors.foreground, fontVariant: ['tabular-nums'] }}>
             {story.result_time}
           </AppText>
@@ -119,7 +126,7 @@ export function RaceDataCard({ story }: { story: EditableStory }) {
               <View
                 key={cell.field}
                 accessible
-                accessibilityLabel={`${cell.label}: ${cell.value}${official(cell.field) ? ', dato oficial' : ''}`}
+                accessibilityLabel={official(cell.field) ? t('{label}: {value}, dato oficial', { label: cell.label, value: cell.value }) : `${cell.label}: ${cell.value}`}
                 style={{
                   width: grid.length % 2 === 1 && index === grid.length - 1 ? '100%' : '50%',
                   paddingHorizontal: spacing.lg,
@@ -148,7 +155,7 @@ export function RaceDataCard({ story }: { story: EditableStory }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.hairline }}>
           <BadgeCheck size={14} color={colors.accent} strokeWidth={2} />
           <AppText variant="caption" tone="subtle" style={{ flex: 1, fontSize: 12.5 }}>
-            Resultado oficial publicado por el evento.
+            {t('Resultado oficial publicado por el evento.')}
           </AppText>
         </View>
       ) : null}

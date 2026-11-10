@@ -5,6 +5,7 @@ import { Pressable, TextInput, View, type TextInputProps, type ViewStyle } from 
 import { AppText } from './app-text';
 
 import { colors, control, fontFamily, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 /**
  * Presets that set the right keyboard, autofill and capitalization for a
@@ -76,6 +77,7 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
   },
   ref,
 ) {
+  const { t } = useI18n();
   const isPassword = secure || kind === 'password' || kind === 'new-password';
   const [hidden, setHidden] = useState(true);
   const [focused, setFocused] = useState(false);
@@ -156,7 +158,7 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
             hitSlop={10}
             style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
             accessibilityRole="button"
-            accessibilityLabel="Borrar texto">
+            accessibilityLabel={t('Borrar texto')}>
             <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
               <X size={12} color={colors.foreground} strokeWidth={2.5} />
             </View>
@@ -169,7 +171,7 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
             hitSlop={8}
             style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}
             accessibilityRole="button"
-            accessibilityLabel={hidden ? 'Mostrar contraseña' : 'Ocultar contraseña'}>
+            accessibilityLabel={hidden ? t('Mostrar contraseña') : t('Ocultar contraseña')}>
             {hidden ? <EyeOff size={18} color={iconColor} /> : <Eye size={18} color={iconColor} />}
           </Pressable>
         ) : null}

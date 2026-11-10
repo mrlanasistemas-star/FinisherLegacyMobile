@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { registerPushDevice } from '@/api/pushDevices';
 import { ensureNotificationChannels } from '@/features/push/notification-channels';
 import { useUiStore } from '@/stores/uiStore';
+import { t } from '@/i18n';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
 
@@ -52,8 +53,8 @@ export async function registerForPush({ prompt }: { prompt: boolean }): Promise<
       ok: false,
       reason: 'unavailable',
       message: Device.isDevice
-        ? 'Esta versión de la app todavía no puede recibir avisos.'
-        : 'Los avisos sólo funcionan en un teléfono físico.',
+        ? t('Esta versión de la app todavía no puede recibir avisos.')
+        : t('Los avisos sólo funcionan en un teléfono físico.'),
     };
   }
 
@@ -64,14 +65,14 @@ export async function registerForPush({ prompt }: { prompt: boolean }): Promise<
       permission = status === 'granted' ? 'granted' : 'denied';
     }
     if (permission !== 'granted') {
-      return { ok: false, reason: 'denied', message: 'Activa las notificaciones de Finisher Legacy en los ajustes de tu teléfono.' };
+      return { ok: false, reason: 'denied', message: t('Activa las notificaciones de Finisher Legacy en los ajustes de tu teléfono.') };
     }
 
     await ensureNotificationChannels();
     const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: getEasProjectId() as string });
     return await storeToken(token);
   } catch {
-    return { ok: false, reason: 'error', message: 'No pudimos activar los avisos. Intenta de nuevo.' };
+    return { ok: false, reason: 'error', message: t('No pudimos activar los avisos. Intenta de nuevo.') };
   }
 }
 
@@ -90,6 +91,6 @@ export async function storeToken(token: string): Promise<PushRegistrationResult>
     useUiStore.getState().setPushDeviceUuid(device.uuid);
     return { ok: true, deviceUuid: device.uuid };
   } catch {
-    return { ok: false, reason: 'error', message: 'No pudimos activar los avisos. Intenta de nuevo.' };
+    return { ok: false, reason: 'error', message: t('No pudimos activar los avisos. Intenta de nuevo.') };
   }
 }

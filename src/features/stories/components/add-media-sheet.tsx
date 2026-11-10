@@ -13,10 +13,11 @@ import { View } from 'react-native';
 import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { Sheet } from '@/components/ui/sheet';
+import { useI18n, type Translate } from '@/i18n';
 import type { MediaQuota } from '@/schemas/story';
 import { colors, spacing } from '@/theme/tokens';
 
-import { humanDuration, kindNoun } from '../quota';
+import { humanDuration, remainingShort } from '../quota';
 
 export type AddAction = 'photos' | 'video' | 'purchased';
 
@@ -84,28 +85,33 @@ function Row({ icon: Icon, label, detail, onPress, divider = true, trailing: Tra
   );
 }
 
-function roomLabel(remaining: number, kind: 'photos' | 'videos'): string {
-  if (remaining <= 0) return kind === 'photos' ? 'Llegaste al límite de fotos' : 'Llegaste al límite de videos';
-  return `${remaining === 1 ? 'Queda' : 'Quedan'} ${remaining} ${kindNoun(kind, remaining)}`;
+function roomLabel(t: Translate, remaining: number, kind: 'photos' | 'videos'): string {
+  if (remaining <= 0) return kind === 'photos' ? t('Llegaste al límite de fotos') : t('Llegaste al límite de videos');
+  return remainingShort(kind, remaining);
 }
 
 export function AddMediaSheet({ visible, onClose, quota, pendingPhotos, pendingVideos, hasVoiceMessage, onPick }: AddMediaSheetProps) {
   const photosLeft = Math.max(0, quota.photos.remaining - pendingPhotos);
   const videosLeft = Math.max(0, quota.videos.remaining - pendingVideos);
-  const videoMax = quota.videos.max_seconds ? ` · hasta ${humanDuration(quota.videos.max_seconds)}` : '';
+  const { t } = useI18n();
+  const videoRoom = roomLabel(t, videosLeft, 'videos');
+  const videoDetail =
+    videosLeft > 0 && quota.videos.max_seconds
+      ? t('{room} · hasta {duration}', { room: videoRoom, duration: humanDuration(quota.videos.max_seconds) })
+      : videoRoom;
 
   return (
     <Sheet visible={visible} onClose={onClose}>
       <AppText variant="subtitle" accessibilityRole="header" style={{ marginBottom: spacing.xxs }}>
-        Agregar a mi recuerdo
+        {t('Agregar a mi recuerdo')}
       </AppText>
-      <Row icon={ImageIcon} label="Fotos de mi teléfono" detail={roomLabel(photosLeft, 'photos')} onPress={() => onPick('photos')} />
-      <Row icon={Video} label="Video de mi teléfono" detail={`${roomLabel(videosLeft, 'videos')}${videosLeft > 0 ? videoMax : ''}`} onPress={() => onPick('video')} />
-      <Row icon={ShoppingBag} label="Fotos que compré" detail="Las que compraste a los fotógrafos del evento" onPress={() => onPick('purchased')} />
+      <Row icon={ImageIcon} label={t('Fotos de mi teléfono')} detail={roomLabel(t, photosLeft, 'photos')} onPress={() => onPick('photos')} />
+      <Row icon={Video} label={t('Video de mi teléfono')} detail={videoDetail} onPress={() => onPick('video')} />
+      <Row icon={ShoppingBag} label={t('Fotos que compré')} detail={t('Las que compraste a los fotógrafos del evento')} onPress={() => onPick('purchased')} />
       <Row
         icon={Mic}
-        label="Mensaje de voz"
-        detail={hasVoiceMessage ? 'Ya tienes uno. Para cambiarlo, entra a finisherlegacy.com' : 'Por ahora se agrega desde finisherlegacy.com'}
+        label={t('Mensaje de voz')}
+        detail={hasVoiceMessage ? t('Ya tienes uno. Para cambiarlo, entra a finisherlegacy.com') : t('Por ahora se agrega desde finisherlegacy.com')}
         divider={false}
         trailing={Globe}
       />

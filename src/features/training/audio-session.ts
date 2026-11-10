@@ -27,6 +27,8 @@
 
 import type { InterruptionMode } from 'expo-audio';
 
+import { t } from '@/i18n';
+
 import type { MixMode } from './audio-driver';
 
 export type AudioPhase = 'off' | 'keepAlive' | 'message' | 'paused';
@@ -72,8 +74,8 @@ export function lockScreenControlsAvailable(os: Os, mixMode: MixMode): boolean {
 export function mixModeCaption(os: Os, mixMode: MixMode): string {
   if (mixMode === 'mix') {
     return os === 'ios'
-      ? 'Tu música baja un momento con cada mensaje; en iPhone, sin controles en la pantalla bloqueada.'
-      : 'Tu música baja un momento con cada mensaje; los controles siguen en la pantalla bloqueada.';
+      ? t('Tu música baja un momento con cada mensaje; en iPhone, sin controles en la pantalla bloqueada.')
+      : t('Tu música baja un momento con cada mensaje; los controles siguen en la pantalla bloqueada.');
   }
-  return 'Tu música se pausa en cada mensaje; en la pantalla bloqueada, ⏩ y ⏪ cambian de mensaje.';
+  return t('Tu música se pausa en cada mensaje; en la pantalla bloqueada, ⏩ y ⏪ cambian de mensaje.');
 }

@@ -17,6 +17,7 @@ import { colors, radius, spacing } from '@/theme/tokens';
 import type { MediaEntitlement } from '@/types/models';
 import { prepareImageUpload, prepareVideoUpload, type UploadDescriptor } from '@/utils/media-file';
 import { ensureOnline } from '@/utils/network';
+import { useI18n } from '@/i18n';
 
 interface PickedAsset extends UploadDescriptor {
   kind: 'image' | 'video';
@@ -38,6 +39,7 @@ function megabytes(bytes: number): string {
 }
 
 export function MediaUploadSheet({ visible, onClose, participantId, entitlement, onLimitReached }: MediaUploadSheetProps) {
+  const { t } = useI18n();
   const [asset, setAsset] = useState<PickedAsset | null>(null);
   const [uploadedUuid, setUploadedUuid] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -69,7 +71,7 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
 
     const permission = source === 'camera' ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      setError('Necesitamos tu permiso para continuar.');
+      setError(t('Necesitamos tu permiso para continuar.'));
       return;
     }
 
@@ -89,11 +91,11 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
 
     const prepared = prepareVideoUpload(picked, 'recuerdo');
     if (bucket && bucket.allowed_mimes.length > 0 && !bucket.allowed_mimes.includes(prepared.type)) {
-      setError('Ese formato de video no es compatible. Usa MP4 o MOV.');
+      setError(t('Ese formato de video no es compatible. Usa MP4 o MOV.'));
       return;
     }
     if (bucket && picked.fileSize && picked.fileSize > bucket.max_bytes) {
-      setError(`Este video pesa más de ${megabytes(bucket.max_bytes)}. Elige uno más corto o recórtalo.`);
+      setError(t('Este video pesa más de {size}. Elige uno más corto o recórtalo.', { size: megabytes(bucket.max_bytes) }));
       return;
     }
     setAsset({ ...prepared, kind: 'video', width: picked.width, height: picked.height });
@@ -107,7 +109,7 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
       await ensureOnline();
       const media = await upload.mutateAsync({ file: { uri: asset.uri, name: asset.name, type: asset.type }, isPublic: true, onProgress: setProgress });
       setUploadedUuid(media.uuid);
-      showToast(asset.kind === 'image' ? 'Ese momento ya forma parte de tu Legacy.' : 'Ahora puedes volver a vivir esa meta.', 'success');
+      showToast(asset.kind === 'image' ? t('Ese momento ya forma parte de tu Legacy.') : t('Ahora puedes volver a vivir esa meta.'), 'success');
     } catch (caught) {
       if (caught instanceof AppError && caught.code === 'MEDIA_LIMIT_REACHED') {
         close();
@@ -115,10 +117,10 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
         return;
       }
       if (caught instanceof AppError && caught.code === 'MEDIA_TOO_LARGE') {
-        setError('El archivo es demasiado grande. Elige uno más ligero.');
+        setError(t('El archivo es demasiado grande. Elige uno más ligero.'));
         return;
       }
-      setError(caught instanceof AppError ? caught.message : 'No pudimos subir tu archivo. Intenta otra vez.');
+      setError(caught instanceof AppError ? caught.message : t('No pudimos subir tu archivo. Intenta otra vez.'));
     }
   }
 
@@ -128,13 +130,13 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
         <View style={{ paddingBottom: spacing.lg, gap: spacing.md, alignItems: 'center' }}>
           <CircleCheck size={40} color={colors.accent} />
           <AppText variant="subtitle" align="center">
-            Guardado en tu Legacy
+            {t('Guardado en tu Legacy')}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
-            ¿Quieres compartirlo con tu comunidad?
+            {t('¿Quieres compartirlo con tu comunidad?')}
           </AppText>
           <AppButton
-            label="Compartir como Legacy Moment"
+            label={t('Compartir como Legacy Moment')}
             icon={Share2}
             onPress={() => {
               const target = `/moments/create?type=race_completed&participantId=${participantId}&mediaUuids=${uploadedUuid}` as const;
@@ -142,26 +144,31 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
               router.push(target);
             }}
           />
-          <AppButton label="Ahora no" variant="ghost" onPress={close} />
+          <AppButton label={t('Ahora no')} variant="ghost" onPress={close} />
         </View>
       ) : !asset ? (
         <View style={{ paddingBottom: spacing.sm }}>
           <AppText variant="subtitle" style={{ marginBottom: spacing.xs }}>
-            Agregar recuerdo
+            {t('Agregar recuerdo')}
           </AppText>
           {entitlement ? (
             <AppText variant="caption" tone="muted" style={{ marginBottom: spacing.xs }}>
-              Fotos {entitlement.images.used}/{entitlement.images.limit} · Videos {entitlement.videos.used}/{entitlement.videos.limit}
+              {t('Fotos {imagesUsed}/{imagesLimit} · Videos {videosUsed}/{videosLimit}', {
+                imagesUsed: entitlement.images.used,
+                imagesLimit: entitlement.images.limit,
+                videosUsed: entitlement.videos.used,
+                videosLimit: entitlement.videos.limit,
+              })}
             </AppText>
           ) : null}
-          <SheetActionRow icon={Camera} label="Tomar foto" onPress={() => pick('camera')} />
-          <SheetActionRow icon={ImagePlus} label="Elegir foto" onPress={() => pick('library-image')} />
-          <SheetActionRow icon={Video} label="Elegir video" onPress={() => pick('library-video')} />
+          <SheetActionRow icon={Camera} label={t('Tomar foto')} onPress={() => pick('camera')} />
+          <SheetActionRow icon={ImagePlus} label={t('Elegir foto')} onPress={() => pick('library-image')} />
+          <SheetActionRow icon={Video} label={t('Elegir video')} onPress={() => pick('library-video')} />
           <InlineError message={error} />
         </View>
       ) : (
         <View style={{ paddingBottom: spacing.lg, gap: spacing.md }}>
-          <AppText variant="subtitle">Confirmar recuerdo</AppText>
+          <AppText variant="subtitle">{t('Confirmar recuerdo')}</AppText>
 
           {asset.kind === 'image' ? (
             <Image
@@ -173,7 +180,7 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
             <View style={{ width: '100%', height: 180, borderRadius: radius.md, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
               <Video color={colors.accent} size={32} />
               <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xs }}>
-                Video listo para subir
+                {t('Video listo para subir')}
               </AppText>
             </View>
           )}
@@ -184,7 +191,7 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
                 <View style={{ height: '100%', width: `${progress}%`, backgroundColor: colors.gold }} />
               </View>
               <AppText variant="caption" tone="muted">
-                Subiendo… {progress}%
+                {t('Subiendo… {progress}%', { progress })}
               </AppText>
             </View>
           ) : null}
@@ -192,8 +199,8 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
           <InlineError message={error} onRetry={error && !upload.isPending ? confirmUpload : undefined} />
 
           <View style={{ gap: spacing.sm }}>
-            <AppButton label="Subir" onPress={confirmUpload} loading={upload.isPending} />
-            <AppButton label="Elegir otro" variant="ghost" onPress={reset} disabled={upload.isPending} />
+            <AppButton label={t('Subir')} onPress={confirmUpload} loading={upload.isPending} />
+            <AppButton label={t('Elegir otro')} variant="ghost" onPress={reset} disabled={upload.isPending} />
           </View>
         </View>
       )}

@@ -16,11 +16,12 @@ import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { PhotoExpansionSheet } from '@/features/iap/photo-expansion-sheet';
 import { usePhotoExpansion } from '@/features/iap/use-photo-expansion';
+import { useI18n } from '@/i18n';
 import { QUOTA_KINDS, type MediaQuota, type QuotaBucket, type QuotaKind } from '@/schemas/story';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 
-import { isFull, kindLabel, limitMessage, meterCaption, meterRatio, meterText, PLAN_EXPIRED_MESSAGE, planState } from '../quota';
+import { expandActionLabel, isFull, kindLabel, limitMessage, meterAccessibilityLabel, meterCaption, meterRatio, meterText, planExpiredMessage, planState } from '../quota';
 
 const ICONS: Record<QuotaKind, LucideIcon> = { photos: ImageIcon, videos: Video, audio: Mic };
 
@@ -41,6 +42,7 @@ interface KindMeterProps {
 }
 
 function KindMeter({ publicId, kind, bucket, openRequest, onGranted, divider }: KindMeterProps) {
+  const { t } = useI18n();
   const plan = planState(bucket);
   const expired = plan.status === 'expired';
   const sellable = bucket.can_expand || (expired && plan.renewable);
@@ -64,7 +66,7 @@ function KindMeter({ publicId, kind, bucket, openRequest, onGranted, divider }: 
   useEffect(() => {
     if (!requested || canOffer || requestedAt === null || told.current === requestedAt) return;
     told.current = requestedAt;
-    showToast(expired ? PLAN_EXPIRED_MESSAGE : limitMessage(kind));
+    showToast(expired ? planExpiredMessage() : limitMessage(kind));
   }, [requested, requestedAt, canOffer, expired, kind]);
 
   useEffect(() => {
@@ -84,7 +86,7 @@ function KindMeter({ publicId, kind, bucket, openRequest, onGranted, divider }: 
           {kindLabel(kind)}
         </AppText>
         <AppText
-          accessibilityLabel={`${bucket.used} de ${bucket.limit} ${kindLabel(kind).toLowerCase()}`}
+          accessibilityLabel={meterAccessibilityLabel(kind, bucket)}
           style={{ fontFamily: fontFamily.semibold, fontSize: 15, color: colors.foreground, fontVariant: ['tabular-nums'] }}>
           {meterText(bucket)}
         </AppText>
@@ -104,8 +106,8 @@ function KindMeter({ publicId, kind, bucket, openRequest, onGranted, divider }: 
             scaleTo={0.94}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel={expired ? `Renovar plan de ${kindLabel(kind).toLowerCase()}` : `Ampliar ${kindLabel(kind).toLowerCase()}`}>
-            <AppText style={{ fontFamily: fontFamily.bold, fontSize: 13, color: colors.accent }}>{expired ? 'Renovar' : 'Ampliar'}</AppText>
+            accessibilityLabel={expandActionLabel(kind, expired)}>
+            <AppText style={{ fontFamily: fontFamily.bold, fontSize: 13, color: colors.accent }}>{expired ? t('Renovar') : t('Ampliar')}</AppText>
           </PressableScale>
         ) : null}
       </View>

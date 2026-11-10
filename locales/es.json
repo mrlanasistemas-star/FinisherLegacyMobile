@@ -1,0 +1,11 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "Finisher Legacy",
+    "NSCameraUsageDescription": "Finisher Legacy usa la cámara para que tomes fotos de tu medalla, de tus carreras o de tu perfil cuando tú lo eliges.",
+    "NSPhotoLibraryUsageDescription": "Finisher Legacy usa tus fotos para que elijas imágenes y videos de tus carreras: la foto de tu medalla, tus momentos, tus recuerdos y tu foto de perfil. Solo se sube lo que tú eliges.",
+    "NSLocationWhenInUseUsageDescription": "Finisher Legacy usa tu ubicación solo cuando inicias el seguimiento en vivo, para que las personas con las que compartes tu enlace vean tu avance en la carrera.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "Permite “Siempre” para que tu seguimiento en vivo continúe aunque bloquees el teléfono durante la carrera. Solo se usa mientras el seguimiento está activo y puedes detenerlo cuando quieras.",
+    "NSLocationAlwaysUsageDescription": "Permite “Siempre” para que tu seguimiento en vivo continúe aunque bloquees el teléfono durante la carrera. Solo se usa mientras el seguimiento está activo.",
+    "NFCReaderUsageDescription": "Finisher Legacy usa NFC solo cuando tú lo pides, para activar, leer o verificar tu Finisher Legacy Tag al acercarlo al teléfono."
+  }
+}

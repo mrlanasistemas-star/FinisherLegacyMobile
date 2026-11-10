@@ -20,6 +20,7 @@ import type { TagFace } from '@/features/commerce/tag-design';
 import { haptics } from '@/utils/haptics';
 
 import { TagRender, tagGeometry, TAG_WIDTHS, type TagSide, type TagSize } from './TagRender';
+import { useI18n } from '@/i18n';
 
 const FLIP_SPRING = { damping: 17, stiffness: 120, mass: 1 } as const;
 
@@ -44,6 +45,7 @@ interface TagFlipProps {
  * static and a flip is an instant swap.
  */
 export function TagFlip({ face, size = 'lg', width, float = true, tilt = false, onSideChange, style }: TagFlipProps) {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const active = useHeroActive();
   const g = tagGeometry(width ?? TAG_WIDTHS[size]);
@@ -116,9 +118,9 @@ export function TagFlip({ face, size = 'lg', width, float = true, tilt = false, 
         <Animated.View
           accessible
           accessibilityRole="button"
-          accessibilityLabel={side === 'front' ? `Frente del tag ${face.nameLine}` : `Reverso del tag: ${face.backLine}`}
-          accessibilityHint="Toca para girar el tag"
-          accessibilityActions={[{ name: 'activate', label: 'Girar el tag' }]}
+          accessibilityLabel={side === 'front' ? t('Frente del tag {name}', { name: face.nameLine }) : t('Reverso del tag: {line}', { line: face.backLine })}
+          accessibilityHint={t('Toca para girar el tag')}
+          accessibilityActions={[{ name: 'activate', label: t('Girar el tag') }]}
           onAccessibilityAction={flip}
           style={[{ width: g.width, height: g.height }, floatStyle]}>
           {tilt ? (

@@ -17,8 +17,10 @@ import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 import type { AthleteSummary } from '@/types/social';
 import { legalLinks } from '@/utils/links';
+import { useI18n } from '@/i18n';
 
 export default function PrivacyScreen() {
+  const { t } = useI18n();
   const { data } = useProfile();
   const update = useUpdateProfile();
   const blocks = useBlocks();
@@ -40,22 +42,22 @@ export default function PrivacyScreen() {
         country: profile.country,
         profile_visibility: value ? 'private' : 'public',
       });
-      showToast(value ? 'Tu perfil ahora es privado.' : 'Tu perfil ahora es público.', 'success');
+      showToast(value ? t('Tu perfil ahora es privado.') : t('Tu perfil ahora es público.'), 'success');
     } catch (error) {
-      showToast(error instanceof AppError ? error.message : 'No pudimos cambiar tu privacidad. Intenta otra vez.', 'destructive');
+      showToast(error instanceof AppError ? error.message : t('No pudimos cambiar tu privacidad. Intenta otra vez.'), 'destructive');
     }
   }
 
   return (
-    <LargeTitleScroll title="Privacidad" contentContainerStyle={{ gap: spacing.lg }}>
-        <ListGroup title="Perfil" footer="Cada momento también tiene su propia visibilidad: Todos, Seguidores o Solo yo.">
+    <LargeTitleScroll title={t('Privacidad')} contentContainerStyle={{ gap: spacing.lg }}>
+        <ListGroup title={t('Perfil')} footer={t('Cada momento también tiene su propia visibilidad: Todos, Seguidores o Solo yo.')}>
           <ListRow
             icon={ShieldCheck}
-            label="Perfil privado"
+            label={t('Perfil privado')}
             description={
               isPrivate
-                ? 'Solo tú puedes ver tu perfil, tus momentos y tus medallas. Nadie nuevo puede seguirte.'
-                : 'Otros atletas pueden ver tus logros públicos, seguirte y apoyarte en tus momentos.'
+                ? t('Solo tú puedes ver tu perfil, tus momentos y tus medallas. Nadie nuevo puede seguirte.')
+                : t('Otros atletas pueden ver tus logros públicos, seguirte y apoyarte en tus momentos.')
             }
             divider={false}
             trailing={
@@ -68,7 +70,7 @@ export default function PrivacyScreen() {
                   trackColor={{ false: colors.surfaceMuted, true: colors.gold }}
                   thumbColor={colors.white}
                   ios_backgroundColor={colors.surfaceMuted}
-                  accessibilityLabel="Perfil privado"
+                  accessibilityLabel={t('Perfil privado')}
                 />
               )
             }
@@ -77,13 +79,13 @@ export default function PrivacyScreen() {
 
         <View>
           <AppText variant="eyebrow" tone="subtle" style={{ marginBottom: spacing.xs, marginLeft: spacing.md }}>
-            Atletas bloqueados
+            {t('Atletas bloqueados')}
           </AppText>
           {blocks.isPending ? (
             <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} />
           ) : blocked.length === 0 ? (
             <AppText variant="caption" tone="muted" style={{ paddingHorizontal: spacing.md }}>
-              No has bloqueado a nadie. Puedes bloquear desde el menú ••• del perfil de un atleta.
+              {t('No has bloqueado a nadie. Puedes bloquear desde el menú ••• del perfil de un atleta.')}
             </AppText>
           ) : (
             <View style={{ backgroundColor: colors.card, borderRadius: 18, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.hairline }}>
@@ -94,15 +96,16 @@ export default function PrivacyScreen() {
           )}
         </View>
 
-        <ListGroup title="Legal">
-          <ListRow label="Política de privacidad" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy)} />
-          <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms)} />
+        <ListGroup title={t('Legal')}>
+          <ListRow label={t('Política de privacidad')} trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy)} />
+          <ListRow label={t('Términos y condiciones')} trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms)} />
         </ListGroup>
     </LargeTitleScroll>
   );
 }
 
 function BlockedRow({ athlete }: { athlete: AthleteSummary }) {
+  const { t } = useI18n();
   const block = useBlock(athlete.username ?? '');
   return (
     <AthleteRow
@@ -110,15 +113,15 @@ function BlockedRow({ athlete }: { athlete: AthleteSummary }) {
       showFollow={false}
       trailing={
         <AppButton
-          label="Desbloquear"
+          label={t('Desbloquear')}
           size="sm"
           variant="secondary"
           fullWidth={false}
           loading={block.isPending}
           onPress={() =>
             block.mutate(false, {
-              onSuccess: () => showToast(`Desbloqueaste a @${athlete.username}.`, 'default'),
-              onError: () => showToast('No pudimos desbloquear. Intenta otra vez.', 'destructive'),
+              onSuccess: () => showToast(t('Desbloqueaste a @{username}.', { username: athlete.username ?? '' }), 'default'),
+              onError: () => showToast(t('No pudimos desbloquear. Intenta otra vez.'), 'destructive'),
             })
           }
         />

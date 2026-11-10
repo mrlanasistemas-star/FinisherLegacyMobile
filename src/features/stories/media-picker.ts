@@ -9,6 +9,7 @@
 
 import * as ImagePicker from 'expo-image-picker';
 
+import { t } from '@/i18n';
 import type { MediaQuota, QuotaKind } from '@/schemas/story';
 
 import { admit, durationProblem, slotsLeft } from './quota';
@@ -58,7 +59,7 @@ export async function pickPhotos(storyId: string, quota: MediaQuota): Promise<Pi
       exif: false,
     });
   } catch {
-    return { status: 'error', message: 'No pudimos abrir tus fotos. Intenta de nuevo.' };
+    return { status: 'error', message: t('No pudimos abrir tus fotos. Intenta de nuevo.') };
   }
   if (result.canceled || result.assets.length === 0) return { status: 'cancelled' };
 
@@ -83,7 +84,7 @@ export async function pickVideo(storyId: string, quota: MediaQuota): Promise<Pic
       quality: 1,
     });
   } catch {
-    return { status: 'error', message: 'No pudimos abrir tus videos. Intenta de nuevo.' };
+    return { status: 'error', message: t('No pudimos abrir tus videos. Intenta de nuevo.') };
   }
   const asset = result.canceled ? undefined : result.assets[0];
   if (!asset) return { status: 'cancelled' };

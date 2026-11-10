@@ -23,30 +23,37 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useCreateTrainingLink, useRevokeTrainingLink, useTrainingLinks } from '@/features/training/use-training';
+import { useI18n, type Translate } from '@/i18n';
 import { createTrainingLinkSchema, isLinkActive, type CreateTrainingLinkInput, type TrainingLink } from '@/schemas/training';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
 
-const EXPIRY_OPTIONS: { value: CreateTrainingLinkInput['expires_in_days']; label: string }[] = [
-  { value: 7, label: '7 días' },
-  { value: 30, label: '30 días' },
-  { value: 90, label: '90 días' },
-  { value: null, label: 'Sin límite' },
-];
+/** Built with the component's translator so the labels follow the app language. */
+function expiryOptions(t: Translate): { value: CreateTrainingLinkInput['expires_in_days']; label: string }[] {
+  return [
+    { value: 7, label: t('{days} días', { days: 7 }) },
+    { value: 30, label: t('{days} días', { days: 30 }) },
+    { value: 90, label: t('{days} días', { days: 90 }) },
+    { value: null, label: t('Sin límite') },
+  ];
+}
 
-async function shareLink(link: TrainingLink, firstName: string | null) {
-  const who = firstName ? `a ${firstName}` : 'me';
-  const message = `Envía${firstName ? 'le' : 'me'} ánimo para "${link.title}": graba un audio o escribe un mensaje que ${firstName ? 'escuchará' : 'escucharé'} mientras ${firstName ? 'entrena' : 'entreno'}. ${link.url}`;
+async function shareLink(link: TrainingLink, firstName: string | null, t: Translate) {
+  // Two whole sentences (third / first person) instead of glued fragments.
+  const message = firstName
+    ? t('Envíale ánimo para "{title}": graba un audio o escribe un mensaje que escuchará mientras entrena. {url}', { title: link.title, url: link.url })
+    : t('Envíame ánimo para "{title}": graba un audio o escribe un mensaje que escucharé mientras entreno. {url}', { title: link.title, url: link.url });
   try {
-    await Share.share({ message, url: link.url, title: `Envía ánimo ${who}` });
+    await Share.share({ message, url: link.url, title: firstName ? t('Envía ánimo a {name}', { name: firstName }) : t('Envíame ánimo') });
   } catch {
-    showToast('No pudimos abrir el menú para compartir.', 'destructive');
+    showToast(t('No pudimos abrir el menú para compartir.'), 'destructive');
   }
 }
 
 export default function TrainingShareScreen() {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const links = useTrainingLinks();
   const create = useCreateTrainingLink();
@@ -67,7 +74,7 @@ export default function TrainingShareScreen() {
     create.mutate(parsed.data, {
       onSuccess: (link) => {
         setTitle('');
-        void shareLink(link, firstName);
+        void shareLink(link, firstName, t);
       },
       onError: (e) => {
         const field = e instanceof AppError ? e.fieldErrors?.title?.[0] : undefined;
@@ -83,8 +90,8 @@ export default function TrainingShareScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <LargeTitleScroll
-        title="Compartir mi enlace"
-        subtitle="Tu familia y amigos te envían audios y mensajes desde la web, sin crear cuenta."
+        title={t('Compartir mi enlace')}
+        subtitle={t('Tu familia y amigos te envían audios y mensajes desde la web, sin crear cuenta.')}
         keyboard
         refreshControl={<BrandRefreshControl refreshing={links.isRefetching} onRefresh={() => links.refetch()} />}
         contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl, gap: spacing.lg }}>
@@ -93,11 +100,11 @@ export default function TrainingShareScreen() {
             <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
               <Link2 size={18} color={colors.accent} />
             </View>
-            <AppText variant="subtitle">Nuevo enlace</AppText>
+            <AppText variant="subtitle">{t('Nuevo enlace')}</AppText>
           </View>
           <FormInput
-            label="¿Para qué entrenas?"
-            placeholder="Ej. Maratón de la CDMX"
+            label={t('¿Para qué entrenas?')}
+            placeholder={t('Ej. Maratón de la CDMX')}
             value={title}
             onChangeText={(text) => {
               setTitle(text);
@@ -110,14 +117,14 @@ export default function TrainingShareScreen() {
           />
           <View style={{ gap: spacing.xs }}>
             <AppText variant="caption" tone="muted" style={{ fontFamily: fontFamily.semibold }}>
-              Recibir mensajes durante
+              {t('Recibir mensajes durante')}
             </AppText>
             <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-              {EXPIRY_OPTIONS.map((option) => {
+              {expiryOptions(t).map((option) => {
                 const selected = option.value === expiry;
                 return (
                   <PressableScale
-                    key={option.label}
+                    key={String(option.value)}
                     onPress={() => setExpiry(option.value)}
                     haptic="selection"
                     scaleTo={0.94}
@@ -141,12 +148,12 @@ export default function TrainingShareScreen() {
               })}
             </View>
           </View>
-          <AppButton label="Crear y compartir" icon={Share2} onPress={submit} loading={create.isPending} />
+          <AppButton label={t('Crear y compartir')} icon={Share2} onPress={submit} loading={create.isPending} />
         </View>
 
         <View style={{ gap: spacing.sm }}>
           <AppText variant="eyebrow" tone="subtle" style={{ marginLeft: spacing.xxs }}>
-            Mis enlaces
+            {t('Mis enlaces')}
           </AppText>
           {links.isPending ? (
             <>
@@ -155,16 +162,16 @@ export default function TrainingShareScreen() {
             </>
           ) : links.isError ? (
             notFound ? (
-              <EmptyState compact icon={Link2} title="Muy pronto" message="Los enlaces estarán disponibles en un momento." actionLabel="Reintentar" onAction={() => links.refetch()} />
+              <EmptyState compact icon={Link2} title={t('Muy pronto')} message={t('Los enlaces estarán disponibles en un momento.')} actionLabel={t('Reintentar')} onAction={() => links.refetch()} />
             ) : (
-              <ErrorState error={links.error} onRetry={() => links.refetch()} message="No pudimos cargar tus enlaces." />
+              <ErrorState error={links.error} onRetry={() => links.refetch()} message={t('No pudimos cargar tus enlaces.')} />
             )
           ) : list.length === 0 ? (
-            <EmptyState compact icon={MessageCircleHeart} title="Aún no tienes enlaces" message="Crea uno arriba y compártelo por WhatsApp, Instagram o donde quieras." />
+            <EmptyState compact icon={MessageCircleHeart} title={t('Aún no tienes enlaces')} message={t('Crea uno arriba y compártelo por WhatsApp, Instagram o donde quieras.')} />
           ) : (
             list.map((link, index) => (
               <StaggerItem key={link.uuid} index={index}>
-                <LinkCard link={link} onShare={() => void shareLink(link, firstName)} onRevoke={() => setRevokeTarget(link)} />
+                <LinkCard link={link} onShare={() => void shareLink(link, firstName, t)} onRevoke={() => setRevokeTarget(link)} />
               </StaggerItem>
             ))
           )}
@@ -173,15 +180,15 @@ export default function TrainingShareScreen() {
 
       <ConfirmDialog
         visible={!!revokeTarget}
-        title="¿Desactivar este enlace?"
-        description="Nadie podrá enviarte mensajes nuevos con él. Los que ya recibiste se quedan contigo."
-        confirmLabel="Desactivar"
+        title={t('¿Desactivar este enlace?')}
+        description={t('Nadie podrá enviarte mensajes nuevos con él. Los que ya recibiste se quedan contigo.')}
+        confirmLabel={t('Desactivar')}
         loading={revoke.isPending}
         onCancel={() => setRevokeTarget(null)}
         onConfirm={() => {
           if (!revokeTarget) return;
           revoke.mutate(revokeTarget.uuid, {
-            onSuccess: () => showToast('Enlace desactivado'),
+            onSuccess: () => showToast(t('Enlace desactivado')),
             onError: (e) => showToast(e.message, 'destructive'),
             onSettled: () => setRevokeTarget(null),
           });
@@ -192,8 +199,15 @@ export default function TrainingShareScreen() {
 }
 
 function LinkCard({ link, onShare, onRevoke }: { link: TrainingLink; onShare: () => void; onRevoke: () => void }) {
+  const { t, tc } = useI18n();
   const active = isLinkActive(link);
-  const state = link.revoked_at ? 'Desactivado' : !active ? 'Vencido' : link.expires_at ? `Activo hasta el ${formatLongDate(link.expires_at)}` : 'Activo · sin vencimiento';
+  const state = link.revoked_at
+    ? t('Desactivado')
+    : !active
+      ? t('Vencido')
+      : link.expires_at
+        ? t('Activo hasta el {date}', { date: formatLongDate(link.expires_at) })
+        : t('Activo · sin vencimiento');
   return (
     <View
       style={{
@@ -218,15 +232,15 @@ function LinkCard({ link, onShare, onRevoke }: { link: TrainingLink; onShare: ()
         </View>
         {active ? (
           <>
-            <IconButton icon={Share2} label={`Compartir ${link.title}`} onPress={onShare} size={20} />
-            <IconButton icon={Trash2} label={`Desactivar ${link.title}`} onPress={onRevoke} size={20} color={colors.destructive} />
+            <IconButton icon={Share2} label={t('Compartir {title}', { title: link.title })} onPress={onShare} size={20} />
+            <IconButton icon={Trash2} label={t('Desactivar {title}', { title: link.title })} onPress={onRevoke} size={20} color={colors.destructive} />
           </>
         ) : null}
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
         <MessageCircleHeart size={15} color={colors.accent} />
         <AppText variant="caption" tone="muted">
-          {link.messages_count === 0 ? 'Sin mensajes aún' : `${link.messages_count} ${link.messages_count === 1 ? 'mensaje' : 'mensajes'}`}
+          {link.messages_count === 0 ? t('Sin mensajes aún') : tc('{count} mensaje|{count} mensajes', link.messages_count)}
         </AppText>
         <AppText variant="caption" tone="subtle" numberOfLines={1} style={{ flex: 1, textAlign: 'right' }}>
           {link.url.replace(/^https?:\/\//, '')}

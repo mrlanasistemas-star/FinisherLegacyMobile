@@ -17,15 +17,16 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useMyEvents } from '@/hooks/use-my-events';
 import { colors, spacing } from '@/theme/tokens';
 import type { AthleteHistoryRow } from '@/types/models';
+import { useI18n, type Translate } from '@/i18n';
 
 type Section = { year: string; rows: AthleteHistoryRow[] };
 
 const NAV_HEIGHT = 52;
 
-function groupByYear(rows: AthleteHistoryRow[]): Section[] {
+function groupByYear(rows: AthleteHistoryRow[], t: Translate): Section[] {
   const buckets = new Map<string, AthleteHistoryRow[]>();
   for (const row of rows) {
-    const year = row.event_date ? row.event_date.slice(0, 4) : 'Sin fecha';
+    const year = row.event_date ? row.event_date.slice(0, 4) : t('Sin fecha');
     const bucket = buckets.get(year) ?? [];
     bucket.push(row);
     buckets.set(year, bucket);
@@ -35,21 +36,22 @@ function groupByYear(rows: AthleteHistoryRow[]): Section[] {
 
 /** Mis carreras — every participation grouped by year, large title collapsing into the nav bar. */
 export default function MyEventsScreen() {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useScrollY();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyEvents();
 
   const rows = useMemo<AthleteHistoryRow[]>(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
-  const sections = useMemo(() => groupByYear(rows), [rows]);
+  const sections = useMemo(() => groupByYear(rows, t), [rows, t]);
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/legacy'));
 
   const header = (
     <View style={{ paddingBottom: spacing.sm, gap: 2 }}>
       <AppText variant="display" accessibilityRole="header">
-        Mis carreras
+        {t('Mis carreras')}
       </AppText>
       <AppText variant="body" tone="muted">
-        Cada carrera que corriste, en un solo lugar.
+        {t('Cada carrera que corriste, en un solo lugar.')}
       </AppText>
     </View>
   );
@@ -76,12 +78,12 @@ export default function MyEventsScreen() {
               <Skeleton height={96} radius={16} />
             </View>
           ) : isError ? (
-            <ErrorState error={error} message="No pudimos cargar tu historia." onRetry={refetch} />
+            <ErrorState error={error} message={t('No pudimos cargar tu historia.')} onRetry={refetch} />
           ) : (
             <EmptyState
               icon={Trophy}
-              title="Tu historia empieza aquí"
-              message="Cuando una participación real se vincule a tu cuenta, aparecerá en esta línea de tiempo."
+              title={t('Tu historia empieza aquí')}
+              message={t('Cuando una participación real se vincule a tu cuenta, aparecerá en esta línea de tiempo.')}
             />
           )
         }
@@ -99,7 +101,7 @@ export default function MyEventsScreen() {
         )}
       />
 
-      <ScrollHeader scrollY={scrollY} title="Mis carreras" threshold={60} left={<IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />} />
+      <ScrollHeader scrollY={scrollY} title={t('Mis carreras')} threshold={60} left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={goBack} size={26} />} />
     </View>
   );
 }

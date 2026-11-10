@@ -24,11 +24,12 @@ import { PressableScale } from '@/components/motion/pressable-scale';
 import { Skeleton } from '@/components/skeleton';
 import { InlineError } from '@/components/ui/inline-error';
 import { HeaderTextButton, TopBar } from '@/components/ui/top-bar';
-import { kindNoun, limitFromError, slotsLeft } from '@/features/stories/quota';
+import { limitFromError, limitMessage, slotsLeft } from '@/features/stories/quota';
 import { pendingCount } from '@/features/stories/upload-queue';
 import { useUploadStore } from '@/features/stories/upload-store';
 import { useImportPurchasedPhotos, usePurchasedPhotos, useStoryMedia } from '@/features/stories/use-stories';
 import { useResponsive } from '@/hooks/use-responsive';
+import { useI18n } from '@/i18n';
 import type { PurchasedPhoto } from '@/schemas/story';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
@@ -43,6 +44,7 @@ function close() {
 }
 
 export default function PurchasedPhotosScreen() {
+  const { t, tc } = useI18n();
   const { publicId = '' } = useLocalSearchParams<{ publicId?: string }>();
   const insets = useSafeAreaInsets();
   const { width } = useResponsive();
@@ -77,8 +79,8 @@ export default function PurchasedPhotosScreen() {
       haptics.warning();
       setError(
         free <= 0
-          ? 'Llegaste al límite de fotos de este recuerdo. Lo que ya agregaste se queda.'
-          : `Solo ${free === 1 ? 'queda' : 'quedan'} ${free} ${kindNoun('photos', free)} en este recuerdo.`,
+          ? limitMessage('photos')
+          : tc('Solo queda {count} foto en este recuerdo.|Solo quedan {count} fotos en este recuerdo.', free),
       );
       return;
     }
@@ -94,7 +96,7 @@ export default function PurchasedPhotosScreen() {
       onSuccess: (created) => {
         haptics.success();
         const count = created.length || saleIds.length;
-        showToast(count === 1 ? 'Agregamos tu foto al recuerdo.' : `Agregamos ${count} fotos a tu recuerdo.`, 'success');
+        showToast(tc('Agregamos tu foto al recuerdo.|Agregamos {count} fotos a tu recuerdo.', count), 'success');
         close();
       },
       onError: (caught) => {
@@ -105,7 +107,7 @@ export default function PurchasedPhotosScreen() {
         }
         haptics.error();
         setError(
-          caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : 'Todavía no podemos agregar fotos compradas desde la app. Intenta más tarde.',
+          caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : t('Todavía no podemos agregar fotos compradas desde la app. Intenta más tarde.'),
         );
       },
     });
@@ -117,11 +119,11 @@ export default function PurchasedPhotosScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ paddingHorizontal: side, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
         <TopBar
-          title="Fotos que compré"
+          title={t('Fotos que compré')}
           onBack={close}
           right={
             <HeaderTextButton
-              label={selected.length > 0 ? `Agregar (${selected.length})` : 'Agregar'}
+              label={selected.length > 0 ? t('Agregar ({count})', { count: selected.length }) : t('Agregar')}
               onPress={submit}
               disabled={selected.length === 0}
               loading={importPhotos.isPending}
@@ -141,8 +143,8 @@ export default function PurchasedPhotosScreen() {
       ) : photos.isError && rows.length === 0 ? (
         <ErrorState
           error={photos.error}
-          title={missing ? 'Aún no disponible' : undefined}
-          message={missing ? 'Todavía no podemos mostrar aquí tus fotos compradas. Las encuentras en finisherlegacy.com.' : 'No pudimos cargar tus fotos compradas.'}
+          title={missing ? t('Aún no disponible') : undefined}
+          message={missing ? t('Todavía no podemos mostrar aquí tus fotos compradas. Las encuentras en finisherlegacy.com.') : t('No pudimos cargar tus fotos compradas.')}
           onRetry={missing ? undefined : photos.refetch}
           onBack={close}
         />
@@ -174,11 +176,11 @@ export default function PurchasedPhotosScreen() {
                 <AppText variant="caption" tone="muted" accessibilityLiveRegion="polite">
                   {media.data
                     ? free <= 0
-                      ? 'Este recuerdo ya no tiene lugar para más fotos.'
+                      ? t('Este recuerdo ya no tiene lugar para más fotos.')
                       : selected.length > 0
-                        ? `${selected.length} ${selected.length === 1 ? 'elegida' : 'elegidas'} · ${room === 0 ? 'ya no caben más' : `${room === 1 ? 'cabe' : 'caben'} ${room} más`}`
-                        : `Elige las que quieras agregar. ${free === 1 ? 'Cabe' : 'Caben'} ${free} ${kindNoun('photos', free)} más.`
-                    : 'Elige las que quieras agregar a tu recuerdo.'}
+                        ? `${tc('{count} elegida|{count} elegidas', selected.length)} · ${room === 0 ? t('ya no caben más') : tc('cabe {count} más|caben {count} más', room)}`
+                        : tc('Elige las que quieras agregar. Cabe {count} foto más.|Elige las que quieras agregar. Caben {count} fotos más.', free)
+                    : t('Elige las que quieras agregar a tu recuerdo.')}
                 </AppText>
                 <InlineError message={error} />
               </View>
@@ -187,8 +189,8 @@ export default function PurchasedPhotosScreen() {
           ListEmptyComponent={
             <EmptyState
               icon={ShoppingBag}
-              title="Aún no has comprado fotos"
-              message="Cuando compres fotos a los fotógrafos de un evento aparecerán aquí, listas para agregarlas a tu recuerdo."
+              title={t('Aún no has comprado fotos')}
+              message={t('Cuando compres fotos a los fotógrafos de un evento aparecerán aquí, listas para agregarlas a tu recuerdo.')}
             />
           }
           ListFooterComponent={photos.isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={{ paddingVertical: spacing.md }} /> : null}
@@ -197,7 +199,7 @@ export default function PurchasedPhotosScreen() {
             const added = item.already_in_story_ids.includes(publicId);
             const order = selected.indexOf(id);
             const isSelected = order >= 0;
-            const label = [`Foto ${index + 1}`, item.event_name, added ? 'ya está en este recuerdo' : null].filter(Boolean).join(', ');
+            const label = [t('Foto {position}', { position: index + 1 }), item.event_name, added ? t('ya está en este recuerdo') : null].filter(Boolean).join(', ');
 
             return (
               <PressableScale
@@ -218,7 +220,7 @@ export default function PurchasedPhotosScreen() {
                   <View style={{ position: 'absolute', left: 5, bottom: 5, flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: 'rgba(11,11,12,0.66)' }}>
                     <Check size={11} color={colors.onDark} strokeWidth={3} />
                     <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.semibold, fontSize: 10.5, color: colors.onDark }}>
-                      Agregada
+                      {t('Agregada')}
                     </AppText>
                   </View>
                 ) : (

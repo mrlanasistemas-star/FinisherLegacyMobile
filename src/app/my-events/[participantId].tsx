@@ -46,14 +46,16 @@ import { useMyGear } from '@/hooks/use-gear';
 import { useEventParticipant } from '@/hooks/use-my-events';
 import { canOfferLiveTracking } from '@/features/tracking/eligibility';
 import { LiveTrackingCard } from '@/features/tracking/components/live-tracking-card';
-import { PLATE_STATUS_LABEL, SUPPORT_STATUS_LABEL } from '@/components/my-event-row';
+import { plateStatusLabel, supportStatusLabel } from '@/components/my-event-row';
 import { showToast } from '@/stores/toastStore';
 import { colors, radius, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
 import { formatMoney } from '@/utils/money';
 import type { AthleteEventMedia, AthleteOwnedProduct } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 export default function MyEventDetailScreen() {
+  const { t } = useI18n();
   const { participantId: participantIdParam } = useLocalSearchParams<{ participantId: string }>();
   const parsedParticipantId = Number(participantIdParam);
   const participantId = Number.isFinite(parsedParticipantId) ? parsedParticipantId : null;
@@ -95,7 +97,7 @@ export default function MyEventDetailScreen() {
     const to = from + direction;
     if (from < 0 || to < 0 || to >= order.length) return;
     [order[from], order[to]] = [order[to], order[from]];
-    reorderMedia.mutate(order, { onError: () => showToast('No pudimos guardar el nuevo orden. Intenta otra vez.', 'destructive') });
+    reorderMedia.mutate(order, { onError: () => showToast(t('No pudimos guardar el nuevo orden. Intenta otra vez.'), 'destructive') });
   }
 
   const usedGearUuids = useMemo(
@@ -110,8 +112,8 @@ export default function MyEventDetailScreen() {
   if (participantId === null) {
     return (
       <Screen edges={['top', 'left', 'right']}>
-        <ScreenHeader title="Mi evento" />
-        <ErrorState message="Este enlace no es válido." />
+        <ScreenHeader title={t('Mi evento')} />
+        <ErrorState message={t('Este enlace no es válido.')} />
       </Screen>
     );
   }
@@ -131,8 +133,8 @@ export default function MyEventDetailScreen() {
   if (isError || !data) {
     return (
       <Screen edges={['top', 'left', 'right']}>
-        <ScreenHeader title="Mi evento" />
-        <ErrorState error={error} message="No pudimos cargar esta participación." onRetry={refetch} />
+        <ScreenHeader title={t('Mi evento')} />
+        <ErrorState error={error} message={t('No pudimos cargar esta participación.')} onRetry={refetch} />
       </Screen>
     );
   }
@@ -144,9 +146,9 @@ export default function MyEventDetailScreen() {
     try {
       await updateVisibility.mutateAsync({ uuid: item.uuid, isPublic: !item.is_public });
       setActionsFor(null);
-      showToast(item.is_public ? 'Ahora sólo tú puedes verlo.' : 'Ahora es público.', 'success');
+      showToast(item.is_public ? t('Ahora sólo tú puedes verlo.') : t('Ahora es público.'), 'success');
     } catch (caught) {
-      showToast(caught instanceof AppError ? caught.message : 'No pudimos actualizar la visibilidad.', 'destructive');
+      showToast(caught instanceof AppError ? caught.message : t('No pudimos actualizar la visibilidad.'), 'destructive');
     }
   }
 
@@ -156,19 +158,19 @@ export default function MyEventDetailScreen() {
       await deleteMedia.mutateAsync(actionsFor.uuid);
       setConfirmingDeleteMedia(false);
       setActionsFor(null);
-      showToast('Recuerdo eliminado.', 'success');
+      showToast(t('Recuerdo eliminado.'), 'success');
     } catch (caught) {
       setConfirmingDeleteMedia(false);
-      showToast(caught instanceof AppError ? caught.message : 'No pudimos eliminar este recuerdo.', 'destructive');
+      showToast(caught instanceof AppError ? caught.message : t('No pudimos eliminar este recuerdo.'), 'destructive');
     }
   }
 
   async function handleAddGear(product: AthleteOwnedProduct) {
     try {
       await addGear.mutateAsync({ athleteOwnedProductUuid: product.uuid });
-      showToast('Equipo agregado a esta carrera.', 'success');
+      showToast(t('Equipo agregado a esta carrera.'), 'success');
     } catch (caught) {
-      showToast(caught instanceof AppError ? caught.message : 'No pudimos agregar este equipo.', 'destructive');
+      showToast(caught instanceof AppError ? caught.message : t('No pudimos agregar este equipo.'), 'destructive');
     }
   }
 
@@ -177,10 +179,10 @@ export default function MyEventDetailScreen() {
     try {
       await removeGear.mutateAsync(removingGearUuid);
       setRemovingGearUuid(null);
-      showToast('Equipo quitado de esta carrera.', 'success');
+      showToast(t('Equipo quitado de esta carrera.'), 'success');
     } catch (caught) {
       setRemovingGearUuid(null);
-      showToast(caught instanceof AppError ? caught.message : 'No pudimos quitar este equipo.', 'destructive');
+      showToast(caught instanceof AppError ? caught.message : t('No pudimos quitar este equipo.'), 'destructive');
     }
   }
 
@@ -195,7 +197,7 @@ export default function MyEventDetailScreen() {
         <Reveal style={{ gap: spacing.xs }}>
           {participant.event_date ? <AppText variant="eyebrow">{formatLongDate(participant.event_date)}</AppText> : null}
           <AppText variant="display" accessibilityRole="header">
-            {participant.event ?? 'Evento'}
+            {participant.event ?? t('Evento')}
           </AppText>
           {subtitle ? (
             <AppText variant="body" tone="muted">
@@ -203,13 +205,13 @@ export default function MyEventDetailScreen() {
             </AppText>
           ) : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs }}>
-            {participant.bib_number ? <Badge label={`Dorsal ${participant.bib_number}`} /> : null}
+            {participant.bib_number ? <Badge label={t('Dorsal {number}', { number: participant.bib_number })} /> : null}
           </View>
         </Reveal>
 
         {/* Suggested, never automatic: the athlete decides what to share. */}
         <AppButton
-          label="Compartir con mi comunidad"
+          label={t('Compartir con mi comunidad')}
           icon={Share2}
           variant="secondary"
           size="md"
@@ -218,7 +220,7 @@ export default function MyEventDetailScreen() {
 
         {result ? (
           <View style={{ gap: spacing.sm }}>
-            <SectionTitle title="Resultado" />
+            <SectionTitle title={t('Resultado')} />
             <Card>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, justifyContent: 'space-around' }}>
                 {result.official_time ? (
@@ -227,7 +229,7 @@ export default function MyEventDetailScreen() {
                       {result.official_time}
                     </AppText>
                     <AppText variant="caption" tone="muted">
-                      Tiempo oficial
+                      {t('Tiempo oficial')}
                     </AppText>
                   </View>
                 ) : null}
@@ -235,7 +237,7 @@ export default function MyEventDetailScreen() {
                   <View>
                     <AppText variant="title">{result.pace}</AppText>
                     <AppText variant="caption" tone="muted">
-                      Ritmo
+                      {t('Ritmo')}
                     </AppText>
                   </View>
                 ) : null}
@@ -243,7 +245,7 @@ export default function MyEventDetailScreen() {
                   <View>
                     <AppText variant="title">#{result.overall_position}</AppText>
                     <AppText variant="caption" tone="muted">
-                      General
+                      {t('General')}
                     </AppText>
                   </View>
                 ) : null}
@@ -252,7 +254,7 @@ export default function MyEventDetailScreen() {
               {result.splits.length > 0 ? (
                 <View style={{ marginTop: spacing.md, gap: spacing.xs }}>
                   <AppText variant="eyebrow" tone="muted">
-                    Splits
+                    {t('Splits')}
                   </AppText>
                   {result.splits.map((split, index) => (
                     <View
@@ -281,14 +283,14 @@ export default function MyEventDetailScreen() {
 
         {medals.length > 0 ? (
           <View style={{ gap: spacing.sm }}>
-            <SectionTitle title="Medallas de esta carrera" />
+            <SectionTitle title={t('Medallas de esta carrera')} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
               {medals.map((medal) => (
                 <PressScale key={medal.id} haptic onPress={() => router.push(`/medals/${medal.id}`)}>
                   <Card style={{ width: 140, alignItems: 'center', gap: spacing.xs }}>
                     <MedalIcon color={colors.accent} size={22} />
                     <AppText variant="caption" numberOfLines={2} align="center">
-                      {medal.title ?? 'Medalla'}
+                      {medal.title ?? t('Medalla')}
                     </AppText>
                   </Card>
                 </PressScale>
@@ -318,17 +320,17 @@ export default function MyEventDetailScreen() {
                 </View>
               ) : null}
               <View style={{ flex: 1, gap: 2 }}>
-                <AppText variant="bodyStrong">{legacyPlate.personalization.athlete_name ?? 'Tu Legacy Plate'}</AppText>
+                <AppText variant="bodyStrong">{legacyPlate.personalization.athlete_name ?? t('Tu Legacy Plate')}</AppText>
                 <AppText variant="caption" tone="muted">
-                  {legacyPlate.model?.name ?? 'Modelo pendiente'}
+                  {legacyPlate.model?.name ?? t('Modelo pendiente')}
                 </AppText>
               </View>
-              <Badge label={PLATE_STATUS_LABEL[legacyPlate.status] ?? legacyPlate.status} variant="gold" />
+              <Badge label={plateStatusLabel(legacyPlate.status, t) ?? legacyPlate.status} variant="gold" />
             </Card>
           ) : (
             <Card>
               <AppText variant="body" tone="muted">
-                Aún no tienes una Legacy Plate para esta participación.
+                {t('Aún no tienes una Legacy Plate para esta participación.')}
               </AppText>
             </Card>
           )}
@@ -336,8 +338,8 @@ export default function MyEventDetailScreen() {
 
         <View style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <SectionTitle title="Recuerdos" />
-            <PressScale haptic onPress={() => setUploadOpen(true)} accessibilityRole="button" accessibilityLabel="Agregar recuerdo">
+            <SectionTitle title={t('Recuerdos')} />
+            <PressScale haptic onPress={() => setUploadOpen(true)} accessibilityRole="button" accessibilityLabel={t('Agregar recuerdo')}>
               <View
                 style={{
                   flexDirection: 'row',
@@ -351,7 +353,7 @@ export default function MyEventDetailScreen() {
                 }}>
                 <Plus color={colors.accent} size={14} />
                 <AppText variant="caption" tone="gold">
-                  Agregar
+                  {t('Agregar')}
                 </AppText>
               </View>
             </PressScale>
@@ -361,13 +363,13 @@ export default function MyEventDetailScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <CameraIcon color={colors.muted} size={14} />
               <AppText variant="caption" tone={imagesFull ? 'gold' : 'muted'}>
-                Fotos {imageCount}{imageLimit !== null ? `/${imageLimit}` : ""}
+                {imageLimit !== null ? t('Fotos {count}/{limit}', { count: imageCount, limit: imageLimit }) : t('Fotos {count}', { count: imageCount })}
               </AppText>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <VideoIcon color={colors.muted} size={14} />
               <AppText variant="caption" tone={videosFull ? 'gold' : 'muted'}>
-                Videos {videoCount}{videoLimit !== null ? `/${videoLimit}` : ""}
+                {videoLimit !== null ? t('Videos {count}/{limit}', { count: videoCount, limit: videoLimit }) : t('Videos {count}', { count: videoCount })}
               </AppText>
             </View>
           </View>
@@ -377,9 +379,9 @@ export default function MyEventDetailScreen() {
           ) : mediaItems.length === 0 ? (
             <EmptyState
               icon={CameraIcon}
-              title="Sin recuerdos todavía"
-              message="Agrega fotos o un video de esta carrera para revivirla después."
-              actionLabel="Agregar recuerdo"
+              title={t('Sin recuerdos todavía')}
+              message={t('Agrega fotos o un video de esta carrera para revivirla después.')}
+              actionLabel={t('Agregar recuerdo')}
               onAction={() => setUploadOpen(true)}
             />
           ) : (
@@ -389,10 +391,10 @@ export default function MyEventDetailScreen() {
           {imagesFull && videosFull ? (
             <Card style={{ alignItems: 'center', gap: spacing.xs }}>
               <AppText variant="bodyStrong" align="center">
-                Tus recuerdos incluidos están completos.
+                {t('Tus recuerdos incluidos están completos.')}
               </AppText>
               <AppText variant="caption" tone="muted" align="center">
-                Para agregar otro, elimina una foto o video de esta carrera.
+                {t('Para agregar otro, elimina una foto o video de esta carrera.')}
               </AppText>
             </Card>
           ) : null}
@@ -400,8 +402,8 @@ export default function MyEventDetailScreen() {
 
         <View style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <SectionTitle title="Equipo usado" />
-            <PressScale haptic onPress={() => setAddGearOpen(true)} accessibilityRole="button" accessibilityLabel="Agregar equipo">
+            <SectionTitle title={t('Equipo usado')} />
+            <PressScale haptic onPress={() => setAddGearOpen(true)} accessibilityRole="button" accessibilityLabel={t('Agregar equipo')}>
               <View
                 style={{
                   flexDirection: 'row',
@@ -415,7 +417,7 @@ export default function MyEventDetailScreen() {
                 }}>
                 <Plus color={colors.accent} size={14} />
                 <AppText variant="caption" tone="gold">
-                  Agregar
+                  {t('Agregar')}
                 </AppText>
               </View>
             </PressScale>
@@ -423,7 +425,7 @@ export default function MyEventDetailScreen() {
 
           {(gearUsed.length === 0) ? (
             <AppText variant="body" tone="muted">
-              Aún no marcaste equipo para esta carrera.
+              {t('Aún no marcaste equipo para esta carrera.')}
             </AppText>
           ) : (
             <View style={{ gap: spacing.xs }}>
@@ -441,7 +443,7 @@ export default function MyEventDetailScreen() {
                     onPress={() => setRemovingGearUuid(gear.uuid)}
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel="Quitar equipo">
+                    accessibilityLabel={t('Quitar equipo')}>
                     <Trash2 color={colors.muted} size={18} />
                   </Pressable>
                 </Card>
@@ -452,7 +454,7 @@ export default function MyEventDetailScreen() {
 
         {purchases.length > 0 ? (
           <View style={{ gap: spacing.sm }}>
-            <SectionTitle title="Compras de esta carrera" />
+            <SectionTitle title={t('Compras de esta carrera')} />
             <View style={{ gap: spacing.xs }}>
               {purchases.map((purchase) => (
                 <Card key={purchase.id} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -473,20 +475,20 @@ export default function MyEventDetailScreen() {
 
         {canOfferLiveTracking(participant.event_date) ? (
           <View style={{ gap: spacing.sm }}>
-            <SectionTitle title="Seguimiento en vivo" />
+            <SectionTitle title={t('Seguimiento en vivo')} />
             <LiveTrackingCard participantId={participant.id} />
           </View>
         ) : null}
 
         {supportSession ? (
           <View style={{ gap: spacing.sm }}>
-            <SectionTitle title="Tu equipo de apoyo" />
+            <SectionTitle title={t('Tu equipo de apoyo')} />
             <Card style={{ gap: spacing.xs }}>
               <AppText variant="bodyStrong">{supportSession.title}</AppText>
-              <Badge label={SUPPORT_STATUS_LABEL[supportSession.status] ?? supportSession.status} />
+              <Badge label={supportStatusLabel(supportSession.status, t)} />
               {supportSession.messages.slice(0, 2).map((message) => (
                 <AppText key={message.id} variant="caption" tone="muted" numberOfLines={2}>
-                  {message.is_surprise ? '🎁 Un mensaje sorpresa te espera.' : message.message_text ?? '…'}
+                  {message.is_surprise ? t('🎁 Un mensaje sorpresa te espera.') : message.message_text ?? '…'}
                 </AppText>
               ))}
             </Card>
@@ -497,9 +499,9 @@ export default function MyEventDetailScreen() {
 
       <ScrollHeader
         scrollY={scrollY}
-        title={participant.event ?? 'Mi carrera'}
+        title={participant.event ?? t('Mi carrera')}
         threshold={60}
-        left={<IconButton icon={ChevronLeft} label="Volver" onPress={() => (router.canGoBack() ? router.back() : router.replace('/legacy'))} size={26} />}
+        left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/legacy'))} size={26} />}
       />
 
       <MediaViewer
@@ -516,7 +518,7 @@ export default function MyEventDetailScreen() {
         onClose={() => setUploadOpen(false)}
         participantId={participantId}
         entitlement={entitlement.data}
-        onLimitReached={() => showToast('Llegaste al límite de recuerdos de esta carrera. Elimina uno para agregar otro.', 'default')}
+        onLimitReached={() => showToast(t('Llegaste al límite de recuerdos de esta carrera. Elimina uno para agregar otro.'), 'default')}
       />
 
       <Sheet visible={actionsFor !== null} onClose={() => setActionsFor(null)}>
@@ -524,13 +526,13 @@ export default function MyEventDetailScreen() {
           <>
             <SheetActionRow
               icon={actionsFor.is_public ? Lock : Globe}
-              label={actionsFor.is_public ? 'Hacer sólo mío' : 'Hacer público'}
+              label={actionsFor.is_public ? t('Hacer sólo mío') : t('Hacer público')}
               onPress={() => handleToggleVisibility(actionsFor)}
             />
             {mediaItems.length > 1 && mediaItems[0]?.uuid !== actionsFor.uuid ? (
               <SheetActionRow
                 icon={ArrowLeft}
-                label="Mover antes"
+                label={t('Mover antes')}
                 onPress={() => {
                   moveMedia(actionsFor.uuid, -1);
                   setActionsFor(null);
@@ -540,7 +542,7 @@ export default function MyEventDetailScreen() {
             {mediaItems.length > 1 && mediaItems[mediaItems.length - 1]?.uuid !== actionsFor.uuid ? (
               <SheetActionRow
                 icon={ArrowRight}
-                label="Mover después"
+                label={t('Mover después')}
                 onPress={() => {
                   moveMedia(actionsFor.uuid, 1);
                   setActionsFor(null);
@@ -549,23 +551,23 @@ export default function MyEventDetailScreen() {
             ) : null}
             <SheetActionRow
               icon={Share2}
-              label="Compartir con mi comunidad"
+              label={t('Compartir con mi comunidad')}
               onPress={() => {
                 const uuid = actionsFor.uuid;
                 setActionsFor(null);
                 router.push(`/moments/create?type=race_completed&participantId=${participantId}&mediaUuids=${uuid}`);
               }}
             />
-            <SheetActionRow icon={Trash2} label="Eliminar" destructive onPress={() => setConfirmingDeleteMedia(true)} />
+            <SheetActionRow icon={Trash2} label={t('Eliminar')} destructive onPress={() => setConfirmingDeleteMedia(true)} />
           </>
         ) : null}
       </Sheet>
 
       <ConfirmDialog
         visible={confirmingDeleteMedia}
-        title="Eliminar recuerdo"
-        description="Esta foto o video se quitará de esta carrera. Esta acción no se puede deshacer."
-        confirmLabel="Eliminar"
+        title={t('Eliminar recuerdo')}
+        description={t('Esta foto o video se quitará de esta carrera. Esta acción no se puede deshacer.')}
+        confirmLabel={t('Eliminar')}
         loading={deleteMedia.isPending}
         onConfirm={handleDeleteMedia}
         onCancel={() => setConfirmingDeleteMedia(false)}
@@ -573,13 +575,13 @@ export default function MyEventDetailScreen() {
 
       <Sheet visible={addGearOpen} onClose={() => setAddGearOpen(false)}>
         <AppText variant="subtitle" style={{ marginBottom: spacing.sm }}>
-          Elige de Mi equipo
+          {t('Elige de Mi equipo')}
         </AppText>
         {myGear.isPending ? (
           <Skeleton height={80} />
         ) : availableGear.length === 0 ? (
           <AppText variant="body" tone="muted" style={{ paddingBottom: spacing.md }}>
-            No tienes más equipo disponible para agregar.
+            {t('No tienes más equipo disponible para agregar.')}
           </AppText>
         ) : (
           <View style={{ gap: spacing.xs, paddingBottom: spacing.sm }}>
@@ -593,7 +595,7 @@ export default function MyEventDetailScreen() {
                   setAddGearOpen(false);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={`Agregar ${product.product_name}`}
+                accessibilityLabel={t('Agregar {name}', { name: product.product_name })}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 52, paddingVertical: spacing.sm }}>
                 <View style={{ flex: 1 }}>
                   <AppText variant="bodyStrong">{product.product_name}</AppText>
@@ -612,9 +614,9 @@ export default function MyEventDetailScreen() {
 
       <ConfirmDialog
         visible={removingGearUuid !== null}
-        title="Quitar equipo"
-        description="Este equipo dejará de estar asociado a esta carrera."
-        confirmLabel="Quitar"
+        title={t('Quitar equipo')}
+        description={t('Este equipo dejará de estar asociado a esta carrera.')}
+        confirmLabel={t('Quitar')}
         loading={removeGear.isPending}
         onConfirm={handleRemoveGear}
         onCancel={() => setRemovingGearUuid(null)}

@@ -15,6 +15,7 @@ import { usePushPermission } from '@/hooks/use-push';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, spacing } from '@/theme/tokens';
 import type { NotificationPreferenceRow } from '@/types/models';
+import { useI18n } from '@/i18n';
 
 /**
  * Push on this phone. Registration logic lives in
@@ -24,6 +25,7 @@ import type { NotificationPreferenceRow } from '@/types/models';
  * (stored server-side, same switches as the web; the server enforces them).
  */
 export default function NotificationSettingsScreen() {
+  const { t } = useI18n();
   const { available, permission, pending, enable } = usePushPermission();
   const registeredUuid = useUiStore((state) => state.pushDeviceUuid);
   const setPushDeviceUuid = useUiStore((state) => state.setPushDeviceUuid);
@@ -43,55 +45,55 @@ export default function NotificationSettingsScreen() {
       await unregisterDevice.mutateAsync(registeredUuid);
       setPushDeviceUuid(null);
     } catch (caught) {
-      setError(caught instanceof AppError ? caught.message : 'No pudimos desactivar las notificaciones. Intenta de nuevo.');
+      setError(caught instanceof AppError ? caught.message : t('No pudimos desactivar las notificaciones. Intenta de nuevo.'));
     }
   }
 
   const enabledHere = !!registeredUuid && permission === 'granted';
 
   return (
-    <LargeTitleScroll title="Notificaciones">
+    <LargeTitleScroll title={t('Notificaciones')}>
 
       <View style={{ gap: spacing.md, marginTop: spacing.sm, paddingBottom: spacing.xl }}>
         <AppText variant="body" tone="muted">
-          Recibe un aviso cuando alguien de tu equipo de apoyo te escriba, cuando tu pedido cambie de estado, o cuando haya novedades sobre tus eventos.
+          {t('Recibe un aviso cuando alguien de tu equipo de apoyo te escriba, cuando tu pedido cambie de estado, o cuando haya novedades sobre tus eventos.')}
         </AppText>
 
         {!available ? (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               <CircleAlert size={18} color={colors.accent} />
-              <AppText variant="bodyStrong">No disponible en este teléfono</AppText>
+              <AppText variant="bodyStrong">{t('No disponible en este teléfono')}</AppText>
             </View>
             <AppText variant="caption" tone="muted">
               {!Device.isDevice
-                ? 'Las notificaciones push sólo funcionan en un teléfono físico, no en un simulador.'
-                : 'Esta versión de la app todavía no puede recibir avisos. Llegarán con la próxima actualización.'}
+                ? t('Las notificaciones push sólo funcionan en un teléfono físico, no en un simulador.')
+                : t('Esta versión de la app todavía no puede recibir avisos. Llegarán con la próxima actualización.')}
             </AppText>
           </Card>
         ) : enabledHere ? (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               <Bell size={18} color={colors.accent} />
-              <AppText variant="bodyStrong">Notificaciones activadas en este teléfono</AppText>
+              <AppText variant="bodyStrong">{t('Notificaciones activadas en este teléfono')}</AppText>
             </View>
-            <AppButton label="Desactivar en este teléfono" variant="secondary" onPress={handleDisable} loading={unregisterDevice.isPending} />
+            <AppButton label={t('Desactivar en este teléfono')} variant="secondary" onPress={handleDisable} loading={unregisterDevice.isPending} />
           </Card>
         ) : (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
               <BellOff size={18} color={colors.muted} />
-              <AppText variant="bodyStrong">Notificaciones desactivadas</AppText>
+              <AppText variant="bodyStrong">{t('Notificaciones desactivadas')}</AppText>
             </View>
             {permission === 'denied' ? (
               <>
                 <AppText variant="caption" tone="muted">
-                  Las bloqueaste en los ajustes del teléfono. Actívalas ahí y vuelve aquí.
+                  {t('Las bloqueaste en los ajustes del teléfono. Actívalas ahí y vuelve aquí.')}
                 </AppText>
-                <AppButton label="Abrir ajustes del teléfono" variant="secondary" onPress={() => Linking.openSettings()} />
+                <AppButton label={t('Abrir ajustes del teléfono')} variant="secondary" onPress={() => Linking.openSettings()} />
               </>
             ) : (
-              <AppButton label="Activar notificaciones" onPress={handleEnable} loading={pending} />
+              <AppButton label={t('Activar notificaciones')} onPress={handleEnable} loading={pending} />
             )}
           </Card>
         )}
@@ -109,6 +111,7 @@ export default function NotificationSettingsScreen() {
 }
 
 function CategoryPreferences() {
+  const { t } = useI18n();
   const { data, isPending, isError, refetch } = useNotificationPreferences();
   const update = useUpdateNotificationPreferences();
 
@@ -121,9 +124,9 @@ function CategoryPreferences() {
     return (
       <View style={{ gap: spacing.xs }}>
         <AppText variant="caption" tone="destructive">
-          No pudimos cargar tus preferencias.
+          {t('No pudimos cargar tus preferencias.')}
         </AppText>
-        <AppButton label="Reintentar" variant="secondary" onPress={() => refetch()} />
+        <AppButton label={t('Reintentar')} variant="secondary" onPress={() => refetch()} />
       </View>
     );
   }
@@ -131,28 +134,28 @@ function CategoryPreferences() {
   return (
     <View style={{ gap: spacing.md }}>
       <AppText variant="eyebrow" tone="subtle" style={{ marginLeft: spacing.md }}>
-        Qué te avisamos
+        {t('Qué te avisamos')}
       </AppText>
       {data.categories.map((row) => (
         <ListGroup key={row.key} title={row.label} footer={row.description}>
           <ListRow
-            label="En tu teléfono (push)"
+            label={t('En tu teléfono (push)')}
             trailing={
-              <PreferenceSwitch value={row.push} disabled={update.isPending} label={`${row.label}: push`} onChange={(value) => toggle(row, 'push', value)} />
+              <PreferenceSwitch value={row.push} disabled={update.isPending} label={t('{category}: push', { category: row.label })} onChange={(value) => toggle(row, 'push', value)} />
             }
           />
           <ListRow
-            label="En la app y la web"
+            label={t('En la app y la web')}
             divider={false}
             trailing={
-              <PreferenceSwitch value={row.in_app} disabled={update.isPending} label={`${row.label}: en la app`} onChange={(value) => toggle(row, 'in_app', value)} />
+              <PreferenceSwitch value={row.in_app} disabled={update.isPending} label={t('{category}: en la app', { category: row.label })} onChange={(value) => toggle(row, 'in_app', value)} />
             }
           />
         </ListGroup>
       ))}
       {update.isError ? (
         <AppText variant="caption" tone="destructive">
-          No pudimos guardar el cambio. Intenta de nuevo.
+          {t('No pudimos guardar el cambio. Intenta de nuevo.')}
         </AppText>
       ) : null}
     </View>

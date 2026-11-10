@@ -16,6 +16,7 @@
 
 import { AppError } from '@/api/errors';
 import type { SubmitPurchaseBody } from '@/api/iap';
+import { t } from '@/i18n';
 import type { IapPurchaseResult, StoryQuota } from '@/schemas/iap';
 
 import type { IapProduct, IapPurchase, IapStoreError } from './iap-driver';
@@ -129,29 +130,57 @@ function applyOutcome(state: PurchaseState, outcome: PurchaseOutcome): PurchaseS
 /* Copy                                                                */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Getters, not plain strings: each message is resolved in the language
+ * active when it is read (`MESSAGES.granted`), never frozen at import time.
+ */
 export const MESSAGES = {
-  granted: 'Listo. Ya tienes más espacio para fotos en este recuerdo.',
-  replayed: 'Esta compra ya estaba aplicada a tu recuerdo.',
-  pending: 'Tu pago está pendiente de aprobación. Te daremos el espacio en cuanto la tienda lo confirme; no tienes que volver a comprar.',
-  retry: 'Tu compra quedó registrada en la tienda, pero no pudimos confirmarla todavía. Lo intentaremos de nuevo automáticamente; no se te cobrará dos veces.',
-  network: 'Sin conexión. Tu compra está a salvo: la confirmaremos en cuanto vuelvas a tener Internet.',
-  invalid: 'La tienda indica que esta compra fue cancelada o reembolsada, así que no se agregó espacio.',
-  mismatch: 'No pudimos asociar esta compra a tu recuerdo. Escríbenos desde Soporte y lo resolvemos; tu compra está a salvo.',
-  otherAccount: 'Esta compra pertenece a otra cuenta de Finisher Legacy. Inicia sesión con esa cuenta para usarla.',
-  unknownStory: 'Encontramos una compra sin terminar. Abre el recuerdo para el que la hiciste y toca "Restaurar compras".',
-  storeError: 'La tienda no pudo completar la compra. Intenta de nuevo en un momento.',
-  alreadyOwned: 'Tenías una compra anterior sin terminar. La aplicamos; vuelve a intentar si quieres más espacio.',
-  restoredNone: 'No encontramos compras pendientes. Tus ampliaciones ya aplicadas siguen en tu recuerdo.',
-} as const;
+  get granted() {
+    return t('Listo. Ya tienes más espacio para fotos en este recuerdo.');
+  },
+  get replayed() {
+    return t('Esta compra ya estaba aplicada a tu recuerdo.');
+  },
+  get pending() {
+    return t('Tu pago está pendiente de aprobación. Te daremos el espacio en cuanto la tienda lo confirme; no tienes que volver a comprar.');
+  },
+  get retry() {
+    return t('Tu compra quedó registrada en la tienda, pero no pudimos confirmarla todavía. Lo intentaremos de nuevo automáticamente; no se te cobrará dos veces.');
+  },
+  get network() {
+    return t('Sin conexión. Tu compra está a salvo: la confirmaremos en cuanto vuelvas a tener Internet.');
+  },
+  get invalid() {
+    return t('La tienda indica que esta compra fue cancelada o reembolsada, así que no se agregó espacio.');
+  },
+  get mismatch() {
+    return t('No pudimos asociar esta compra a tu recuerdo. Escríbenos desde Soporte y lo resolvemos; tu compra está a salvo.');
+  },
+  get otherAccount() {
+    return t('Esta compra pertenece a otra cuenta de Finisher Legacy. Inicia sesión con esa cuenta para usarla.');
+  },
+  get unknownStory() {
+    return t('Encontramos una compra sin terminar. Abre el recuerdo para el que la hiciste y toca "Restaurar compras".');
+  },
+  get storeError() {
+    return t('La tienda no pudo completar la compra. Intenta de nuevo en un momento.');
+  },
+  get alreadyOwned() {
+    return t('Tenías una compra anterior sin terminar. La aplicamos; vuelve a intentar si quieres más espacio.');
+  },
+  get restoredNone() {
+    return t('No encontramos compras pendientes. Tus ampliaciones ya aplicadas siguen en tu recuerdo.');
+  },
+};
 
 export function storeErrorMessage(error: IapStoreError): string {
   switch (error.kind) {
     case 'network':
-      return 'No pudimos conectar con la tienda. Revisa tu conexión e intenta de nuevo.';
+      return t('No pudimos conectar con la tienda. Revisa tu conexión e intenta de nuevo.');
     case 'already_owned':
       return MESSAGES.alreadyOwned;
     case 'unavailable':
-      return 'Esta ampliación no está disponible en la tienda en este momento.';
+      return t('Esta ampliación no está disponible en la tienda en este momento.');
     default:
       return MESSAGES.storeError;
   }

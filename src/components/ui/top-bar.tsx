@@ -11,6 +11,7 @@ import { Reveal } from '@/components/motion/reveal';
 import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { IconButton } from '@/components/ui/icon-button';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 interface TopBarProps {
   title?: string;
@@ -33,13 +34,14 @@ function defaultBack() {
  * optional actions. Root tab screens use `root` + `large`.
  */
 export function TopBar({ title, right, root = false, onBack, large = false }: TopBarProps) {
+  const { t } = useI18n();
   const goBack = onBack ?? defaultBack;
 
   return (
     <View>
       <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, gap: spacing.xxs }}>
         <View style={{ width: 88, flexDirection: 'row', alignItems: 'center', marginLeft: -10 }}>
-          {!root ? <IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} /> : null}
+          {!root ? <IconButton icon={ChevronLeft} label={t('Volver')} onPress={goBack} size={26} /> : null}
         </View>
         <View style={{ flex: 1, alignItems: 'center' }}>
           {title && !large ? (
@@ -93,6 +95,7 @@ export function LargeTitleScroll({
   contentContainerStyle,
   keyboard = false,
 }: LargeTitleScrollProps) {
+  const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const { scrollY, onScroll } = useScrollY();
   const goBack = onBack ?? defaultBack;
@@ -136,7 +139,7 @@ export function LargeTitleScroll({
         scrollY={scrollY}
         title={title}
         threshold={56}
-        left={!root ? <IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} /> : null}
+        left={!root ? <IconButton icon={ChevronLeft} label={t('Volver')} onPress={goBack} size={26} /> : null}
         right={right}
       />
     </View>

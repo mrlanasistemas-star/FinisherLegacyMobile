@@ -7,6 +7,7 @@ import { AppText } from '@/components/app-text';
 import { TagFlip, TagStage, type TagSide } from '@/components/tag';
 import { TAG_WIDTHS } from '@/components/tag/tag-geometry';
 import { Chip } from '@/components/ui/chip';
+import { useI18n } from '@/i18n';
 import { colors, fontFamily, motion, radius, spacing, springs } from '@/theme/tokens';
 
 import type { TagFace } from '../tag-design';
@@ -26,6 +27,7 @@ interface TagHeroProps {
  * API — Reanimated 4's is behind a build flag this app doesn't set).
  */
 export function TagHero({ face, accent, topInset, height }: TagHeroProps) {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   const [side, setSide] = useState<TagSide>('front');
   const entering = reduceMotion ? FadeIn.duration(motion.fast) : heroEntering;
@@ -44,7 +46,7 @@ export function TagHero({ face, accent, topInset, height }: TagHeroProps) {
         <SideDot active={side === 'front'} />
         <SideDot active={side === 'back'} />
         <AppText variant="caption" tone="muted" style={{ marginLeft: 4 }}>
-          {side === 'front' ? 'Frente' : 'Reverso'} · toca o desliza para girar
+          {side === 'front' ? t('Frente · toca o desliza para girar') : t('Reverso · toca o desliza para girar')}
         </AppText>
       </View>
     </TagStage>
@@ -113,19 +115,20 @@ export function Grouped({ title, children }: { title?: string; children: ReactNo
 
 /** "Cómo funciona": Acerca tu celular → se abre tu recuerdo. */
 export function HowItWorksStrip() {
+  const { t } = useI18n();
   const reduceMotion = useReducedMotion();
   return (
     <Animated.View
       entering={reduceMotion ? undefined : FadeIn.delay(160).duration(motion.base)}
       accessible
-      accessibilityLabel="Cómo funciona: acerca tu celular al tag y se abre tu recuerdo. Sin códigos QR."
+      accessibilityLabel={t('Cómo funciona: acerca tu celular al tag y se abre tu recuerdo. Sin códigos QR.')}
       style={{ gap: spacing.sm }}>
       <AppText variant="label" tone="muted" style={{ textTransform: 'uppercase' }}>
-        Cómo funciona
+        {t('Cómo funciona')}
       </AppText>
       <View style={{ gap: spacing.md, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.black }}>
-        <Step icon={<Smartphone size={18} color={colors.gold} />} title="Acerca tu celular" caption="NFC, sin apps extra" />
-        <Step icon={<Sparkles size={18} color={colors.gold} />} title="Se abre tu recuerdo" caption="Fotos, tiempos, historia" />
+        <Step icon={<Smartphone size={18} color={colors.gold} />} title={t('Acerca tu celular')} caption={t('NFC, sin apps extra')} />
+        <Step icon={<Sparkles size={18} color={colors.gold} />} title={t('Se abre tu recuerdo')} caption={t('Fotos, tiempos, historia')} />
       </View>
     </Animated.View>
   );

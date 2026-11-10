@@ -14,6 +14,7 @@ import { create } from 'zustand';
 
 import { uploadStoryMedia, type StoryUploadFile } from '@/api/stories';
 import { AppError, toAppError } from '@/api/errors';
+import { t } from '@/i18n';
 import type { MediaLimitDetails, QuotaKind, StoryMedia } from '@/schemas/story';
 import { compressImage } from '@/utils/image-compress';
 import { jpegFileName, normalizeVideoMime, videoFileName } from '@/utils/media-file';
@@ -128,11 +129,11 @@ async function run(item: UploadItem) {
       const error = caught instanceof AppError ? caught : toAppError(caught);
       const message =
         error.code === 'MEDIA_TOO_LARGE'
-          ? 'El archivo es demasiado grande. Elige uno más ligero.'
+          ? t('El archivo es demasiado grande. Elige uno más ligero.')
           : error.kind === 'unknown'
-            ? 'No pudimos preparar este archivo. Intenta con otro.'
+            ? t('No pudimos preparar este archivo. Intenta con otro.')
             : error.kind === 'not_found'
-              ? 'Todavía no podemos recibir archivos desde la app. Intenta más tarde.'
+              ? t('Todavía no podemos recibir archivos desde la app. Intenta más tarde.')
               : error.message;
       dispatch({ type: 'FAILED', id: item.id, message });
     }

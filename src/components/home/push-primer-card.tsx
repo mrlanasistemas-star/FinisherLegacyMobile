@@ -9,13 +9,15 @@ import { usePushPermission } from '@/hooks/use-push';
 import { showToast } from '@/stores/toastStore';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, radius, spacing } from '@/theme/tokens';
+import { useI18n } from '@/i18n';
 
 /**
  * Contextual permission ask — explains the value first, and only the
  * button triggers the system dialog. Never shown at launch-time as a
  * modal, never again once dismissed, hidden where push can't work.
  */
-export function PushPrimerCard({ message = 'Entérate cuando tu gente te apoye, cuando cambie tu pedido o salgan tus resultados.' }: { message?: string }) {
+export function PushPrimerCard({ message }: { message?: string }) {
+  const { t } = useI18n();
   const { available, permission, pending, enable } = usePushPermission();
   const dismissed = useUiStore((s) => s.pushPrimerDismissed);
   const dismiss = useUiStore((s) => s.setPushPrimerDismissed);
@@ -25,7 +27,7 @@ export function PushPrimerCard({ message = 'Entérate cuando tu gente te apoye, 
   async function handleEnable() {
     const result = await enable();
     if (result.ok) {
-      showToast('Listo. Te avisaremos de lo importante.', 'success');
+      showToast(t('Listo. Te avisaremos de lo importante.'), 'success');
       dismiss(true);
     } else if (result.reason === 'denied') {
       dismiss(true);
@@ -43,13 +45,13 @@ export function PushPrimerCard({ message = 'Entérate cuando tu gente te apoye, 
         <BellRing size={20} color={colors.accent} />
       </View>
       <View style={{ flex: 1, gap: spacing.xs }}>
-        <AppText variant="bodyStrong">Activa los avisos</AppText>
+        <AppText variant="bodyStrong">{t('Activa los avisos')}</AppText>
         <AppText variant="caption" tone="muted">
-          {message}
+          {message ?? t('Entérate cuando tu gente te apoye, cuando cambie tu pedido o salgan tus resultados.')}
         </AppText>
-        <AppButton label="Activar avisos" size="sm" fullWidth={false} onPress={handleEnable} loading={pending} style={{ alignSelf: 'flex-start', marginTop: spacing.xxs }} />
+        <AppButton label={t('Activar avisos')} size="sm" fullWidth={false} onPress={handleEnable} loading={pending} style={{ alignSelf: 'flex-start', marginTop: spacing.xxs }} />
       </View>
-      <IconButton icon={X} label="Ahora no" onPress={() => dismiss(true)} size={18} color={colors.subtle} style={{ marginTop: -8, marginRight: -8 }} />
+      <IconButton icon={X} label={t('Ahora no')} onPress={() => dismiss(true)} size={18} color={colors.subtle} style={{ marginTop: -8, marginRight: -8 }} />
     </Animated.View>
   );
 }
