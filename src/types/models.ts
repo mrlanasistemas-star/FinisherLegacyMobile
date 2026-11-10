@@ -457,13 +457,18 @@ export interface PublicGear {
 // Notifications — GET /me/notifications, POST .../read, POST .../read-all
 // ---------------------------------------------------------------------------
 
-/** Structured deep-link target — whitelisted server-side from the notification metadata. */
+/**
+ * Structured deep-link target, whitelisted server-side. Canonical keys (push `data.target` and
+ * the API): `{type, id?, uuid?, slug?, event_slug?}`. The API also repeats
+ * the legacy `{kind, username?, moment_uuid?, order_uuid?}` keys for older builds.
+ */
 export interface NotificationTarget {
   /** `training` = a new "Envíame ánimo" message → Entrenamientos. */
   kind?: 'athlete' | 'moment' | 'order' | 'event' | 'training';
-  /** Push payloads of training cheers send `{type: "training", uuid}` instead of `kind`. */
-  type?: string;
+  type?: 'athlete' | 'moment' | 'order' | 'event' | 'participant' | 'legacy_plate' | 'product' | 'tracking' | 'support' | 'training' | (string & {});
+  id?: number;
   uuid?: string;
+  slug?: string;
   username?: string;
   moment_uuid?: string;
   order_uuid?: string;
@@ -471,15 +476,34 @@ export interface NotificationTarget {
   event_slug?: string;
 }
 
+/** Preference category keys (same as the backend NotificationCategory). */
+export type NotificationCategoryKey = 'pedidos' | 'comunidad' | 'entrenamientos' | 'soporte' | 'avisos' | 'promociones';
+
 export interface AppNotification {
   id: string;
   title: string | null;
   message: string | null;
   type: string | null;
   action_url: string | null;
+  category?: NotificationCategoryKey | string | null;
+  image_url?: string | null;
   target: NotificationTarget | null;
   read_at: string | null;
   created_at: string;
+}
+
+/** One row of GET /me/notifications/preferences. */
+export interface NotificationPreferenceRow {
+  key: NotificationCategoryKey;
+  label: string;
+  description: string;
+  in_app: boolean;
+  push: boolean;
+}
+
+export interface NotificationPreferences {
+  categories: NotificationPreferenceRow[];
+  push_available: boolean;
 }
 
 /** GET /me/events/{participant}/media-entitlement — the only source of media limits. */
@@ -790,18 +814,4 @@ export interface CheckoutSession {
   url: string;
   expires_at: string;
   return_url: string;
-}
-
-// ---------------------------------------------------------------------------
-// Legacy Plate Models — GET /legacy-plate-models (public catalog)
-// ---------------------------------------------------------------------------
-
-export interface LegacyPlateModel {
-  uuid: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  width_mm: number;
-  height_mm: number;
-  preview_image_url: string | null;
 }

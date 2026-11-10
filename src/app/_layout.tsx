@@ -25,6 +25,7 @@ import '@/features/tracking/tracking-task';
 import { useLiveTrackingBootstrap } from '@/features/tracking/tracking-controller';
 import { usePendingActivationRecovery } from '@/features/nfc/use-activation';
 import { TrainingBridge } from '@/features/training/training-bridge';
+import { useIapRecovery } from '@/features/iap/use-photo-expansion';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -36,6 +37,8 @@ function RootNavigator() {
   useLiveTrackingBootstrap(status === 'authenticated');
   // Finish an NFC activation whose write succeeded but whose confirm never arrived.
   usePendingActivationRecovery();
+  // Credit store purchases (photo space) left unfinished by a crash / no signal / Ask to Buy.
+  useIapRecovery();
 
   return (
     <Stack
@@ -85,6 +88,8 @@ function RootNavigator() {
         <Stack.Screen name="training/index" />
         <Stack.Screen name="training/session" />
         <Stack.Screen name="training/share" />
+        <Stack.Screen name="stories/index" />
+        <Stack.Screen name="stories/[publicId]" />
         {/* Full-screen sheet: slides up and drags down itself (see training/player.tsx). */}
         <Stack.Screen name="training/player" options={{ presentation: 'transparentModal', animation: 'none', gestureEnabled: false }} />
       </Stack.Protected>
