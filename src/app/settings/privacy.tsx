@@ -16,6 +16,7 @@ import { useUpdateProfile } from '@/hooks/use-update-profile';
 import { showToast } from '@/stores/toastStore';
 import { colors, spacing } from '@/theme/tokens';
 import type { AthleteSummary } from '@/types/social';
+import { legalLinks } from '@/utils/links';
 
 export default function PrivacyScreen() {
   const { data } = useProfile();
@@ -94,8 +95,8 @@ export default function PrivacyScreen() {
         </View>
 
         <ListGroup title="Legal">
-          <ListRow label="Política de privacidad" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/privacy')} />
-          <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/terms')} />
+          <ListRow label="Política de privacidad" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy)} />
+          <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms)} />
         </ListGroup>
     </LargeTitleScroll>
   );

@@ -11,12 +11,10 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.finisherlegacy.app",
-      "buildNumber": "1",
       "supportsTablet": false
     },
     "android": {
       "package": "com.finisherlegacy.app",
-      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0B0B0C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -25,7 +23,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.CAMERA"
+        "android.permission.CAMERA",
+        "android.permission.NFC",
+        "android.permission.VIBRATE"
       ]
     },
     "web": {
@@ -47,19 +47,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Finisher Legacy necesita acceso a tus fotos para elegir la imagen de tu medalla o tu foto de perfil.",
-          "cameraPermission": "Finisher Legacy usa tu cámara para tomar fotos de tus carreras, tu medalla o tu perfil."
+          "photosPermission": "Finisher Legacy usa tus fotos para que elijas imágenes y videos de tus carreras: la foto de tu medalla, tus momentos, tus recuerdos y tu foto de perfil. Solo se sube lo que tú eliges.",
+          "cameraPermission": "Finisher Legacy usa la cámara para que tomes fotos de tu medalla, de tus carreras o de tu perfil cuando tú lo eliges.",
+          "microphonePermission": false
         }
       ],
       "expo-video",
       "expo-notifications",
-      [
-        "@stripe/stripe-react-native",
-        {
-          "merchantIdentifier": [],
-          "enableGooglePay": false
-        }
-      ],
       [
         "expo-location",
         {
@@ -82,9 +76,6 @@
         "projectId": "f6dce084-4b31-4f64-980a-917784b1f5c3"
       }
     },
-    "owner": "zuriel2026s-team",
-    "androidNavigationBar": {
-      "enforceContrast": false
-    }
+    "owner": "zuriel2026s-team"
   }
 }

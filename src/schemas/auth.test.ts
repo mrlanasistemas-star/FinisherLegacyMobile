@@ -17,10 +17,16 @@ describe('registerSchema', () => {
     email: 'ana@example.com',
     password: 'password123',
     password_confirmation: 'password123',
+    accept_terms: true,
   };
 
   it('accepts a fully valid payload', () => {
     expect(registerSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('requires accepting the Terms (App Store 1.2, user-generated content)', () => {
+    const result = registerSchema.safeParse({ ...valid, accept_terms: false });
+    expect(result.success).toBe(false);
   });
 
   it('rejects a password shorter than 8 characters (backend Password::default())', () => {

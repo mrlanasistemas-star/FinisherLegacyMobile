@@ -10,3 +10,13 @@ export const webLinks = {
   moment: (uuid: string) => `${WEB_ORIGIN}/moments/${uuid}`,
   event: (slug: string) => `${WEB_ORIGIN}/events/${slug}`,
 };
+
+/**
+ * Legal pages on the web — the same URLs declared in App Store Connect and
+ * Play Console (docs/store/README.md). Screens use these, never literals.
+ */
+export const legalLinks = {
+  privacy: `${WEB_ORIGIN}/privacy`,
+  terms: `${WEB_ORIGIN}/terms`,
+  accountDeletion: `${WEB_ORIGIN}/eliminar-cuenta`,
+};

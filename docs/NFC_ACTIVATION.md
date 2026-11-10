@@ -16,7 +16,8 @@ con el NFC del propio teléfono, sin apps de terceros.
   `@expo/config-plugins *`; TurboModule con `codegenConfig`).
 - Config plugin `app.plugin.js` usado desde `app.config.ts`:
   - iOS: `NFCReaderUsageDescription` (español) y
-    `com.apple.developer.nfc.readersession.formats = [NDEF, TAG]`.
+    `com.apple.developer.nfc.readersession.formats = [TAG]` (`includeNdefEntitlement: false`:
+    la app nunca usa `NFCNDEFReaderSession`, y `NDEF` provoca el error de subida ITMS-90778).
     `requestTechnology` abre una `NFCTagReaderSession`, por eso TAG es obligatorio.
     El App ID necesita la capability **NFC Tag Reading** en Apple Developer.
   - Android: `android.permission.NFC`; el manifest de la librería declara

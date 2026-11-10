@@ -1,8 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { Check } from 'lucide-react-native';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { registerRequest } from '@/api/auth';
 import { AppError } from '@/api/errors';
@@ -15,8 +17,9 @@ import { Reveal } from '@/components/motion/reveal';
 import { AppLink } from '@/components/ui/app-link';
 import { registerSchema, type RegisterFormValues } from '@/schemas/auth';
 import { useAuthStore } from '@/stores/authStore';
-import { spacing } from '@/theme/tokens';
+import { colors, fontFamily, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
+import { legalLinks } from '@/utils/links';
 
 const FIELD_NAMES = ['first_name', 'last_name', 'email', 'password', 'password_confirmation'] as const;
 
@@ -38,6 +41,7 @@ export default function RegisterScreen() {
       email: '',
       password: '',
       password_confirmation: '',
+      accept_terms: false,
     },
   });
 
@@ -45,7 +49,8 @@ export default function RegisterScreen() {
     setFormError(null);
     setSubmitting(true);
     try {
-      const { user, token } = await registerRequest(values);
+      const { accept_terms: _accepted, ...payload } = values;
+      const { user, token } = await registerRequest(payload);
       await tokenStorage.set(token);
       haptics.success();
       useAuthStore.getState().setSession(user, token);
@@ -183,6 +188,47 @@ export default function RegisterScreen() {
             )}
           />
         </FieldGroup>
+      </Reveal>
+
+      <Reveal delay={240}>
+        {/* Explicit Terms acceptance (community rules, zero tolerance for
+            abusive content) — App Store 1.2 / Play UGC policy. */}
+        <Controller
+          control={control}
+          name="accept_terms"
+          render={({ field }) => (
+            <View style={{ gap: spacing.xs }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm }}>
+                <Pressable
+                  onPress={() => {
+                    haptics.selection();
+                    field.onChange(!field.value);
+                  }}
+                  hitSlop={10}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: field.value }}
+                  accessibilityLabel="Acepto los Términos y condiciones, las reglas de la comunidad y el Aviso de privacidad"
+                  style={{ width: 24, height: 24, marginTop: 2, borderRadius: 6, borderWidth: 2, borderColor: field.value ? colors.gold : colors.muted, backgroundColor: field.value ? colors.gold : 'transparent', alignItems: 'center', justifyContent: 'center' }}>
+                  {field.value ? <Check size={15} color={colors.black} strokeWidth={3} /> : null}
+                </Pressable>
+                <View style={{ flex: 1, gap: spacing.xxs }}>
+                  <AppText variant="body" style={{ fontFamily: fontFamily.medium }}>
+                    Acepto los Términos y condiciones (incluidas las reglas de la comunidad: no se tolera contenido ofensivo ni abusivo) y el Aviso de privacidad.
+                  </AppText>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
+                    <AppLink label="Leer Términos" small onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms).catch(() => {})} />
+                    <AppLink label="Leer Aviso de privacidad" small onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy).catch(() => {})} />
+                  </View>
+                </View>
+              </View>
+              {errors.accept_terms?.message ? (
+                <AppText variant="caption" style={{ color: colors.destructive }}>
+                  {errors.accept_terms.message}
+                </AppText>
+              ) : null}
+            </View>
+          )}
+        />
       </Reveal>
     </AuthShell>
   );

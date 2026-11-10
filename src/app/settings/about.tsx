@@ -8,6 +8,7 @@ import { AppText } from '@/components/app-text';
 import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { colors, spacing } from '@/theme/tokens';
+import { legalLinks } from '@/utils/links';
 
 export default function AboutScreen() {
   const version = Constants.expoConfig?.version ?? '1.0.0';
@@ -39,8 +40,8 @@ export default function AboutScreen() {
       </ListGroup>
 
       <ListGroup title="Legal">
-        <ListRow label="Política de privacidad" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/privacy')} />
-        <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/terms')} />
+        <ListRow label="Política de privacidad" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.privacy)} />
+        <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync(legalLinks.terms)} />
       </ListGroup>
     </LargeTitleScroll>
   );

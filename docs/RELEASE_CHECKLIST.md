@@ -2,23 +2,25 @@
 
 Estado real verificado — no se marca ✅ nada que no se haya confirmado.
 
+> **Publicación en tiendas:** la guía vigente (fichas, Data safety, App Privacy, notas de revisión, cuenta demo, pendientes externos) está en [`docs/store/`](./store/README.md). Este documento queda como checklist técnico general.
+
 ## App identity
 
 - ✅ `app.json`: "Finisher Legacy", slug `FinisherLegacyMobile`, scheme `finisherlegacy`.
 - ✅ `com.finisherlegacy.app` en iOS y Android — **no cambiar**.
-- ✅ `ios.buildNumber` / `android.versionCode`: incrementar en cada submit (production usa `autoIncrement`).
+- ✅ Build number / versionCode remotos en EAS (`appVersionSource: remote` + `autoIncrement`); ya no están en `app.json`.
 - ✅ Ícono, adaptive icon y splash reales.
 - ✅ `ios.supportsTablet: false` (V1 no se diseñó para iPad).
-- ✅ `ios.usesAppleSignIn: true` (Sign in with Apple — EAS sincroniza la capability).
+- ✅ Sin login social (solo correo y contraseña): Sign in with Apple no aplica.
 
 ## Plugins nativos (requieren development build / EAS, no Expo Go)
 
-- ✅ `@stripe/stripe-react-native` (0.64.0, versión de SDK 57) — `merchantIdentifier: []`, `enableGooglePay: false`: sin entitlement de Apple Pay hasta tener Merchant ID.
-- ✅ `expo-apple-authentication`, `expo-camera`, `expo-image-picker`, `expo-video`, `expo-notifications`, `expo-secure-store`.
+- ✅ `@stripe/stripe-react-native` (0.64.0) — se retira al pasar al checkout web de OpenPay.
+- ✅ `expo-image-picker`, `expo-video`, `expo-audio`, `expo-location`, `expo-notifications`, `expo-secure-store`, `react-native-nfc-manager`.
 
 ## Permisos
 
-- ✅ Android: sólo `CAMERA`. Textos de permiso de cámara y fotos en español.
+- ✅ Android: `CAMERA`, `NFC`, `VIBRATE` + ubicación / servicios en primer plano de sus plugins. Bloqueados: `RECORD_AUDIO`, `SYSTEM_ALERT_WINDOW`, `READ_MEDIA_*`, `ACCESS_BACKGROUND_LOCATION`, `AD_ID` (ver `docs/store/README.md`).
 
 ## EAS
 
@@ -32,8 +34,7 @@ Estado real verificado — no se marca ✅ nada que no se haya confirmado.
 - Sin llaves: la app muestra "El pago con tarjeta todavía no está activo" y el pedido queda guardado.
 
 ### Google / Apple sign-in
-- Google: crear clientes OAuth (iOS, Android con el SHA-1 de firma de EAS, Web) en Google Cloud. App: `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`, `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` (en `eas.json` → `env`). Backend: `GOOGLE_OAUTH_CLIENT_IDS` (los mismos, separados por coma). Sin ids el botón no aparece.
-- Apple: habilitar Sign in with Apple en el App ID. Backend: `APPLE_SIGNIN_CLIENT_IDS=com.finisherlegacy.app`. El botón sólo aparece en iOS.
+- Retirado de la app (código `socialSignIn` y variables `EXPO_PUBLIC_GOOGLE_*` eliminados). Las cuentas antiguas sin contraseña pueden eliminarse escribiendo ELIMINAR.
 
 ### Push
 - Proveedor real (FCM/APNs vía Expo Push) y reemplazar `NullPushNotificationGateway` en el backend. Hoy las notificaciones sociales/pedidos son internas (bandeja de la app), no push.

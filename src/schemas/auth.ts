@@ -14,6 +14,10 @@ export const registerSchema = z
     email: z.string().min(1, 'Ingresa tu correo.').email('Ingresa un correo válido.'),
     password: z.string().min(8, 'Debe tener al menos 8 caracteres.'),
     password_confirmation: z.string().min(1, 'Confirma tu contraseña.'),
+    // Explicit acceptance of the Terms (community rules included) — App
+    // Store guideline 1.2 for apps with user-generated content. Client-side
+    // only: register.tsx strips it before calling the API.
+    accept_terms: z.boolean().refine((value) => value, 'Acepta los Términos y el Aviso de privacidad para continuar.'),
   })
   .refine((data) => data.password === data.password_confirmation, {
     message: 'Las contraseñas no coinciden.',
