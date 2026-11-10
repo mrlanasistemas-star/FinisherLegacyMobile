@@ -10,6 +10,8 @@ y reemplaza `<CORREO>` / `<CONTRASEÑA>` con lo que imprime. El comando crea (o 
 
 Sube el video a YouTube como **no listado** y reemplaza `<VIDEO_URL>`.
 
+**Compra dentro de la app (ampliación de fotos).** La historia «[DEMO]» de la cuenta de revisión es la que el revisor usa para ver «Ampliar espacio». Antes de enviar, confirma en Administración › Cuotas que hay un paquete de ampliación **activo, de alcance global** (la historia demo no tiene un Tag asociado, así que un paquete limitado a un producto o tipo no le aplica) con sus identificadores de App Store / Google Play, y que esos productos están aprobados o «Listos para enviar» en cada tienda. Si no, el botón no aparece.
+
 ---
 
 ## App Store — Review Notes (English)
@@ -34,7 +36,10 @@ Cheer messages and training audio keep playing with the screen locked while the 
 Guideline 2.5.4: in "Modo entrenamiento" with "one message every N minutes", the athlete starts a workout whose whole purpose is to hear their cheer messages through the headphones at set times while the phone is locked. Between two messages the app keeps its audio session alive with a near-silent track, mixed with (never interrupting) the athlete's music, so the next message plays on time. It runs only while a workout is active: it stops when the athlete pauses or ends the workout, or when every message has played. The screen shows "Sesión activa" and a battery note meanwhile.
 
 Purchases
-The store sells only physical goods (Finisher Legacy Tags, shipped to the user), paid through an external payment processor on our website (guideline 3.1.3(e)). No digital goods, subscriptions or content are sold in the app, and nothing in the app is unlocked by payment.
+The store sells physical goods (Finisher Legacy Tags, shipped to the user), paid through an external payment processor on our website (guideline 3.1.3(e)).
+
+In-App Purchase (photo expansions)
+The only digital item is extra photo space for a story ("photo expansion"), a consumable sold exclusively through In-App Purchase (StoreKit); it is never offered through the external processor in the app. Every story includes free photo space; the expansion only adds more. Where to find it: Recuerdos tab › "Mis historias" › open a story › the storage card shows used / available photos and the "Ampliar espacio" button, which opens the purchase sheet. The demo account already has a sample story ("[DEMO] Mi primer medio maratón"), so "Mis historias" opens it directly. No subscriptions; nothing else in the app is unlocked by payment.
 
 User-generated content (guideline 1.2)
 - Users must accept the Terms (with zero-tolerance community rules) at sign-up.
@@ -73,7 +78,10 @@ Los mensajes de ánimo y el audio del entrenamiento siguen sonando con la pantal
 Directriz 2.5.4: en "Modo entrenamiento" con "un mensaje cada N minutos", el atleta inicia un entrenamiento cuyo propósito es escuchar sus mensajes de ánimo en los audífonos a intervalos con el teléfono bloqueado. Entre dos mensajes la app mantiene activa su sesión de audio con una pista casi silenciosa, mezclada con la música del atleta (nunca la interrumpe), para que el siguiente mensaje suene a tiempo. Solo funciona durante un entrenamiento activo: se detiene al pausarlo o terminarlo, o cuando ya sonaron todos los mensajes. Mientras tanto la pantalla muestra "Sesión activa" y un aviso de batería.
 
 Compras
-La tienda vende solo bienes físicos (Finisher Legacy Tag con envío), pagados con un procesador externo en nuestro sitio (3.1.3(e)). No se venden bienes digitales, suscripciones ni contenido, y nada de la app se desbloquea con un pago.
+La tienda vende bienes físicos (Finisher Legacy Tag con envío), pagados con un procesador externo en nuestro sitio (3.1.3(e)).
+
+Compra dentro de la app (ampliación de fotos)
+El único artículo digital es espacio adicional para fotos de una historia ("ampliación de fotos"), un consumible que se vende únicamente mediante compra dentro de la app (In-App Purchase / StoreKit); en la app nunca se ofrece con el procesador externo. Cada historia incluye espacio gratis para fotos; la ampliación solo agrega más. Dónde encontrarlo: pestaña Recuerdos › "Mis historias" › abrir una historia › la tarjeta de espacio muestra las fotos usadas / disponibles y el botón "Ampliar espacio", que abre la hoja de compra. La cuenta demo ya tiene una historia de ejemplo ("[DEMO] Mi primer medio maratón"), así que "Mis historias" la abre directamente. No hay suscripciones; nada más en la app se desbloquea con un pago.
 
 Contenido de usuarios (1.2)
 - Aceptación obligatoria de los Términos (reglas de la comunidad con tolerancia cero) al registrarse.
@@ -93,6 +101,7 @@ Perfil › Configuración › Contraseña y cuenta › Eliminar mi cuenta. Tambi
 Sign in with: Email <CORREO> / Password <CONTRASEÑA> (tap "Ya tengo cuenta" on the welcome screen).
 The account has sample data labelled "[DEMO]", visible only to this account.
 NFC activation requires a physical Finisher Legacy Tag; the full flow, live tracking with the screen locked, and background audio are shown here: <VIDEO_URL>.
+In-app purchase (photo expansion, Google Play Billing): Recuerdos tab › "Mis historias" opens the "[DEMO]" story › storage card › "Ampliar espacio".
 No other credentials, codes or hardware are needed for the rest of the app.
 ```
 
