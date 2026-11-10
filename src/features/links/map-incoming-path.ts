@@ -7,7 +7,8 @@
  *   https://finisherlegacy.com/@ana        → /athlete/ana
  *   https://finisherlegacy.com/moments/<u> → /moments/<u>
  *   https://finisherlegacy.com/events/<s>  → /events/<s>
- *   https://finisherlegacy.com/n/<token>   → /nfc/<token>   (NFC tag tap — universal/app link)
+ *   https://finisherlegacy.com/n/<token>   → /nfc/<token>   (legacy plate NFC tap)
+ *   https://finisherlegacy.com/t/<code>    → /nfc/t/<code>  (Finisher Legacy Tag NFC tap)
  *   https://finisherlegacy.com/reset-password/<token>?email=… → /reset-password?token=…&email=…
  *   …/stripe-redirect                      → null (Stripe handles it; stay put)
  *
@@ -33,6 +34,10 @@ export function mapIncomingPath(raw: string): string | null {
     query.set('token', reset[1]);
     return `/reset-password?${query.toString()}`;
   }
+
+  // Finisher Legacy Tag URL written at activation: `/t/{code}` → `/nfc/t/{code}`.
+  const tag = path.match(/^\/t\/([A-Za-z0-9-]{8,24})\/?(?:\?.*)?$/);
+  if (tag) return `/nfc/t/${tag[1]}`;
 
   // NFC tag URL written on the product: `/n/{token}` (web) → `/nfc/{token}` (app).
   const nfc = path.match(/^\/(?:n|nfc)\/([A-Za-z0-9_-]+)\/?(?:\?.*)?$/);

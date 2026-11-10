@@ -27,8 +27,24 @@ function appLinkDomain(): string {
 export default ({ config }: ConfigContext): ExpoConfig => {
   const domain = appLinkDomain();
 
+  // Native NFC (react-native-nfc-manager v4, New Architecture). Writes the
+  // Finisher Legacy Tag URL in-app — see docs/NFC_ACTIVATION.md.
+  //  - iOS: NFCReaderUsageDescription + readersession.formats [NDEF, TAG]
+  //    (requestTechnology opens an NFCTagReaderSession, so TAG is required).
+  //  - Android: android.permission.NFC; the library manifest declares
+  //    android.hardware.nfc required=false, so phones without NFC can still
+  //    install.
+  const nfcPlugin: [string, Record<string, unknown>] = [
+    'react-native-nfc-manager',
+    {
+      nfcPermission: 'Finisher Legacy usa NFC para activar y leer tu Finisher Legacy Tag cuando lo acercas al teléfono.',
+      includeNdefEntitlement: true,
+    },
+  ];
+
   return {
     ...(config as ExpoConfig),
+    plugins: [...(config.plugins ?? []), nfcPlugin],
     ios: {
       ...config.ios,
       associatedDomains: [`applinks:${domain}`],
@@ -39,7 +55,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         {
           action: 'VIEW',
           autoVerify: true,
-          data: [{ scheme: 'https', host: domain, pathPrefix: '/n/' }],
+          data: [
+            { scheme: 'https', host: domain, pathPrefix: '/n/' },
+            { scheme: 'https', host: domain, pathPrefix: '/t/' },
+          ],
           category: ['BROWSABLE', 'DEFAULT'],
         },
       ],

@@ -63,7 +63,7 @@ export function NfcPulse({ size = 168, active = true }: { size?: number; active?
           shadowOffset: { width: 0, height: 0 },
           elevation: 0,
         }}>
-        <Nfc size={disc * 0.46} color={colors.goldSoft} strokeWidth={1.8} />
+        <Nfc size={disc * 0.46} color={colors.accent} strokeWidth={1.8} />
       </View>
     </View>
   );

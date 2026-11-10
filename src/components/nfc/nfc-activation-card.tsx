@@ -8,7 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AppText } from '@/components/app-text';
 import { Badge } from '@/components/ui/badge';
 import { NFC_TARGET_LABEL } from '@/features/nfc/nfc-target';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { colors, palette, radius, shadows, spacing } from '@/theme/tokens';
 import type { NfcTarget } from '@/types/nfc';
 
 interface NfcActivationCardProps {
@@ -28,8 +28,8 @@ export function NfcActivationCard({ target, status, statusVariant = 'gold', chil
   return (
     <Animated.View
       entering={FadeInDown.springify().damping(18).stiffness(160)}
-      style={{ borderRadius: radius.xl, overflow: 'hidden', backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.border }}>
-      <View style={{ height: 200, backgroundColor: colors.graphiteLight }}>
+      style={{ borderRadius: radius.xl, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, ...shadows.card }}>
+      <View style={{ height: 200, backgroundColor: colors.surfaceMuted }}>
         {target?.image_url ? (
           <Image source={{ uri: target.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={250} accessibilityIgnoresInvertColors />
         ) : (
@@ -45,7 +45,7 @@ export function NfcActivationCard({ target, status, statusVariant = 'gold', chil
 
       <View style={{ padding: spacing.lg, gap: spacing.xs }}>
         {target ? (
-          <AppText variant="label" tone="gold" style={{ letterSpacing: 2 }}>
+          <AppText variant="eyebrow">
             {NFC_TARGET_LABEL[target.type].toUpperCase()}
           </AppText>
         ) : null}
@@ -63,11 +63,11 @@ export function NfcActivationCard({ target, status, statusVariant = 'gold', chil
   );
 }
 
-/** Fallback art: a brushed-steel plate with the NFC mark — never an empty grey box. */
+/** Fallback art: a warm bone plate with a gold hairline and the NFC mark — never an empty grey box. */
 function SteelPlate() {
   return (
     <LinearGradient
-      colors={['#3A3A40', '#1E1E22', '#2E2E34', '#17171A']}
+      colors={[palette.white, palette.bone, '#EFE6D8', palette.bone]}
       locations={[0, 0.45, 0.7, 1]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}

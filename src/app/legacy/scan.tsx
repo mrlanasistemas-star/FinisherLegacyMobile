@@ -1,90 +1,184 @@
-import { router } from 'expo-router';
-import { KeyRound, Nfc, X } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import { KeyRound, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { extractLegacyCode, normalizeManualCode } from '@/api/legacyCodes';
-import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
-import { FormInput } from '@/components/form-input';
-import { IconButton } from '@/components/ui/icon-button';
-import { colors, radius, spacing } from '@/theme/tokens';
+import { ActivationShell } from '@/components/nfc/activation-shell';
+import { StepButton } from '@/components/nfc/step-button';
+import { TapIllustration, type TapPhase } from '@/components/nfc/tap-illustration';
+import { failureCopy } from '@/features/nfc/activation-copy';
+import { readTagOnce } from '@/features/nfc/activation-session';
+import { nativeNfcDriver } from '@/features/nfc/nfc-driver';
+import type { ActivationFailure } from '@/features/nfc/nfc-errors';
+import { webOrigin } from '@/features/nfc/use-activation';
+import { classifyFlUrl } from '@/features/nfc/url-policy';
+import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 
-/**
- * "Tengo un código impreso" — the route keeps its historical name
- * (`/legacy/scan`) so old links work, but there is no camera scanner any
- * more: new Legacy Plates and products connect by NFC tap. Printed codes
- * from earlier plates/products are still honored by typing them:
- * Legacy Codes → `/legacy/{code}`, product codes (`AST…`) → `/gear/claim`.
- */
-export default function EnterCodeScreen() {
-  const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+const PLATFORM: 'ios' | 'android' = Platform.OS === 'ios' ? 'ios' : 'android';
 
-  function submit() {
-    const normalized = extractLegacyCode(code) ?? normalizeManualCode(code);
-    if (normalized.length < 4) {
-      setError('Escribe el código completo, tal como aparece impreso.');
+type ReadNotice = { title: string; body: string; action?: 'activate' | 'settings' } | null;
+
+/**
+ * "Leer mi Finisher Legacy" — the in-app scan entry (route kept as
+ * `/legacy/scan` for old links). Reads a chip with the phone's NFC and
+ * routes by what it carries — it never writes:
+ *   /t/{code} → /nfc/t/{code} · /n/{token} → /nfc/{token} · /l/{code} → /legacy/{code}
+ *   blank chip → offer the activation wizard.
+ * Printed codes from earlier plates/products still work by typing them.
+ */
+export default function ScanScreen() {
+  const [code, setCode] = useState('');
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [reading, setReading] = useState(false);
+  const [phase, setPhase] = useState<TapPhase>('idle');
+  const [notice, setNotice] = useState<ReadNotice>(null);
+
+  function close() {
+    if (router.canGoBack()) router.back();
+    else router.replace('/legacy');
+  }
+
+  function showFailure(failure: ActivationFailure) {
+    if (failure.kind === 'cancelled') {
+      setPhase('idle');
       return;
     }
-    haptics.success();
-    setError(null);
-    if (/^AST[A-Z0-9]+$/.test(normalized)) {
-      router.replace({ pathname: '/gear/claim', params: { code: normalized } });
-    } else {
-      router.replace(`/legacy/${normalized}`);
+    const copy = failureCopy(failure);
+    setNotice({ title: copy.title, body: copy.body, action: copy.action === 'settings' ? 'settings' : undefined });
+    setPhase('error');
+  }
+
+  async function read() {
+    if (reading) return;
+    setReading(true);
+    setNotice(null);
+    setPhase('searching');
+    try {
+      const outcome = await readTagOnce(nativeNfcDriver());
+      if (outcome.type === 'failed') {
+        if (outcome.failure.kind !== 'cancelled') haptics.error();
+        showFailure(outcome.failure);
+        return;
+      }
+      for (const uri of outcome.uris) {
+        const link = classifyFlUrl(uri, webOrigin);
+        if (!link) continue;
+        haptics.success();
+        setPhase('done');
+        const href = (link.kind === 'tag' ? `/nfc/t/${link.code}` : link.kind === 'nfc_token' ? `/nfc/${link.token}` : `/legacy/${link.code}`) as Href;
+        router.replace(href);
+        return;
+      }
+      haptics.warning();
+      setPhase('idle');
+      setNotice(
+        outcome.blank
+          ? { title: 'Este Finisher Legacy aún no está activado', body: 'Actívalo con el código de la tarjeta que venía en tu empaque.', action: 'activate' }
+          : { title: 'No es un Finisher Legacy', body: 'Este chip tiene información de otra app o servicio. Acerca el tag que venía en tu empaque.' },
+      );
+    } finally {
+      setReading(false);
     }
   }
 
+  function submitCode() {
+    const normalized = extractLegacyCode(code) ?? normalizeManualCode(code);
+    if (normalized.length < 4) {
+      setCodeError('Escribe el código completo, tal como aparece impreso.');
+      return;
+    }
+    haptics.success();
+    setCodeError(null);
+    if (/^AST[A-Z0-9]+$/.test(normalized)) router.replace({ pathname: '/gear/claim', params: { code: normalized } });
+    else router.replace(`/legacy/${normalized}` as Href);
+  }
+
   return (
-    <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.sm }}>
-        <IconButton icon={X} label="Cerrar" onPress={() => (router.canGoBack() ? router.back() : router.replace('/legacy'))} />
+    <ActivationShell
+      stepKey="scan"
+      title="Leer mi Finisher Legacy"
+      leading={{ icon: X, label: 'Cerrar', onPress: close }}
+      footer={
+        <>
+          {notice?.action === 'activate' ? <StepButton label="Activar mi Finisher Legacy" onPress={() => router.replace('/activate' as Href)} /> : null}
+          {notice?.action === 'settings' ? <StepButton label="Abrir ajustes de NFC" onPress={() => nativeNfcDriver().openSettings()} /> : null}
+          <StepButton
+            label={reading ? (PLATFORM === 'android' ? 'Cancelar lectura' : 'Buscando…') : 'Leer con NFC'}
+            variant={notice?.action || reading ? 'secondary' : 'primary'}
+            loading={reading && PLATFORM === 'ios'}
+            onPress={reading ? () => nativeNfcDriver().endSession() : read}
+            accessibilityHint={reading ? 'Cancela la lectura' : 'Activa el lector NFC del teléfono'}
+          />
+        </>
+      }>
+      <View style={{ alignItems: 'center' }}>
+        <TapIllustration phase={phase} platform={PLATFORM} size={200} />
       </View>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: spacing.lg, gap: spacing.xl, paddingBottom: spacing.xl }}>
-          <View style={{ gap: spacing.xs, marginTop: spacing.md }}>
-            <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
-              CÓDIGO IMPRESO
-            </AppText>
-            <AppText variant="title" accessibilityRole="header">
-              Agrega tu pieza con su código
-            </AppText>
-            <AppText variant="body" tone="muted">
-              Si tu Legacy Plate o tu producto trae un código impreso, escríbelo aquí para conectarlo a tu historia.
-            </AppText>
-          </View>
 
-          <View style={{ gap: spacing.sm }}>
-            <FormInput
-              label="Código"
-              icon={KeyRound}
-              value={code}
-              onChangeText={(text) => {
-                setCode(text.toUpperCase());
-                if (error) setError(null);
-              }}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              autoFocus
-              placeholder="Ej. Q8K2MX7P"
-              returnKeyType="go"
-              onSubmitEditing={submit}
-              error={error ?? undefined}
-            />
-            <AppButton label="Continuar" onPress={submit} disabled={code.trim().length < 4} />
-          </View>
+      <View style={{ gap: spacing.xs }} accessibilityLiveRegion="polite">
+        <AppText variant="title" accessibilityRole="header">
+          {notice?.title ?? (reading ? 'Acerca tu Finisher Legacy' : 'Acerca tu teléfono al tag')}
+        </AppText>
+        <AppText variant="body" tone="muted">
+          {notice?.body ??
+            (PLATFORM === 'ios'
+              ? 'Toca “Leer con NFC” y acerca el tag a la parte superior de tu iPhone.'
+              : 'Toca “Leer con NFC” y acerca el tag al centro de la parte trasera del teléfono.')}
+        </AppText>
+      </View>
 
-          <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite }}>
-            <Nfc size={22} color={colors.gold} />
-            <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-              ¿Tu pieza tiene NFC? No necesitas código: acerca tu teléfono a la etiqueta y se abrirá Finisher Legacy.
-            </AppText>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View style={styles.divider} />
+
+      <View style={{ gap: spacing.xs }}>
+        <AppText variant="bodyStrong">¿Tu pieza trae un código impreso?</AppText>
+        <AppText variant="caption" tone="muted">
+          Legacy Plates y productos anteriores se conectan escribiendo su código.
+        </AppText>
+        <View style={[styles.field, codeError ? { borderColor: colors.destructive } : null]}>
+          <KeyRound size={18} color={colors.accent} strokeWidth={1.8} />
+          <TextInput
+            value={code}
+            onChangeText={(text) => {
+              setCode(text.toUpperCase());
+              if (codeError) setCodeError(null);
+            }}
+            placeholder="Ej. Q8K2MX7P"
+            placeholderTextColor={colors.subtle}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            autoComplete="off"
+            returnKeyType="go"
+            onSubmitEditing={submitCode}
+            accessibilityLabel="Código impreso"
+            style={styles.input}
+          />
+        </View>
+        {codeError ? (
+          <AppText variant="caption" tone="destructive">
+            {codeError}
+          </AppText>
+        ) : null}
+        <StepButton label="Usar código" variant="secondary" onPress={submitCode} disabled={code.trim().length < 4} />
+      </View>
+    </ActivationShell>
   );
 }
+
+const styles = StyleSheet.create({
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.hairline, marginVertical: spacing.xs },
+  field: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+    backgroundColor: colors.input,
+  },
+  input: { flex: 1, minHeight: 46, fontFamily: fontFamily.medium, fontSize: 16, letterSpacing: 1, color: colors.foreground, paddingVertical: 0 },
+});
