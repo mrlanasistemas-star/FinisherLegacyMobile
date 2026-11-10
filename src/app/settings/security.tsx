@@ -16,6 +16,7 @@ import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 import { fontFamily, spacing } from '@/theme/tokens';
+import { deleteConfirmationWord, resolveDeleteConfirmation } from '@/utils/delete-confirmation';
 import { ensureOnline } from '@/utils/network';
 import { useI18n } from '@/i18n';
 
@@ -47,13 +48,13 @@ export default function SecurityScreen() {
   async function confirmDelete() {
     setError(null);
     if (!secret.trim()) {
-      setError(socialMode ? t('Escribe {word} para confirmar.', { word: 'ELIMINAR' }) : t('Escribe tu contraseña para confirmar.'));
+      setError(socialMode ? t('Escribe {word} para confirmar.', { word: deleteConfirmationWord() }) : t('Escribe tu contraseña para confirmar.'));
       return;
     }
     setDeleting(true);
     try {
       await ensureOnline();
-      await deleteAccount(socialMode ? { confirmation: secret.trim().toUpperCase() === 'ELIMINAR' ? 'ELIMINAR' : undefined } : { password: secret });
+      await deleteAccount(socialMode ? { confirmation: resolveDeleteConfirmation(secret) } : { password: secret });
       await tokenStorage.clear();
       queryClient.clear();
       useAuthStore.getState().clearSession();
@@ -101,7 +102,7 @@ export default function SecurityScreen() {
               {t('Se borran tu perfil, fotos, momentos, mensajes, reacciones y seguidores, y se cierra tu sesión en todos tus dispositivos. Tus pedidos y resultados oficiales de eventos se conservan de forma anónima. Esto no se puede deshacer.')}
             </AppText>
             {socialMode ? (
-              <FormInput label={t('Escribe {word} para confirmar', { word: 'ELIMINAR' })} autoCapitalize="characters" value={secret} onChangeText={setSecret} />
+              <FormInput label={t('Escribe {word} para confirmar', { word: deleteConfirmationWord() })} autoCapitalize="characters" value={secret} onChangeText={setSecret} />
             ) : (
               <FormInput label={t('Tu contraseña')} kind="password" value={secret} onChangeText={setSecret} />
             )}

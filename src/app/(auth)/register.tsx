@@ -21,6 +21,7 @@ import { colors, fontFamily, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 import { legalLinks } from '@/utils/links';
 import { useI18n } from '@/i18n';
+import { splitMarkers } from '@/i18n/text';
 
 const FIELD_NAMES = ['first_name', 'last_name', 'email', 'password', 'password_confirmation'] as const;
 
@@ -84,10 +85,16 @@ export default function RegisterScreen() {
         <>
           <AppButton label={t('Crear mi cuenta')} onPress={handleSubmit(onSubmit)} loading={submitting} />
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.xxs, flexWrap: 'wrap' }}>
-            <AppText variant="body" tone="muted">
-              {t('¿Ya tienes cuenta?')}
-            </AppText>
-            <AppLink label={t('Inicia sesión')} onPress={() => router.replace('/login')} />
+            {/* One sentence for the translator: {link} marks where the link goes. */}
+            {splitMarkers(t('¿Ya tienes cuenta? {link}'), ['link']).map((segment, index) =>
+              segment.type === 'slot' ? (
+                <AppLink key={index} label={t('Inicia sesión')} onPress={() => router.replace('/login')} />
+              ) : segment.value.trim() ? (
+                <AppText key={index} variant="body" tone="muted">
+                  {segment.value.trim()}
+                </AppText>
+              ) : null,
+            )}
           </View>
         </>
       }>
@@ -101,7 +108,7 @@ export default function RegisterScreen() {
             render={({ field }) => (
               <FloatingField
                 ref={field.ref}
-                label={t('Nombre')}
+                label={t('Nombre||nombre de pila')}
                 kind="name"
                 value={field.value}
                 onChangeText={field.onChange}

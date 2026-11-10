@@ -15,6 +15,7 @@ import { NfcPulse } from '@/components/nfc/nfc-pulse';
 import { IconButton } from '@/components/ui/icon-button';
 import { nfcInAppHref } from '@/features/nfc/nfc-target';
 import { useClaimNfcTag, useNfcTag } from '@/hooks/use-nfc';
+import { I18nText } from '@/components/i18n/i18n-text';
 import { useI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
@@ -78,10 +79,6 @@ export default function NfcTapScreen() {
 
   const claimError = claim.error instanceof AppError ? claim.error : null;
   const alreadyClaimed = claimError?.code === NFC_ALREADY_CLAIMED || claimError?.status === 409;
-  // One whole sentence for the translator; {section} marks where the bold "Mi equipo" goes.
-  const [activateBefore, activateAfter = ''] = t(
-    'Actívalo y quedará en {section}, conectado a tu historia. Cada vez que alguien lo acerque a su teléfono verá tu legado.',
-  ).split('{section}');
 
   return (
     <SafeAreaView edges={['top', 'bottom', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
@@ -138,9 +135,11 @@ export default function NfcTapScreen() {
         ) : (
           <NfcActivationCard target={resolution.target} status={t('Listo para activar')}>
             <AppText variant="body" tone="muted">
-              {activateBefore}
-              <AppText variant="bodyStrong">{t('Mi equipo')}</AppText>
-              {activateAfter}
+              {/* One whole sentence for the translator; {section} marks where the bold "Mi equipo" goes. */}
+              <I18nText
+                text={t('Actívalo y quedará en {section}, conectado a tu historia. Cada vez que alguien lo acerque a su teléfono verá tu legado.')}
+                slots={{ section: <AppText variant="bodyStrong">{t('Mi equipo')}</AppText> }}
+              />
             </AppText>
             {!authenticated ? (
               <>

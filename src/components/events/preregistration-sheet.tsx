@@ -106,7 +106,7 @@ export function PreregistrationSheet({ visible, onClose, editionId, eventName, r
               ) : null}
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-              <FormInput containerStyle={{ flex: 1 }} label={t('Nombre')} kind="name" value={firstName} onChangeText={setFirstName} error={fieldErrors.first_name} />
+              <FormInput containerStyle={{ flex: 1 }} label={t('Nombre||nombre de pila')} kind="name" value={firstName} onChangeText={setFirstName} error={fieldErrors.first_name} />
               <FormInput containerStyle={{ flex: 1 }} label={t('Apellido')} kind="name" value={lastName} onChangeText={setLastName} error={fieldErrors.last_name} />
             </View>
             <FormInput label={t('Correo')} kind="email" value={email} onChangeText={setEmail} error={fieldErrors.email} />

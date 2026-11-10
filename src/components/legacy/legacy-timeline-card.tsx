@@ -26,7 +26,7 @@ interface LegacyTimelineCardProps {
  * it goes to the full event story (result, media, gear, Legacy Plate, apoyo).
  */
 export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPress, compact = false }: LegacyTimelineCardProps) {
-  const { t } = useI18n();
+  const { t, tc } = useI18n();
   const year = row.event_date ? row.event_date.slice(0, 4) : '';
   const time = row.result?.official_time ?? null;
   const position = row.result?.overall_position ?? null;
@@ -108,8 +108,8 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
           )}
 
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md, marginTop: spacing.xs }}>
-            <Count icon={MedalIcon} count={row.medal_count} label={t('{count} medallas', { count: row.medal_count })} />
-            <Count icon={Camera} count={row.media_count} label={t('{count} recuerdos', { count: row.media_count })} />
+            <Count icon={MedalIcon} count={row.medal_count} label={tc('{count} medalla|{count} medallas', row.medal_count)} />
+            <Count icon={Camera} count={row.media_count} label={tc('{count} recuerdo|{count} recuerdos', row.media_count)} />
             <Count icon={Shirt} count={row.gear_count} label={t('{count} equipo', { count: row.gear_count })} />
             {plate ? <Badge label={`Legacy Plate · ${plate}`} variant="gold" /> : null}
           </View>

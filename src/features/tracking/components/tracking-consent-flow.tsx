@@ -13,6 +13,7 @@ import { haptics } from '@/utils/haptics';
 
 import { createConsent } from '../consent';
 import { getLocationAccess, requestBackgroundAccess, requestForegroundAccess, startLiveTracking, TrackingError, type TrackingStartError } from '../tracking-controller';
+import { I18nText } from '@/components/i18n/i18n-text';
 import { useI18n, type Translate } from '@/i18n';
 
 type Step = 'consent' | 'background' | 'starting';
@@ -103,8 +104,10 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
             {t('¿Seguimos con la pantalla apagada?')}
           </AppText>
           <AppText variant="body" tone="muted">
-            {t('Para que tu gente te vea avanzar aunque guardes el teléfono, elige')}{' '}
-            <AppText variant="bodyStrong">{t('“Permitir siempre”')}</AppText> {t('(o “Permitir todo el tiempo”) en el siguiente aviso.')}
+            <I18nText
+              text={t('Para que tu gente te vea avanzar aunque guardes el teléfono, elige {option} (o “Permitir todo el tiempo”) en el siguiente aviso.')}
+              slots={{ option: <AppText variant="bodyStrong">{t('“Permitir siempre”')}</AppText> }}
+            />
           </AppText>
           <AppText variant="body" tone="muted">
             {t('Solo se usa mientras tu seguimiento esté activo. Verás un aviso permanente en tu teléfono mientras compartes tu ubicación.')}

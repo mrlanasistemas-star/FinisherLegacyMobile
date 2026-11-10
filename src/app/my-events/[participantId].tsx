@@ -245,7 +245,7 @@ export default function MyEventDetailScreen() {
                   <View>
                     <AppText variant="title">#{result.overall_position}</AppText>
                     <AppText variant="caption" tone="muted">
-                      {t('General')}
+                      {t('General||clasificación general')}
                     </AppText>
                   </View>
                 ) : null}

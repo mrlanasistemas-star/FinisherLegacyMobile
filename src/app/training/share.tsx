@@ -23,7 +23,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useCreateTrainingLink, useRevokeTrainingLink, useTrainingLinks } from '@/features/training/use-training';
-import { useI18n, type Translate } from '@/i18n';
+import { useI18n, type Translate, type TranslateCount } from '@/i18n';
 import { createTrainingLinkSchema, isLinkActive, type CreateTrainingLinkInput, type TrainingLink } from '@/schemas/training';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
@@ -31,11 +31,11 @@ import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
 
 /** Built with the component's translator so the labels follow the app language. */
-function expiryOptions(t: Translate): { value: CreateTrainingLinkInput['expires_in_days']; label: string }[] {
+function expiryOptions(t: Translate, tc: TranslateCount): { value: CreateTrainingLinkInput['expires_in_days']; label: string }[] {
   return [
-    { value: 7, label: t('{days} días', { days: 7 }) },
-    { value: 30, label: t('{days} días', { days: 30 }) },
-    { value: 90, label: t('{days} días', { days: 90 }) },
+    { value: 7, label: tc('{count} día|{count} días', 7) },
+    { value: 30, label: tc('{count} día|{count} días', 30) },
+    { value: 90, label: tc('{count} día|{count} días', 90) },
     { value: null, label: t('Sin límite') },
   ];
 }
@@ -53,7 +53,7 @@ async function shareLink(link: TrainingLink, firstName: string | null, t: Transl
 }
 
 export default function TrainingShareScreen() {
-  const { t } = useI18n();
+  const { t, tc } = useI18n();
   const insets = useSafeAreaInsets();
   const links = useTrainingLinks();
   const create = useCreateTrainingLink();
@@ -120,7 +120,7 @@ export default function TrainingShareScreen() {
               {t('Recibir mensajes durante')}
             </AppText>
             <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-              {expiryOptions(t).map((option) => {
+              {expiryOptions(t, tc).map((option) => {
                 const selected = option.value === expiry;
                 return (
                   <PressableScale

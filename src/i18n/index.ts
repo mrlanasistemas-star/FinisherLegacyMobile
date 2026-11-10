@@ -7,6 +7,7 @@
  *     t('Mis historias')
  *     t('Hola, {name}', { name: user.first_name })
  *     tc('{count} foto|{count} fotos', photos.length)
+ *     t('Nombre||nombre completo del atleta')           // translator note, never shown
  *     const { t, tc, locale, setLocale } = useI18n();   // re-renders on change
  *     const t = useT();                                 // only the translator
  *     const locale = useLocale();                       // only the language code
@@ -36,6 +37,7 @@ import { useMemo, useSyncExternalStore } from 'react';
 import { env } from '@/utils/env';
 
 import { setActiveLocale } from './active-locale';
+import { ordinal, stripNote } from './text';
 import en from './locales/en.json';
 import es from './locales/es.json';
 
@@ -115,8 +117,9 @@ export function pluralize(text: string, count: number): string {
   return (count === 1 ? forms[0] : forms[forms.length - 1]).trim();
 }
 
+/** `||` starts a translator note: part of the key, never of the text. */
 function lookup(source: string): string {
-  return snapshot.locale === SOURCE_LOCALE ? source : messages[source] || source;
+  return stripNote(snapshot.locale === SOURCE_LOCALE ? source : messages[source] || source);
 }
 
 /** Translates a Spanish source string into the active language. */
@@ -141,6 +144,11 @@ export function getLocales(): LocaleOption[] {
 /** BCP 47 tag of the active language, for `Intl` and date formatting. */
 export function getRegionalLocale(): string {
   return snapshot.locales.find((option) => option.code === snapshot.locale)?.regional ?? snapshot.locale;
+}
+
+/** A place in the active language: "3.º" in Spanish, "3rd" in English. */
+export function getOrdinal(value: number): string {
+  return ordinal(value, getRegionalLocale());
 }
 
 function supported(code: string | null | undefined): string | null {

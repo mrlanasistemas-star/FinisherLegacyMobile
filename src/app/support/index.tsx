@@ -128,7 +128,7 @@ export default function SupportScreen() {
       <Sheet visible={creating} onClose={() => setCreating(false)}>
         <View style={{ gap: spacing.md, paddingBottom: spacing.md }}>
           <AppText variant="subtitle">{t('Nueva sesión de apoyo')}</AppText>
-          <FormInput label={t('Nombre')} value={title} onChangeText={setTitle} placeholder={t('Ej. Maratón CDMX 2026')} />
+          <FormInput label={t('Nombre||nombre de la sesión de apoyo')} value={title} onChangeText={setTitle} placeholder={t('Ej. Maratón CDMX 2026')} />
           {formError ? (
             <AppText variant="caption" tone="destructive">
               {formError}

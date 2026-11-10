@@ -36,6 +36,7 @@ import type { AthleteHistoryRow } from '@/types/models';
 import { formatLongDate } from '@/utils/dates';
 import { timeOfDayGreeting } from '@/utils/greeting';
 import { useI18n } from '@/i18n';
+import { splitMarkers } from '@/i18n/text';
 
 const NAV_HEIGHT = 52;
 
@@ -118,12 +119,18 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingTop: insets.top + NAV_HEIGHT, paddingBottom: spacing.xxl }}
         refreshControl={<BrandRefreshControl refreshing={refreshing} onRefresh={refresh} progressViewOffset={insets.top + NAV_HEIGHT} />}>
         <Reveal style={{ paddingHorizontal: spacing.lg, gap: 2, marginBottom: spacing.lg }}>
-          <AppText variant="body" tone="muted">
-            {timeOfDayGreeting()},
-          </AppText>
-          <AppText variant="display" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-            {firstName}
-          </AppText>
+          {/* One sentence for the translator ("Buenos días, {name}"): the name is set big wherever the language puts it. */}
+          {splitMarkers(timeOfDayGreeting(), ['name']).map((segment, index) =>
+            segment.type === 'slot' ? (
+              <AppText key={index} variant="display" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                {firstName}
+              </AppText>
+            ) : segment.value.trim() ? (
+              <AppText key={index} variant="body" tone="muted">
+                {segment.value.trim()}
+              </AppText>
+            ) : null,
+          )}
           {user?.legacy_id ? (
             <View style={{ marginTop: spacing.xs }}>
               <LegacyIdTag legacyId={user.legacy_id} />

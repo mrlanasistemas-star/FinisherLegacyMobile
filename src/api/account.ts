@@ -26,11 +26,12 @@ export async function resetPassword(input: {
 }
 
 /**
- * Re-auth: the current password, or `confirmation: 'ELIMINAR'` for older
+ * Re-auth: the current password, or `confirmation` — the word of the app
+ * language ("ELIMINAR" / "DELETE", see `utils/delete-confirmation.ts`) — for older
  * accounts created with the (removed) Google/Apple sign-in that never had a
  * password. The app itself no longer offers social sign-in.
  */
-export async function deleteAccount(input: { password?: string; confirmation?: 'ELIMINAR' }): Promise<void> {
+export async function deleteAccount(input: { password?: string; confirmation?: string }): Promise<void> {
   try {
     await apiClient.delete('me/account', { data: input });
   } catch (error) {

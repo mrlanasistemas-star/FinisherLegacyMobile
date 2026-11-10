@@ -147,7 +147,7 @@ export default function RecuerdosScreen() {
         </View>
       ) : null}
 
-      {rows.length > 0 ? <SectionHeader title={t('Tu historia')} actionLabel={t('Lista')} onAction={() => router.push('/my-events')} style={{ paddingHorizontal: spacing.lg, marginBottom: -spacing.md }} /> : null}
+      {rows.length > 0 ? <SectionHeader title={t('Tu historia')} actionLabel={t('Lista||ver como lista')} onAction={() => router.push('/my-events')} style={{ paddingHorizontal: spacing.lg, marginBottom: -spacing.md }} /> : null}
     </View>
   );
 

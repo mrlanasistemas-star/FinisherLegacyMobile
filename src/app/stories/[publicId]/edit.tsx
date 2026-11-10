@@ -219,12 +219,12 @@ function EditForm({ story, publicId }: EditFormProps) {
           <FormGroup title={t('Carrera')}>
             {row('event_name', t('Evento'), { placeholder: t('Nombre del evento'), autoCapitalize: 'words', maxLength: 160 }, 'race_date')}
             {row('race_date', t('Fecha'), { placeholder: t('DD/MM/AAAA'), keyboardType: 'number-pad', maxLength: 10 }, 'location')}
-            {row('location', t('Lugar'), { placeholder: t('Ciudad, estado'), autoCapitalize: 'words', maxLength: 160 }, 'distance')}
+            {row('location', t('Lugar||sede o ciudad de la carrera'), { placeholder: t('Ciudad, estado'), autoCapitalize: 'words', maxLength: 160 }, 'distance')}
             {row('distance', t('Distancia'), { placeholder: '21K', autoCapitalize: 'characters', maxLength: 60, last: true }, 'athlete_display_name')}
           </FormGroup>
 
           <FormGroup title={t('Mi resultado')} footer={anyOfficial ? t('Los datos marcados como Oficial vienen del resultado publicado por el evento y no se pueden cambiar.') : undefined}>
-            {row('athlete_display_name', t('Nombre'), { placeholder: t('Como quieres aparecer'), autoCapitalize: 'words', autoComplete: 'name', maxLength: 80 }, 'bib_number')}
+            {row('athlete_display_name', t('Nombre||nombre completo del atleta'), { placeholder: t('Como quieres aparecer'), autoCapitalize: 'words', autoComplete: 'name', maxLength: 80 }, 'bib_number')}
             {row('bib_number', t('Dorsal'), { placeholder: '1234', autoCapitalize: 'characters', autoCorrect: false, maxLength: 12 }, 'result_time')}
             {row('result_time', t('Tiempo'), { placeholder: 'h:mm:ss', keyboardType: 'numbers-and-punctuation', autoCorrect: false, maxLength: 8 }, 'pace')}
             {row('pace', t('Ritmo'), { placeholder: '5:30 /km', autoCorrect: false, maxLength: 20 }, 'result_position')}

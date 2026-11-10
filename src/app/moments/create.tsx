@@ -45,7 +45,7 @@ function typeOptions(t: Translate): { value: MomentType; label: string }[] {
 
 function visibilityOptions(t: Translate): { value: MomentVisibility; label: string; description: string; icon: typeof Globe }[] {
   return [
-    { value: 'public', label: t('Todos'), description: t('Cualquier atleta que vea tu perfil.'), icon: Globe },
+    { value: 'public', label: t('Todos||quién puede verlo: cualquier persona'), description: t('Cualquier atleta que vea tu perfil.'), icon: Globe },
     { value: 'followers', label: t('Seguidores'), description: t('Solo quienes te siguen.'), icon: Users },
     { value: 'private', label: t('Solo yo'), description: t('Queda guardado en tu Legacy, sin compartir.'), icon: Lock },
   ];

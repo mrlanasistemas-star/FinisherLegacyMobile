@@ -59,7 +59,7 @@ function SessionSetup() {
   const queueOptions: { value: QueueMode; label: string }[] = [
     { value: 'unheard_first', label: t('Nuevos primero') },
     { value: 'favorites', label: t('Favoritos') },
-    { value: 'all', label: t('Todos') },
+    { value: 'all', label: t('Todos||filtro: todos los mensajes') },
   ];
   const mixOptions: { value: MixMode; label: string }[] = [
     { value: 'mix', label: t('Mezclar con mi música') },
@@ -210,8 +210,8 @@ function SessionSetup() {
 }
 
 function IntervalChip({ value, selected, onPress }: { value: IntervalMinutes; selected: boolean; onPress: () => void }) {
-  const { t } = useI18n();
-  const label = value === null ? t('Seguido') : `${value} min`;
+  const { t, tc } = useI18n();
+  const label = value === null ? t('Seguido||mensajes uno tras otro, sin pausa') : `${value} min`;
   return (
     <PressableScale
       onPress={onPress}
@@ -219,7 +219,7 @@ function IntervalChip({ value, selected, onPress }: { value: IntervalMinutes; se
       scaleTo={0.94}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={value === null ? t('Mensajes seguidos') : t('Un mensaje cada {minutes} minutos', { minutes: value })}
+      accessibilityLabel={value === null ? t('Mensajes seguidos') : tc('Un mensaje cada minuto|Un mensaje cada {count} minutos', value)}
       style={{
         flex: 1,
         height: 44,

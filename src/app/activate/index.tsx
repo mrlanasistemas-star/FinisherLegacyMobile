@@ -250,7 +250,7 @@ function StepBody({
     case 'approach':
       return (
         <>
-          <Heading title={t('Acerca tu Finisher Legacy')} body={PLATFORM === 'ios' ? t('Cuando aparezca el aviso, acerca el tag a la parte superior de tu iPhone.') : t('Acerca el tag al centro de la parte trasera de tu teléfono.')} />
+          <Heading title={t('Acerca tu Finisher Legacy')} body={PLATFORM === 'ios' ? t('Cuando aparezca el aviso, acerca el Tag a la parte superior de tu iPhone.') : t('Acerca el Tag al centro de la parte trasera de tu teléfono.')} />
           <View style={{ alignItems: 'center' }}>
             <TapIllustration phase="idle" platform={PLATFORM} />
           </View>
@@ -283,7 +283,7 @@ function StepBody({
           </View>
           <Heading title={t('Este chip ya tiene información')} body={overwriteDescription(state, t)} />
           <AppText variant="caption" tone="muted">
-            {t('Si no es tu Finisher Legacy, no lo reemplaces: vuelve y acerca el tag que venía en tu empaque.')}
+            {t('Si no es tu Finisher Legacy, no lo reemplaces: vuelve y acerca el Tag que venía en tu empaque.')}
           </AppText>
         </>
       );
@@ -340,8 +340,8 @@ function Tips() {
   const { t } = useI18n();
   const tips =
     PLATFORM === 'ios'
-      ? [t('Quita fundas metálicas o con imán.'), t('Mantén el tag quieto hasta sentir la vibración.'), t('La primera vez puede tardar unos segundos.')]
-      : [t('Verifica que el NFC esté encendido.'), t('Quita fundas metálicas o con imán.'), t('Mantén el tag quieto hasta sentir la vibración.')];
+      ? [t('Quita fundas metálicas o con imán.'), t('Mantén el Tag quieto hasta sentir la vibración.'), t('La primera vez puede tardar unos segundos.')]
+      : [t('Verifica que el NFC esté encendido.'), t('Quita fundas metálicas o con imán.'), t('Mantén el Tag quieto hasta sentir la vibración.')];
   return (
     <View style={{ gap: spacing.xs }}>
       {tips.map((tip) => (

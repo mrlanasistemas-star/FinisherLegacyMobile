@@ -93,6 +93,6 @@ export function visibilityLabel(visibility: LegacyMoment['visibility']): string 
     case 'private':
       return t('Solo yo');
     default:
-      return t('Todos');
+      return t('Todos||quién puede verlo: cualquier persona');
   }
 }

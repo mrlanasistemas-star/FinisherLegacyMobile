@@ -121,7 +121,7 @@ export function HowItWorksStrip() {
     <Animated.View
       entering={reduceMotion ? undefined : FadeIn.delay(160).duration(motion.base)}
       accessible
-      accessibilityLabel={t('Cómo funciona: acerca tu celular al tag y se abre tu recuerdo. Sin códigos QR.')}
+      accessibilityLabel={t('Cómo funciona: acerca tu celular al Tag y se abre tu recuerdo. Sin códigos QR.')}
       style={{ gap: spacing.sm }}>
       <AppText variant="label" tone="muted" style={{ textTransform: 'uppercase' }}>
         {t('Cómo funciona')}

@@ -35,7 +35,7 @@ export const storyFormSchema = z.object({
   // Positions are free text on purpose: "12", "12 de 340", "3.º".
   result_position: optionalText(60, () => t('Posición')),
   bib_number: optionalText(12, () => t('Dorsal')),
-  athlete_display_name: optionalText(80, () => t('Nombre')),
+  athlete_display_name: optionalText(80, () => t('Nombre||nombre completo del atleta')),
   pace: optionalText(20, () => t('Ritmo')),
   category: optionalText(40, () => t('Categoría')),
   category_position: optionalText(20, () => t('Posición')),
@@ -45,7 +45,7 @@ export const storyFormSchema = z.object({
     .string()
     .trim()
     .refine((value) => value === '' || displayToIsoDate(value) !== null, { error: () => t('Escribe una fecha válida: día/mes/año.') }),
-  location: optionalText(160, () => t('Lugar')),
+  location: optionalText(160, () => t('Lugar||sede o ciudad de la carrera')),
   dedication: optionalText(600, () => t('Dedicatoria')),
   body: optionalText(8000, () => t('Historia')),
 });

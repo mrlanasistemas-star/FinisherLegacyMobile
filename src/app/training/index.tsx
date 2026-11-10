@@ -53,7 +53,7 @@ const SHARE_HREF = '/training/share' as Href;
 export default function TrainingHomeScreen() {
   const { t } = useI18n();
   const filters: { value: TrainingFilter; label: string }[] = [
-    { value: 'all', label: t('Todos') },
+    { value: 'all', label: t('Todos||filtro: todos los mensajes') },
     { value: 'unheard', label: t('Sin escuchar') },
     { value: 'favorites', label: t('Favoritos') },
   ];

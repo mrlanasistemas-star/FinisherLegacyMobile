@@ -18,6 +18,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 import { useI18n } from '@/i18n';
+import { splitMarkers } from '@/i18n/text';
 
 export default function LoginScreen() {
   const { t } = useI18n();
@@ -71,10 +72,16 @@ export default function LoginScreen() {
         <>
           <AppButton label={t('Entrar')} onPress={handleSubmit(onSubmit)} loading={submitting} />
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.xxs, flexWrap: 'wrap' }}>
-            <AppText variant="body" tone="muted">
-              {t('¿No tienes cuenta?')}
-            </AppText>
-            <AppLink label={t('Crea una')} onPress={() => router.replace('/register')} />
+            {/* One sentence for the translator: {link} marks where the link goes. */}
+            {splitMarkers(t('¿No tienes cuenta? {link}'), ['link']).map((segment, index) =>
+              segment.type === 'slot' ? (
+                <AppLink key={index} label={t('Crea una')} onPress={() => router.replace('/register')} />
+              ) : segment.value.trim() ? (
+                <AppText key={index} variant="body" tone="muted">
+                  {segment.value.trim()}
+                </AppText>
+              ) : null,
+            )}
           </View>
         </>
       }>

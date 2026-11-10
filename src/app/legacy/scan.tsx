@@ -79,7 +79,7 @@ export default function ScanScreen() {
       setNotice(
         outcome.blank
           ? { title: t('Este Finisher Legacy aún no está activado'), body: t('Actívalo con el código de la tarjeta que venía en tu empaque.'), action: 'activate' }
-          : { title: t('No es un Finisher Legacy'), body: t('Este chip tiene información de otra app o servicio. Acerca el tag que venía en tu empaque.') },
+          : { title: t('No es un Finisher Legacy'), body: t('Este chip tiene información de otra app o servicio. Acerca el Tag que venía en tu empaque.') },
       );
     } finally {
       setReading(false);
@@ -122,13 +122,13 @@ export default function ScanScreen() {
 
       <View style={{ gap: spacing.xs }} accessibilityLiveRegion="polite">
         <AppText variant="title" accessibilityRole="header">
-          {notice?.title ?? (reading ? t('Acerca tu Finisher Legacy') : t('Acerca tu teléfono al tag'))}
+          {notice?.title ?? (reading ? t('Acerca tu Finisher Legacy') : t('Acerca tu teléfono al Tag'))}
         </AppText>
         <AppText variant="body" tone="muted">
           {notice?.body ??
             (PLATFORM === 'ios'
-              ? t('Toca “Leer con NFC” y acerca el tag a la parte superior de tu iPhone.')
-              : t('Toca “Leer con NFC” y acerca el tag al centro de la parte trasera del teléfono.'))}
+              ? t('Toca “Leer con NFC” y acerca el Tag a la parte superior de tu iPhone.')
+              : t('Toca “Leer con NFC” y acerca el Tag al centro de la parte trasera del teléfono.'))}
         </AppText>
       </View>
 

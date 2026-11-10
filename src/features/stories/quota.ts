@@ -94,9 +94,9 @@ export function kindLabel(kind: QuotaKind): string {
 /** "3 de 10 fotos" — the meter read aloud. */
 export function meterAccessibilityLabel(kind: QuotaKind, bucket: QuotaBucket): string {
   const params = { used: bucket.used, limit: bucket.limit };
-  if (kind === 'photos') return t('{used} de {limit} fotos', params);
-  if (kind === 'videos') return t('{used} de {limit} videos', params);
-  return t('{used} de {limit} mensaje de voz', params);
+  if (kind === 'photos') return tc('{used} de {limit} foto|{used} de {limit} fotos', bucket.limit, params);
+  if (kind === 'videos') return tc('{used} de {limit} video|{used} de {limit} videos', bucket.limit, params);
+  return tc('{used} de {limit} mensaje de voz|{used} de {limit} mensajes de voz', bucket.limit, params);
 }
 
 /** "Ampliar fotos" / "Renovar plan de fotos" — the action next to a full meter. */

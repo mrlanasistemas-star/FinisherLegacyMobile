@@ -264,7 +264,7 @@ export default function EditProfileScreen() {
             <Controller
               control={control}
               name="state"
-              render={({ field }) => <FormInput label={t('Estado')} kind="name" placeholder="Morelos" value={field.value} onChangeText={field.onChange} error={errors.state?.message} returnKeyType="next" />}
+              render={({ field }) => <FormInput label={t('Estado||entidad federativa')} kind="name" placeholder="Morelos" value={field.value} onChangeText={field.onChange} error={errors.state?.message} returnKeyType="next" />}
             />
             <Controller
               control={control}

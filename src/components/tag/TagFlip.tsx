@@ -118,9 +118,9 @@ export function TagFlip({ face, size = 'lg', width, float = true, tilt = false, 
         <Animated.View
           accessible
           accessibilityRole="button"
-          accessibilityLabel={side === 'front' ? t('Frente del tag {name}', { name: face.nameLine }) : t('Reverso del tag: {line}', { line: face.backLine })}
-          accessibilityHint={t('Toca para girar el tag')}
-          accessibilityActions={[{ name: 'activate', label: t('Girar el tag') }]}
+          accessibilityLabel={side === 'front' ? t('Frente del Tag {name}', { name: face.nameLine }) : t('Reverso del Tag: {line}', { line: face.backLine })}
+          accessibilityHint={t('Toca para girar el Tag')}
+          accessibilityActions={[{ name: 'activate', label: t('Girar el Tag') }]}
           onAccessibilityAction={flip}
           style={[{ width: g.width, height: g.height }, floatStyle]}>
           {tilt ? (

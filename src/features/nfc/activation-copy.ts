@@ -143,7 +143,7 @@ export function failureCopy(failure: ActivationFailure): FailureCopy {
 export function progressCopy(progress: SessionProgress, t: Translate): { title: string; body: string } {
   switch (progress) {
     case 'waiting':
-      return { title: t('Acerca tu Finisher Legacy'), body: t('Mantén el tag en la parte trasera de tu teléfono.') };
+      return { title: t('Acerca tu Finisher Legacy'), body: t('Mantén el Tag en la parte trasera de tu teléfono.') };
     case 'detected':
       return { title: t('Lo encontramos'), body: t('No lo muevas…') };
     case 'authorizing':

@@ -26,7 +26,7 @@ export interface ChannelSpec {
  */
 export function notificationChannels(): readonly ChannelSpec[] {
   return [
-    { id: 'default', name: t('General'), description: t('Avisos de tu cuenta y respuestas de soporte.'), importance: 'high' },
+    { id: 'default', name: t('General||canal de avisos generales'), description: t('Avisos de tu cuenta y respuestas de soporte.'), importance: 'high' },
     { id: 'pedidos', name: t('Pedidos y Tags'), description: t('Pagos, envíos, entregas, reembolsos y activación de tus Tags.'), importance: 'high' },
     { id: 'comunidad', name: t('Comunidad'), description: t('Seguidores, reacciones y comentarios en tus momentos.'), importance: 'default' },
     { id: 'entrenamientos', name: t('Entrenamientos'), description: t('Mensajes de ánimo de tu equipo de apoyo.'), importance: 'high' },

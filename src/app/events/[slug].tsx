@@ -111,7 +111,7 @@ export default function EventDetailScreen() {
             <>
               <View style={groupStyle}>
                 <InfoRow icon={CalendarDays} label={edition.name} value={formatLongDate(edition.event_date)} first />
-                {location ? <InfoRow icon={MapPin} label={t('Lugar')} value={location} /> : null}
+                {location ? <InfoRow icon={MapPin} label={t('Lugar||sede o ciudad de la carrera')} value={location} /> : null}
               </View>
 
               {edition.races.length > 0 ? (
