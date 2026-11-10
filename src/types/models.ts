@@ -459,7 +459,11 @@ export interface PublicGear {
 
 /** Structured deep-link target — whitelisted server-side from the notification metadata. */
 export interface NotificationTarget {
-  kind: 'athlete' | 'moment' | 'order' | 'event';
+  /** `training` = a new "Envíame ánimo" message → Entrenamientos. */
+  kind?: 'athlete' | 'moment' | 'order' | 'event' | 'training';
+  /** Push payloads of training cheers send `{type: "training", uuid}` instead of `kind`. */
+  type?: string;
+  uuid?: string;
   username?: string;
   moment_uuid?: string;
   order_uuid?: string;
@@ -747,6 +751,12 @@ export interface Order {
   payment_state: PaymentState;
   /** Server decides: not paid, not cancelled/completed, not expired. */
   payable: boolean;
+  /**
+   * `payable` AND physical goods only — digital goods (photos, photo-space
+   * expansions) are never sold in the app (store policies). Older backends
+   * omit it; treat missing as `payable`.
+   */
+  app_payable?: boolean;
   fulfillment_status: FulfillmentStatus;
   subtotal_minor: number;
   discount_minor: number;
@@ -766,27 +776,20 @@ export interface Order {
 }
 
 // ---------------------------------------------------------------------------
-// Payments — POST /orders/{uuid}/payments/online
+// Payments — POST /orders/{uuid}/checkout-session (OpenPay web checkout)
 // ---------------------------------------------------------------------------
 
 /**
- * `POST /orders/{uuid}/payments/online` with `provider: 'stripe'` — what
- * Stripe's PaymentSheet needs. Never a secret key. Calling it again for the
- * same order returns the SAME PaymentIntent (resume), never a second charge.
+ * One-time URL to the OpenPay web checkout of ONE order, opened in an
+ * in-app browser. Single use, expires in minutes; carries no card data and
+ * no key. `return_url` is the deep link the browser closes on — it never
+ * carries a payment result (the app re-reads the order).
  */
-export interface OnlinePaymentResult {
+export interface CheckoutSession {
   order_uuid: string;
-  provider_reference: string;
-  /** Additive top-level copies (consolidation contract); `client_payload` keeps the original shape. */
-  client_secret?: string;
-  publishable_key?: string | null;
-  client_payload: {
-    provider?: string;
-    client_secret?: string;
-    publishable_key?: string | null;
-    merchant_display_name?: string;
-    [key: string]: unknown;
-  };
+  url: string;
+  expires_at: string;
+  return_url: string;
 }
 
 // ---------------------------------------------------------------------------

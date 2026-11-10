@@ -4,13 +4,16 @@
  *   finisherlegacy://athlete/ana           → /athlete/ana
  *   finisherlegacy://moments/<uuid>        → /moments/<uuid>
  *   finisherlegacy://nfc/<token>           → /nfc/<token>
+ *   finisherlegacy://training              → /training      (Entrenamientos; push "nuevo mensaje de ánimo")
  *   https://finisherlegacy.com/@ana        → /athlete/ana
  *   https://finisherlegacy.com/moments/<u> → /moments/<u>
  *   https://finisherlegacy.com/events/<s>  → /events/<s>
  *   https://finisherlegacy.com/n/<token>   → /nfc/<token>   (legacy plate NFC tap)
  *   https://finisherlegacy.com/t/<code>    → /nfc/t/<code>  (Finisher Legacy Tag NFC tap)
  *   https://finisherlegacy.com/reset-password/<token>?email=… → /reset-password?token=…&email=…
- *   …/stripe-redirect                      → null (Stripe handles it; stay put)
+ *   finisherlegacy://checkout/return?order=<uuid> → /orders/<uuid> (OpenPay in-app checkout closed;
+ *                                            +native-intent stays put instead while the checkout screen waits)
+ *   …/stripe-redirect                      → null (old Stripe builds' 3-D Secure return; stay put)
  *
  * Anything unknown passes through unchanged so Expo Router can resolve it.
  */
@@ -23,6 +26,14 @@ export function mapIncomingPath(raw: string): string | null {
   // backend runs on.
   const withoutScheme = raw.replace(/^finisherlegacy:\/\/\/?/i, '/').replace(/^https?:\/\/[^/?#]+/i, '');
   const path = withoutScheme.startsWith('/') ? withoutScheme : `/${withoutScheme}`;
+
+  // OpenPay in-app checkout return. Carries no payment result on purpose —
+  // the order screen re-reads the real status from the API.
+  const checkoutReturn = path.match(/^\/checkout\/return\/?(?:\?(.*))?$/);
+  if (checkoutReturn) {
+    const order = new URLSearchParams(checkoutReturn[1] ?? '').get('order');
+    return order && /^[0-9a-f-]{36}$/i.test(order) ? `/orders/${order}` : '/orders';
+  }
 
   const handle = path.match(/^\/@([A-Za-z0-9_.]+)\/?(\?.*)?$/);
   if (handle) return `/athlete/${handle[1]}`;
@@ -43,7 +54,7 @@ export function mapIncomingPath(raw: string): string | null {
   const nfc = path.match(/^\/(?:n|nfc)\/([A-Za-z0-9_-]+)\/?(?:\?.*)?$/);
   if (nfc) return `/nfc/${nfc[1]}`;
 
-  if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search)(\/|$|\?)/.test(path)) return path;
+  if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search|training)(\/|$|\?)/.test(path)) return path;
 
   return raw;
 }

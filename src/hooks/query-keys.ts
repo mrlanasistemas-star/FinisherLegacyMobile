@@ -36,4 +36,10 @@ export const queryKeys = {
   order: (uuid: string) => ['orders', uuid] as const,
 
   mediaEntitlement: (participantId: number) => ['me', 'events', participantId, 'media-entitlement'] as const,
+
+  /** Not persisted (root `training`): audio URLs are signed and expire. Offline audio lives in features/training/offline-cache. */
+  training: ['training'] as const,
+  trainingMessagesAll: ['training', 'messages'] as const,
+  trainingMessages: (filter: 'all' | 'unheard' | 'favorites') => ['training', 'messages', filter] as const,
+  trainingLinks: ['training', 'links'] as const,
 };

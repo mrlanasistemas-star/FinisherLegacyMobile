@@ -24,6 +24,7 @@ import { colors } from '@/theme/tokens';
 import '@/features/tracking/tracking-task';
 import { useLiveTrackingBootstrap } from '@/features/tracking/tracking-controller';
 import { usePendingActivationRecovery } from '@/features/nfc/use-activation';
+import { TrainingBridge } from '@/features/training/training-bridge';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -81,6 +82,11 @@ function RootNavigator() {
         <Stack.Screen name="athlete/[username]/index" />
         <Stack.Screen name="athlete/[username]/connections" />
         <Stack.Screen name="settings" />
+        <Stack.Screen name="training/index" />
+        <Stack.Screen name="training/session" />
+        <Stack.Screen name="training/share" />
+        {/* Full-screen sheet: slides up and drags down itself (see training/player.tsx). */}
+        <Stack.Screen name="training/player" options={{ presentation: 'transparentModal', animation: 'none', gestureEnabled: false }} />
       </Stack.Protected>
       <Stack.Protected guard={status !== 'authenticated'}>
         <Stack.Screen name="(auth)" />
@@ -123,6 +129,7 @@ export default function RootLayout() {
         <QueryProvider>
           <StatusBar style="dark" />
           <RootNavigator />
+          <TrainingBridge />
           <OfflineBanner />
           <ToastHost />
         </QueryProvider>

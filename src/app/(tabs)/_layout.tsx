@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
 import { PressableScale } from '@/components/motion/pressable-scale';
+import { MiniPlayer } from '@/features/training/components/mini-player';
 import { useCartCount } from '@/hooks/use-cart';
 import { gradients } from '@/theme/gradients';
 import { colors, fontFamily, springs } from '@/theme/tokens';
@@ -85,48 +86,52 @@ function BrandTabBar({ state, navigation }: BottomTabBarProps) {
   }));
 
   return (
-    <View
-      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
-      style={{
-        backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.97)' : colors.card,
-        borderTopWidth: 1,
-        borderTopColor: colors.hairline,
-        paddingBottom: Math.max(insets.bottom, 8),
-        shadowColor: '#2B2418',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-      }}>
-      {slot ? (
-        <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: slot, alignItems: 'center' }, indicatorStyle]}>
-          <View style={{ width: 28, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.gold }} />
-        </Animated.View>
-      ) : null}
-      <View style={{ flexDirection: 'row', height: BAR_HEIGHT, alignItems: 'center' }}>
-        {ORDER.map((name) => {
-          if (name === null) return <ActivateButton key="activate" />;
-          const route = state.routes.find((r) => r.name === name);
-          if (!route) return null;
-          const focused = activeName === name;
-          const meta = TABS[name];
-          const badge = name === 'store' && cartCount > 0 ? (cartCount > 99 ? '99+' : String(cartCount)) : null;
-          return (
-            <TabItem
-              key={name}
-              label={meta.label}
-              icon={meta.icon}
-              focused={focused}
-              badge={badge}
-              accessibilityLabel={badge ? `${meta.a11y}, ${badge} en el carrito` : meta.a11y}
-              onPress={() => {
-                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                haptics.selection();
-                if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
-              }}
-              onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
-            />
-          );
-        })}
+    <View style={{ backgroundColor: colors.background }}>
+      {/* Entrenamientos "now playing" bar — renders nothing when idle. */}
+      <MiniPlayer style={{ paddingTop: 6 }} />
+      <View
+        onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+        style={{
+          backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.97)' : colors.card,
+          borderTopWidth: 1,
+          borderTopColor: colors.hairline,
+          paddingBottom: Math.max(insets.bottom, 8),
+          shadowColor: '#2B2418',
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.05,
+          shadowRadius: 12,
+        }}>
+        {slot ? (
+          <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: slot, alignItems: 'center' }, indicatorStyle]}>
+            <View style={{ width: 28, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.gold }} />
+          </Animated.View>
+        ) : null}
+        <View style={{ flexDirection: 'row', height: BAR_HEIGHT, alignItems: 'center' }}>
+          {ORDER.map((name) => {
+            if (name === null) return <ActivateButton key="activate" />;
+            const route = state.routes.find((r) => r.name === name);
+            if (!route) return null;
+            const focused = activeName === name;
+            const meta = TABS[name];
+            const badge = name === 'store' && cartCount > 0 ? (cartCount > 99 ? '99+' : String(cartCount)) : null;
+            return (
+              <TabItem
+                key={name}
+                label={meta.label}
+                icon={meta.icon}
+                focused={focused}
+                badge={badge}
+                accessibilityLabel={badge ? `${meta.a11y}, ${badge} en el carrito` : meta.a11y}
+                onPress={() => {
+                  const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                  haptics.selection();
+                  if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+                }}
+                onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+              />
+            );
+          })}
+        </View>
       </View>
     </View>
   );

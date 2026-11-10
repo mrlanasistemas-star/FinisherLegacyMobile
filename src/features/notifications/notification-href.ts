@@ -12,14 +12,22 @@ export type NotificationDestination = { kind: 'app'; href: string } | { kind: 'e
  * target?, action_url?}` — the backend's Expo provider sends the same
  * fields the `/me/notifications` resource exposes.
  */
-export function notificationDestination(input: { target?: NotificationTarget | null; action_url?: string | null; url?: string | null }): NotificationDestination {
+export function notificationDestination(input: {
+  target?: NotificationTarget | null;
+  action_url?: string | null;
+  url?: string | null;
+  /** `training_cheer` pushes also carry `metadata.deep_link` (finisherlegacy://training). */
+  deep_link?: string | null;
+  metadata?: { deep_link?: string | null } | null;
+}): NotificationDestination {
   const target = input.target;
   if (target?.kind === 'athlete' && target.username) return { kind: 'app', href: `/athlete/${target.username}` };
   if (target?.kind === 'moment' && target.moment_uuid) return { kind: 'app', href: `/moments/${target.moment_uuid}` };
   if (target?.kind === 'order' && target.order_uuid) return { kind: 'app', href: `/orders/${target.order_uuid}` };
   if (target?.kind === 'event' && target.event_slug) return { kind: 'app', href: `/events/${target.event_slug}` };
+  if (target?.kind === 'training' || target?.type === 'training') return { kind: 'app', href: '/training' };
 
-  const url = input.action_url ?? input.url ?? null;
+  const url = input.action_url ?? input.url ?? input.deep_link ?? input.metadata?.deep_link ?? null;
   if (!url) return null;
 
   const mapped = mapIncomingPath(url);

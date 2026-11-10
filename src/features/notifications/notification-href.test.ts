@@ -6,6 +6,10 @@ describe('notificationDestination', () => {
     expect(notificationDestination({ target: { kind: 'moment', moment_uuid: 'm1' } })).toEqual({ kind: 'app', href: '/moments/m1' });
     expect(notificationDestination({ target: { kind: 'order', order_uuid: 'o1' } })).toEqual({ kind: 'app', href: '/orders/o1' });
     expect(notificationDestination({ target: { kind: 'event', event_slug: 'cdmx' } })).toEqual({ kind: 'app', href: '/events/cdmx' });
+    expect(notificationDestination({ target: { kind: 'training' } })).toEqual({ kind: 'app', href: '/training' });
+    expect(notificationDestination({ target: { type: 'training', uuid: 'm-1' } })).toEqual({ kind: 'app', href: '/training' });
+    expect(notificationDestination({ metadata: { deep_link: 'finisherlegacy://training' } })).toEqual({ kind: 'app', href: '/training' });
+    expect(notificationDestination({ action_url: 'finisherlegacy://training' })).toEqual({ kind: 'app', href: '/training' });
   });
 
   it('maps web URLs the app knows to native screens', () => {

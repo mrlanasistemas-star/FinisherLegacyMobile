@@ -25,6 +25,8 @@ interface PushData {
   target?: NotificationTarget | null;
   action_url?: string | null;
   url?: string | null;
+  deep_link?: string | null;
+  metadata?: { deep_link?: string | null } | null;
 }
 
 /**

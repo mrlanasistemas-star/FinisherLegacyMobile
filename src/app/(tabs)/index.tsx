@@ -13,6 +13,7 @@ import { ActivateCard } from '@/components/home/activate-card';
 import { ActiveSupportBanner, OrderStatusChip } from '@/components/home/home-banners';
 import { MomentPreviewRow } from '@/components/home/moment-preview-row';
 import { PushPrimerCard } from '@/components/home/push-primer-card';
+import { TrainingHomeCard } from '@/features/training/components/training-home-card';
 import { LegacyTimelineCard } from '@/components/legacy/legacy-timeline-card';
 import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { PressableScale } from '@/components/motion/pressable-scale';
@@ -131,6 +132,10 @@ export default function HomeScreen() {
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl }}>
           <Reveal delay={60}>
             <ActivateCard />
+          </Reveal>
+
+          <Reveal delay={90}>
+            <TrainingHomeCard />
           </Reveal>
 
           {/* Direct children: when both render nothing they must not leave an empty gap slot. */}

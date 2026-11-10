@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { Package, Shirt } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import { Headphones, Package, Shirt } from 'lucide-react-native';
 
 import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { spacing } from '@/theme/tokens';
@@ -15,6 +15,7 @@ export function OwnProfileShortcuts(_props: { isPrivate: boolean }) {
     <ListGroup style={{ marginTop: spacing.sm }}>
       <ListRow icon={Package} label="Mis pedidos" description="Estado y entregas" onPress={() => router.push('/orders')} />
       <ListRow icon={Shirt} label="Mi equipo" description="Piezas conectadas por NFC" onPress={() => router.push('/gear')} />
+      <ListRow icon={Headphones} label="Entrenamientos" description="Mensajes de ánimo de tu equipo" onPress={() => router.push('/training' as Href)} />
     </ListGroup>
   );
 }
