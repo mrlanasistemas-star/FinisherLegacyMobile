@@ -76,9 +76,21 @@ const STORE_PLUGINS: PluginEntry[] = [
     'expo-notifications',
     {
       mode: process.env.EAS_BUILD_PROFILE === 'production' ? 'production' : 'development',
-      color: '#0B0B0C',
+      // Android status-bar icon: white-on-transparent FL monogram (96×96),
+      // tinted with the brand gold. Channels are created at runtime
+      // (src/features/push/notification-channels.ts).
+      icon: './assets/images/notification-icon.png',
+      color: '#C9AE8B',
+      defaultChannel: 'default',
     },
   ],
+  // In-app purchases (expo-iap: StoreKit 2 / Google Play Billing) — photo
+  // space for a Legacy story is a digital good, so inside the app it is sold
+  // ONLY through the store (App Store 3.1.1, Play Payments policy). Adds the
+  // Android `com.android.vending.BILLING` permission; iOS needs the
+  // "In-App Purchase" capability, which EAS enables from the bundle id.
+  // Backend: docs/renovacion/compras-dentro-de-app.md.
+  'expo-iap',
 ];
 
 function pluginName(entry: unknown): string | null {
