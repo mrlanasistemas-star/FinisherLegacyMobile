@@ -17,7 +17,7 @@ export function MediaGrid({ items, onPress }: { items: AthleteEventMedia[]; onPr
         return (
           <View key={item.uuid} style={{ width: tileWidth, aspectRatio: 1, padding: GAP / 2 }}>
             <PressScale onPress={() => onPress(index)} haptic style={{ flex: 1 }}>
-              <View style={{ flex: 1, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.graphiteLight }}>
+              <View style={{ flex: 1, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
                 {/* No poster/thumbnail field exists for video (confirmed —
                     backend has no thumbnail generation yet, see
                     docs/MOBILE_BACKEND_REQUIREMENTS.md), so video tiles show
@@ -36,14 +36,14 @@ export function MediaGrid({ items, onPress }: { items: AthleteEventMedia[]; onPr
                       bottom: 0,
                       alignItems: 'center',
                       justifyContent: 'center',
-                      backgroundColor: 'rgba(10,10,12,0.25)',
+                      backgroundColor: 'rgba(11,11,12,0.25)',
                     }}>
                     <View
                       style={{
                         width: 30,
                         height: 30,
                         borderRadius: 15,
-                        backgroundColor: 'rgba(10,10,12,0.55)',
+                        backgroundColor: 'rgba(11,11,12,0.55)',
                         alignItems: 'center',
                         justifyContent: 'center',
                       }}>

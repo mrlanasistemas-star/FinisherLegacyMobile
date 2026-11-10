@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react-native';
-import { View, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { FadeIn, ZoomIn, useReducedMotion } from 'react-native-reanimated';
 
 import { AppButton } from './app-button';
 import { AppText } from './app-text';
@@ -16,12 +17,12 @@ interface EmptyStateProps {
   onSecondary?: () => void;
   /** Tighter vertical rhythm for inline sections (not full screens). */
   compact?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
  * Every empty screen says what this place is for and offers the next useful
- * step — never a bare "no data".
+ * step — never a bare "no data". The icon medallion springs in once.
  */
 export function EmptyState({
   icon: Icon,
@@ -34,24 +35,39 @@ export function EmptyState({
   compact = false,
   style,
 }: EmptyStateProps) {
+  const reduceMotion = useReducedMotion();
+  const size = compact ? 60 : 84;
+
   return (
     <View
       style={[
         { alignItems: 'center', paddingVertical: compact ? spacing.lg : spacing.xxl, paddingHorizontal: spacing.lg, gap: spacing.sm },
         style,
       ]}>
-      <View
+      <Animated.View
+        entering={reduceMotion ? FadeIn : ZoomIn.springify().damping(14)}
         style={{
-          width: compact ? 56 : 72,
-          height: compact ? 56 : 72,
-          borderRadius: compact ? 28 : 36,
-          backgroundColor: colors.goldWash,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: colors.border,
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: spacing.xxs,
+          marginBottom: spacing.xs,
         }}>
-        <Icon size={compact ? 24 : 30} color={colors.gold} strokeWidth={1.6} />
-      </View>
+        <View
+          style={{
+            position: 'absolute',
+            width: size - 14,
+            height: size - 14,
+            borderRadius: (size - 14) / 2,
+            backgroundColor: colors.goldWash,
+          }}
+        />
+        <Icon size={compact ? 24 : 32} color={colors.accent} strokeWidth={1.6} />
+      </Animated.View>
       <AppText variant="subtitle" align="center" accessibilityRole="header">
         {title}
       </AppText>
@@ -59,10 +75,10 @@ export function EmptyState({
         {message}
       </AppText>
       {actionLabel && onAction ? (
-        <AppButton label={actionLabel} onPress={onAction} size="md" fullWidth={false} style={{ marginTop: spacing.xs, minWidth: 200 }} />
+        <AppButton label={actionLabel} onPress={onAction} size="md" fullWidth={false} style={{ marginTop: spacing.xs, minWidth: 200, alignSelf: 'center' }} />
       ) : null}
       {secondaryLabel && onSecondary ? (
-        <AppButton label={secondaryLabel} onPress={onSecondary} size="md" variant="ghost" fullWidth={false} />
+        <AppButton label={secondaryLabel} onPress={onSecondary} size="md" variant="ghost" fullWidth={false} style={{ alignSelf: 'center' }} />
       ) : null}
     </View>
   );

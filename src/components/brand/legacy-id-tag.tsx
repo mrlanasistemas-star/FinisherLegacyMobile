@@ -23,14 +23,14 @@ export function LegacyIdTag({ legacyId }: LegacyIdTagProps) {
         alignSelf: 'flex-start',
         gap: spacing.xs,
         borderWidth: 1,
-        borderColor: colors.goldDim,
+        borderColor: colors.border,
         borderRadius: radius.pill,
         paddingVertical: spacing.xxs,
         paddingHorizontal: spacing.sm,
-        backgroundColor: 'rgba(201,161,89,0.08)',
+        backgroundColor: colors.card,
       }}>
       <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.gold }} />
-      <AppText variant="label" tone="gold" style={{ letterSpacing: 1.5 }}>
+      <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
         LEGACY ID · {legacyId}
       </AppText>
     </View>

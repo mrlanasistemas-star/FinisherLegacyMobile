@@ -32,7 +32,7 @@ export default function TrackingScreen() {
   const eventName = participant.data?.participant.event ?? null;
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar title="Seguimiento en vivo" />
       </View>

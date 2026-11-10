@@ -4,23 +4,24 @@
 
 Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · Expo Router (file-based, `src/app`, typed routes) · TanStack Query v5 (+ persistencia en AsyncStorage) · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Image / Image Picker / Image Manipulator · Expo Video · Expo Notifications · Reanimated · Gesture Handler · `@stripe/stripe-react-native` (PaymentSheet) · `expo-apple-authentication` · `expo-auth-session` (Google).
 
-**Estilos:** StyleSheet + design system en `src/theme/tokens.ts` (colores, `control` para inputs, spacing, radius, tipografía). NativeWind sigue configurado pero no se usa.
+**Estilos:** StyleSheet + design system en `src/theme/tokens.ts` (paleta del Manual de Identidad 2026: producto CLARO — Blanco Hueso/blanco, texto Negro Carbono, oro solo como acento; texto dorado sobre claro = `colors.accent` / Oro Profundo). Tipografía: Manrope (UI), Montserrat (títulos), Syncopate Bold (momentos de marca, solo mayúsculas). Logo único: `assets/images/brand/fl-monograma.png`. Movimiento en `src/components/motion/` (PressableScale, StaggerItem/listEntering, ScrollHeader, TiltCard, AnimatedCounter, BrandRefreshControl), todo en hilo UI y respetando Reduce Motion. `tailwind.config.js` refleja los tokens; NativeWind no se usa en pantallas.
 
 ## Navegación
 
 ```
-Inicio · Explorar · [LEGADO] · Tienda · Perfil
+Inicio · Recuerdos · [ACTIVAR] · Comunidad · Colecciones
 ```
 
 Consolidación final (spec §89–97, §135). **No hay escáner QR**: los productos físicos (Legacy Plate, prendas, accesorios) abren la app por NFC (`/nfc/[token]`, ver Enlaces). Los códigos impresos de piezas anteriores se siguen aceptando escribiéndolos: `/legacy/scan` conserva su nombre histórico pero ya no usa cámara (Legacy Code → `/legacy/{code}`, código `AST…` → `/gear/claim?code=`). `expo-camera` se retiró; la cámara sólo la usa Image Picker para tomar fotos.
 
-- **Inicio** — página personal, no dashboard: saludo, apoyo en vivo (sesión de apoyo activa/abierta), chip del pedido en curso, "Primeros pasos", tu próxima carrera (cuenta regresiva) o el próximo evento público, tu último capítulo (tarjeta grande), aviso contextual para activar push, 3 momentos de tu comunidad en filas compactas y lo nuevo de la tienda. Búsqueda (`/search`) y campana con badge real.
-- **Explorar** — la comunidad: Siguiendo / Descubrir (feed con cursor `meta.next_cursor`, FlatList afinada para media, pull-to-refresh, reacciones optimistas, mensajes de apoyo en bottom sheet, compartir, atletas para seguir con follow optimista) y Eventos (descubrimiento). `/feed` redirige aquí.
-- **Legado** (centro, medallón dorado elevado) — tu historia: cifras, **Mi equipo** (productos conectados por NFC), medallas y la línea de tiempo por año con tarjetas grandes → historia del evento (`my-events/[participantId]`: resultado, recuerdos, equipo usado, Legacy Plate, apoyo).
-- **Tienda** — catálogo, carrito, checkout, pedidos.
-- **Perfil** — identidad deportiva + atajos "Mis pedidos · Mi equipo · Privacidad"; cuenta, avisos, seguridad y cerrar sesión detrás del engrane.
+- **Inicio** — título grande que colapsa en barra translúcida; saludo, tarjeta **Activar mi Finisher Legacy** (→ `/activate`), apoyo en vivo, pedido en curso, Primeros pasos, próxima carrera, último recuerdo, comunidad y Colecciones. Búsqueda, campana y avatar (→ Perfil).
+- **Recuerdos** (ruta `legacy`) — tu historia: carreras, medallas, equipo conectado por NFC → `my-events/[participantId]`.
+- **Activar** (centro) — no es pestaña: acción principal que abre `/activate` (flujo NFC).
+- **Comunidad** (ruta `explore`) — feed Siguiendo/Descubrir, atletas, eventos. `/feed` redirige aquí.
+- **Colecciones** (ruta `store`) — catálogo de la tienda, carrito (badge), checkout, pedidos.
+- **Perfil** (ruta `profile`, fuera de la barra) — desde el avatar del encabezado.
 
-Pantallas apiladas: `search`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `legacy/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*`; `nfc/[token]` (fuera de los guards: funciona con o sin sesión); y en `(auth)`: onboarding, welcome, login, register, forgot-password, reset-password.
+Pantallas apiladas: `search`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `legacy/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*`; `nfc/[token]` (fuera de los guards: funciona con o sin sesión); y en `(auth)`: welcome (intro de 3 pasos + CTAs; reemplaza al onboarding), login, register, forgot-password, reset-password. Solo correo + contraseña (sin Google/Apple).
 
 **Toda ruta autenticada debe registrarse en `Stack.Protected` de `src/app/_layout.tsx`.**
 

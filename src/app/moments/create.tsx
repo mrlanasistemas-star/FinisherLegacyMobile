@@ -7,7 +7,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
-import { AppButton } from '@/components/app-button';
+import { HeaderTextButton } from '@/components/ui/top-bar';
 import { AppText } from '@/components/app-text';
 import { FormInput } from '@/components/form-input';
 import { Avatar } from '@/components/ui/avatar';
@@ -167,16 +167,16 @@ export default function CreateMomentScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, minHeight: 52 }}>
         <IconButton icon={X} label="Cancelar" onPress={() => router.back()} />
         <AppText style={{ flex: 1, textAlign: 'center', fontFamily: fontFamily.semibold, fontSize: 16 }} accessibilityRole="header">
           Nuevo momento
         </AppText>
-        <AppButton label={visibility === 'private' ? 'Guardar' : 'Publicar'} size="sm" fullWidth={false} onPress={publish} disabled={!canPublish} loading={create.isPending} />
+        <HeaderTextButton label={visibility === 'private' ? 'Guardar' : 'Publicar'} onPress={publish} disabled={!canPublish} loading={create.isPending} />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.xs }}>
             <Avatar uri={profile.data?.profile?.profile_photo_url} name={profile.data?.athlete.full_name} size={40} />
@@ -189,11 +189,11 @@ export default function CreateMomentScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`Visible para: ${VISIBILITY_LABEL[visibility]}. Cambiar`}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', minHeight: 32 }}>
-                <VisibilityIcon size={13} color={colors.gold} />
+                <VisibilityIcon size={13} color={colors.accent} />
                 <AppText variant="caption" tone="gold">
                   {VISIBILITY_LABEL[visibility]}
                 </AppText>
-                <ChevronDown size={14} color={colors.gold} />
+                <ChevronDown size={14} color={colors.accent} />
               </Pressable>
             </View>
           </View>
@@ -211,7 +211,7 @@ export default function CreateMomentScreen() {
             placeholderTextColor={colors.subtle}
             multiline
             maxLength={MAX_CAPTION}
-            selectionColor={colors.gold}
+            selectionColor={colors.accent}
             accessibilityLabel="Texto del momento"
             style={{ minHeight: 96, color: colors.foreground, fontFamily: fontFamily.regular, fontSize: 18, lineHeight: 25, textAlignVertical: 'top' }}
           />
@@ -438,9 +438,9 @@ export default function CreateMomentScreen() {
 
 function LinkedCard({ icon: Icon, title, subtitle, onRemove }: { icon: typeof Trophy; title: string; subtitle: string; onRemove: () => void }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: 14, backgroundColor: colors.graphite }}>
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm, borderRadius: 14, backgroundColor: colors.card }}>
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={20} color={colors.gold} />
+        <Icon size={20} color={colors.accent} />
       </View>
       <View style={{ flex: 1 }}>
         <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }} numberOfLines={1}>

@@ -1,162 +1,262 @@
+import type { BottomTabBarProps } from 'expo-router/build/react-navigation/bottom-tabs';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Tabs } from 'expo-router';
-import { Compass, Gem, Home, ShoppingBag, User } from 'lucide-react-native';
-import { useEffect } from 'react';
-import { Pressable, View, type AccessibilityState, type ColorValue, type GestureResponderEvent } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { router, Tabs, type Href } from 'expo-router';
+import { BookHeart, Home, Nfc, ShoppingBag, Users, type LucideIcon } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Platform, Pressable, View } from 'react-native';
+import Animated, {
+  Easing,
+  interpolate,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { useCartCount } from '@/hooks/use-cart';
-import { colors, fontFamily } from '@/theme/tokens';
+import { gradients } from '@/theme/gradients';
+import { colors, fontFamily, springs } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 
-const TAB_ICON_SIZE = 23;
-const BAR_HEIGHT = 58;
-const LEGADO_SIZE = 56;
-
-function TabIcon(Icon: typeof Home) {
-  return function renderIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
-    // tabBarActiveTintColor/InactiveTintColor are plain hex strings.
-    return <Icon color={color as string} size={TAB_ICON_SIZE} strokeWidth={focused ? 2.3 : 1.8} />;
-  };
-}
-
 /**
- * Inicio · Explorar · LEGADO · Tienda · Perfil (spec §135). Legado is the
- * heart of the app, so it sits in the center as a raised gold medallion —
- * a real tab (state, back behavior, deep links), not a floating action.
- * No scanner anywhere: physical products open the app by NFC deep link.
+ * Navigation (D1 restructure):
+ *   Inicio · Recuerdos · [ACTIVAR] · Comunidad · Colecciones
+ *
+ * - The center slot is not a tab: it is the product's main action — tap your
+ *   NFC piece — and pushes `/activate`.
+ * - Recuerdos = your legacy (races, memories, gear) — the old "Legado" tab.
+ * - Comunidad = feed, athletes, events — the old "Explorar" tab.
+ * - Colecciones = the store catalog (cart badge lives here).
+ * - Perfil stays a real route (`/profile`) but leaves the bar; it is one tap
+ *   away from the avatar in every root header.
  */
-export default function TabsLayout() {
-  const insets = useSafeAreaInsets();
-  const cartCount = useCartCount();
+const ACTIVATE_HREF = '/activate' as Href;
 
+const TABS: Record<string, { label: string; icon: LucideIcon; a11y: string }> = {
+  index: { label: 'Inicio', icon: Home, a11y: 'Inicio' },
+  legacy: { label: 'Recuerdos', icon: BookHeart, a11y: 'Mis recuerdos: tus carreras, fotos y equipo' },
+  explore: { label: 'Comunidad', icon: Users, a11y: 'Comunidad: atletas, momentos y eventos' },
+  store: { label: 'Colecciones', icon: ShoppingBag, a11y: 'Colecciones: tienda Finisher Legacy' },
+};
+/** Bar order; `null` = the center Activar action. */
+const ORDER: (string | null)[] = ['index', 'legacy', null, 'explore', 'store'];
+
+const BAR_HEIGHT = 62;
+
+export default function TabsLayout() {
   return (
-    <Tabs
-      screenListeners={{ tabPress: () => haptics.selection() }}
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.gold,
-        tabBarInactiveTintColor: colors.subtle,
-        tabBarLabelStyle: { fontFamily: fontFamily.medium, fontSize: 11, marginTop: 1 },
-        tabBarStyle: {
-          backgroundColor: 'rgba(10,10,12,0.97)',
-          borderTopColor: colors.hairline,
-          borderTopWidth: 1,
-          height: BAR_HEIGHT + insets.bottom,
-          paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 6),
-        },
-        tabBarItemStyle: { minHeight: 44 },
-      }}>
-      <Tabs.Screen name="index" options={{ title: 'Inicio', tabBarIcon: TabIcon(Home), tabBarAccessibilityLabel: 'Inicio' }} />
-      <Tabs.Screen
-        name="explore"
-        options={{ title: 'Explorar', tabBarIcon: TabIcon(Compass), tabBarAccessibilityLabel: 'Explorar: comunidad, atletas y eventos' }}
-      />
-      <Tabs.Screen
-        name="legacy"
-        options={{
-          title: 'Legado',
-          tabBarAccessibilityLabel: 'Legado: tu historia, carreras y equipo',
-          tabBarButton: (props) => <LegadoTabButton {...props} />,
-        }}
-      />
-      <Tabs.Screen
-        name="store"
-        options={{
-          title: 'Tienda',
-          tabBarIcon: TabIcon(ShoppingBag),
-          tabBarBadge: cartCount > 0 ? (cartCount > 99 ? '99+' : cartCount) : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.gold, color: colors.black, fontFamily: fontFamily.bold, fontSize: 10 },
-          tabBarAccessibilityLabel: cartCount > 0 ? `Tienda, ${cartCount} en el carrito` : 'Tienda',
-        }}
-      />
-      <Tabs.Screen name="profile" options={{ title: 'Perfil', tabBarIcon: TabIcon(User), tabBarAccessibilityLabel: 'Perfil' }} />
+    <Tabs tabBar={(props) => <BrandTabBar {...props} />} screenOptions={{ headerShown: false }}>
+      <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
+      <Tabs.Screen name="legacy" options={{ title: 'Recuerdos' }} />
+      <Tabs.Screen name="explore" options={{ title: 'Comunidad' }} />
+      <Tabs.Screen name="store" options={{ title: 'Colecciones' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
     </Tabs>
   );
 }
 
-interface LegadoTabButtonProps {
-  onPress?: (event: GestureResponderEvent) => void;
-  onLongPress?: ((event: GestureResponderEvent) => void) | null;
-  accessibilityState?: AccessibilityState;
-  accessibilityLabel?: string;
-  testID?: string;
-}
-
-/**
- * Raised medallion for the center tab. Focus is shown three ways (lift,
- * filled gold face, gold label) so it never relies on color alone.
- */
-function LegadoTabButton({ onPress, onLongPress, accessibilityState, accessibilityLabel, testID }: LegadoTabButtonProps) {
-  const focused = !!accessibilityState?.selected;
+function BrandTabBar({ state, navigation }: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
+  const cartCount = useCartCount();
   const reduceMotion = useReducedMotion();
-  const lift = useSharedValue(focused ? 1 : 0);
-  const press = useSharedValue(1);
+  const [width, setWidth] = useState(0);
+  const slot = width / ORDER.length;
+
+  const activeName = state.routes[state.index]?.name;
+  const activeSlot = ORDER.indexOf(activeName ?? '');
+  const indicatorX = useSharedValue(-1);
+  const indicatorOpacity = useSharedValue(0);
 
   useEffect(() => {
-    lift.value = reduceMotion ? (focused ? 1 : 0) : withTiming(focused ? 1 : 0, { duration: 220 });
-  }, [focused, lift, reduceMotion]);
+    if (!slot) return;
+    const target = activeSlot >= 0 ? activeSlot * slot : indicatorX.value;
+    indicatorX.value = reduceMotion || indicatorX.value < 0 ? target : withSpring(target, springs.snappy);
+    indicatorOpacity.value = withTiming(activeSlot >= 0 ? 1 : 0, { duration: 160 });
+  }, [activeSlot, slot, reduceMotion, indicatorX, indicatorOpacity]);
 
-  const medallionStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: -lift.value * 3 }, { scale: press.value }],
-    shadowOpacity: 0.22 + lift.value * 0.3,
+  const indicatorStyle = useAnimatedStyle(() => ({
+    opacity: indicatorOpacity.value,
+    transform: [{ translateX: indicatorX.value }],
   }));
 
   return (
-    <Pressable
-      onPress={onPress}
-      onLongPress={onLongPress ?? undefined}
-      onPressIn={() => {
-        // eslint-disable-next-line react-hooks/immutability
-        press.value = withSpring(0.92, { damping: 18, stiffness: 320 });
-      }}
-      onPressOut={() => {
-        // eslint-disable-next-line react-hooks/immutability
-        press.value = withSpring(1, { damping: 14, stiffness: 260 });
-      }}
-      accessibilityRole="tab"
-      accessibilityState={accessibilityState}
-      accessibilityLabel={accessibilityLabel}
-      testID={testID}
-      style={{ flex: 1, alignItems: 'center' }}>
-      <Animated.View
-        style={[
-          {
-            marginTop: -(LEGADO_SIZE / 2) + 6,
-            width: LEGADO_SIZE,
-            height: LEGADO_SIZE,
-            borderRadius: LEGADO_SIZE / 2,
-            borderWidth: 4,
-            borderColor: colors.black,
-            shadowColor: colors.gold,
-            shadowOffset: { width: 0, height: 4 },
-            shadowRadius: 12,
-            // Android elevation ignores shadowColor and paints a grey halo on black.
-            elevation: 0,
-          },
-          medallionStyle,
-        ]}>
-        <LinearGradient
-          colors={focused ? [colors.goldSoft, colors.gold] : [colors.graphiteLight, colors.graphite]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={{
-            flex: 1,
-            borderRadius: LEGADO_SIZE / 2,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: focused ? colors.goldSoft : colors.goldDim,
-          }}>
-          <Gem color={focused ? colors.black : colors.goldSoft} size={24} strokeWidth={2.1} />
-        </LinearGradient>
-      </Animated.View>
-      <View style={{ marginTop: 1 }}>
-        <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: focused ? colors.gold : colors.goldDim }}>Legado</AppText>
+    <View
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+      style={{
+        backgroundColor: Platform.OS === 'ios' ? 'rgba(255,255,255,0.97)' : colors.card,
+        borderTopWidth: 1,
+        borderTopColor: colors.hairline,
+        paddingBottom: Math.max(insets.bottom, 8),
+        shadowColor: '#2B2418',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+      }}>
+      {slot ? (
+        <Animated.View pointerEvents="none" style={[{ position: 'absolute', top: 0, left: 0, width: slot, alignItems: 'center' }, indicatorStyle]}>
+          <View style={{ width: 28, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, backgroundColor: colors.gold }} />
+        </Animated.View>
+      ) : null}
+      <View style={{ flexDirection: 'row', height: BAR_HEIGHT, alignItems: 'center' }}>
+        {ORDER.map((name) => {
+          if (name === null) return <ActivateButton key="activate" />;
+          const route = state.routes.find((r) => r.name === name);
+          if (!route) return null;
+          const focused = activeName === name;
+          const meta = TABS[name];
+          const badge = name === 'store' && cartCount > 0 ? (cartCount > 99 ? '99+' : String(cartCount)) : null;
+          return (
+            <TabItem
+              key={name}
+              label={meta.label}
+              icon={meta.icon}
+              focused={focused}
+              badge={badge}
+              accessibilityLabel={badge ? `${meta.a11y}, ${badge} en el carrito` : meta.a11y}
+              onPress={() => {
+                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                haptics.selection();
+                if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
+              }}
+              onLongPress={() => navigation.emit({ type: 'tabLongPress', target: route.key })}
+            />
+          );
+        })}
       </View>
-    </Pressable>
+    </View>
+  );
+}
+
+interface TabItemProps {
+  label: string;
+  icon: LucideIcon;
+  focused: boolean;
+  badge: string | null;
+  accessibilityLabel: string;
+  onPress: () => void;
+  onLongPress: () => void;
+}
+
+function TabItem({ label, icon: Icon, focused, badge, accessibilityLabel, onPress, onLongPress }: TabItemProps) {
+  const reduceMotion = useReducedMotion();
+  const active = useSharedValue(focused ? 1 : 0);
+
+  useEffect(() => {
+    active.value = reduceMotion ? (focused ? 1 : 0) : withSpring(focused ? 1 : 0, springs.snappy);
+  }, [focused, active, reduceMotion]);
+
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(active.value, [0, 1], [0, -1]) }, { scale: interpolate(active.value, [0, 1], [1, 1.08]) }],
+  }));
+
+  return (
+    <PressableScale
+      onPress={onPress}
+      onLongPress={onLongPress}
+      scaleTo={0.9}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: focused }}
+      accessibilityLabel={accessibilityLabel}
+      style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 48, gap: 3 }}>
+      <Animated.View style={iconStyle}>
+        <Icon size={23} color={focused ? colors.foreground : colors.subtle} strokeWidth={focused ? 2.3 : 1.8} />
+        {badge ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: -5,
+              right: -10,
+              minWidth: 18,
+              height: 18,
+              paddingHorizontal: 4,
+              borderRadius: 9,
+              backgroundColor: colors.gold,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: 2,
+              borderColor: colors.card,
+            }}>
+            <AppText style={{ fontFamily: fontFamily.bold, fontSize: 10, color: colors.onGold }} maxFontSizeMultiplier={1.2}>
+              {badge}
+            </AppText>
+          </View>
+        ) : null}
+      </Animated.View>
+      <AppText
+        maxFontSizeMultiplier={1.2}
+        numberOfLines={1}
+        style={{ fontFamily: focused ? fontFamily.bold : fontFamily.medium, fontSize: 10.5, color: focused ? colors.foreground : colors.subtle }}>
+        {label}
+      </AppText>
+    </PressableScale>
+  );
+}
+
+/**
+ * Raised carbon medallion with a gold NFC glyph and a slow "breathing" gold
+ * ring — the one action the whole product is built around.
+ */
+function ActivateButton() {
+  const reduceMotion = useReducedMotion();
+  const breathe = useSharedValue(0);
+
+  useEffect(() => {
+    if (reduceMotion) return;
+    breathe.value = withRepeat(withTiming(1, { duration: 2200, easing: Easing.inOut(Easing.sin) }), -1, true);
+  }, [breathe, reduceMotion]);
+
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(breathe.value, [0, 1], [0.25, 0.7]),
+    transform: [{ scale: interpolate(breathe.value, [0, 1], [1, 1.12]) }],
+  }));
+
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <Pressable
+        onPress={() => {
+          haptics.light();
+          router.push(ACTIVATE_HREF);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Activar mi Finisher Legacy"
+        accessibilityHint="Acerca tu pieza con NFC para activarla"
+        hitSlop={6}
+        style={{ alignItems: 'center', marginTop: -22 }}>
+        {({ pressed }) => (
+          <>
+            <View style={{ width: 58, height: 58, alignItems: 'center', justifyContent: 'center' }}>
+              <Animated.View
+                pointerEvents="none"
+                style={[{ position: 'absolute', width: 58, height: 58, borderRadius: 29, borderWidth: 1.5, borderColor: colors.gold }, ringStyle]}
+              />
+              <LinearGradient
+                colors={gradients.carbon}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: 27,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 1,
+                  borderColor: colors.goldDim,
+                  transform: [{ scale: pressed && !reduceMotion ? 0.92 : 1 }],
+                }}>
+                <Nfc size={24} color={colors.gold} strokeWidth={2} />
+              </LinearGradient>
+            </View>
+            <AppText maxFontSizeMultiplier={1.2} style={{ fontFamily: fontFamily.bold, fontSize: 10.5, color: colors.accent, marginTop: 3 }}>
+              Activar
+            </AppText>
+          </>
+        )}
+      </Pressable>
+    </View>
   );
 }

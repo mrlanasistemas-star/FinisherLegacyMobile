@@ -1,8 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { KeyRound, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 
 import { deleteAccount, requestPasswordReset } from '@/api/account';
 import { AppError } from '@/api/errors';
@@ -11,12 +10,12 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { FormInput } from '@/components/form-input';
 import { InlineError } from '@/components/ui/inline-error';
-import { ListRow } from '@/components/ui/list-row';
+import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { Sheet } from '@/components/ui/sheet';
-import { TopBar } from '@/components/ui/top-bar';
+import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
-import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { fontFamily, spacing } from '@/theme/tokens';
 import { ensureOnline } from '@/utils/network';
 
 export default function SecurityScreen() {
@@ -69,32 +68,22 @@ export default function SecurityScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
-      <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title="Contraseña y cuenta" />
-      </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl }}>
-        <View>
-          <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xxs }}>
-            CONTRASEÑA
-          </AppText>
+    <View style={{ flex: 1 }}>
+      <LargeTitleScroll title="Contraseña y cuenta" contentContainerStyle={{ gap: spacing.lg }}>
+        <ListGroup title="Contraseña">
           <ListRow
             icon={KeyRound}
             label="Cambiar contraseña"
             description={`Te enviaremos un enlace seguro a ${user?.email ?? 'tu correo'}.`}
             onPress={sendReset}
             loading={sendingReset}
-            divider={false}
           />
-        </View>
+        </ListGroup>
 
-        <View>
-          <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xxs }}>
-            ZONA DE RIESGO
-          </AppText>
-          <ListRow icon={Trash2} label="Eliminar mi cuenta" destructive description="Borra tu perfil, tus momentos y tu actividad social." onPress={() => setDeleteOpen(true)} divider={false} />
-        </View>
-      </ScrollView>
+        <ListGroup title="Zona de riesgo">
+          <ListRow icon={Trash2} label="Eliminar mi cuenta" destructive description="Borra tu perfil, tus momentos y tu actividad social." onPress={() => setDeleteOpen(true)} />
+        </ListGroup>
+      </LargeTitleScroll>
 
       {deleteOpen ? (
         <Sheet
@@ -115,7 +104,7 @@ export default function SecurityScreen() {
               <FormInput label="Tu contraseña" kind="password" value={secret} onChangeText={setSecret} />
             )}
             <AppButton
-              label={socialMode ? 'Uso contraseña' : 'Entré con Google o Apple'}
+              label={socialMode ? 'Confirmar con mi contraseña' : 'No tengo contraseña'}
               variant="ghost"
               size="sm"
               onPress={() => {
@@ -129,6 +118,6 @@ export default function SecurityScreen() {
           </View>
         </Sheet>
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }

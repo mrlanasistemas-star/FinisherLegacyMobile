@@ -1,6 +1,7 @@
 import { ChevronRight } from 'lucide-react-native';
-import { Pressable, View, type ViewStyle } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 
@@ -15,21 +16,23 @@ interface SectionHeaderProps {
 export function SectionHeader({ title, actionLabel, onAction, style }: SectionHeaderProps) {
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }, style]}>
-      <AppText accessibilityRole="header" style={{ fontFamily: fontFamily.semibold, fontSize: 19 }}>
+      <AppText accessibilityRole="header" style={{ fontFamily: fontFamily.heading, fontSize: 20, letterSpacing: -0.2 }}>
         {title}
       </AppText>
       {actionLabel && onAction ? (
-        <Pressable
+        <PressableScale
+          dim
+          scaleTo={0.98}
           onPress={onAction}
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={`${actionLabel}: ${title}`}
-          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', opacity: pressed ? 0.6 : 1, minHeight: 44 })}>
+          style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
           <AppText variant="caption" tone="gold">
             {actionLabel}
           </AppText>
-          <ChevronRight size={16} color={colors.gold} />
-        </Pressable>
+          <ChevronRight size={16} color={colors.accent} />
+        </PressableScale>
       ) : null}
     </View>
   );

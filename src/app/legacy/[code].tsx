@@ -36,7 +36,7 @@ export default function LegacyCodeLookupScreen() {
   }
 
   return (
-    <Screen scroll edges={['top', 'left', 'right']}>
+    <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Volver">
           <ChevronLeft color={colors.foreground} size={26} />
@@ -65,9 +65,9 @@ export default function LegacyCodeLookupScreen() {
             <>
               <PlateCard code={data.code} />
               <Card>
-                <AppText variant="bodyStrong">Esta placa ya es parte de tu Legacy.</AppText>
+                <AppText variant="bodyStrong">Esta placa ya es parte de tus recuerdos.</AppText>
                 <AppButton
-                  label="Ir a mi Legacy Vault"
+                  label="Ver mis medallas"
                   variant="secondary"
                   onPress={() => router.replace('/medals')}
                   style={{ marginTop: spacing.md }}

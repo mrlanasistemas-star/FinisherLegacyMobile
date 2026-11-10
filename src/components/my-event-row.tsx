@@ -65,8 +65,8 @@ export function MyEventRow({ row, onPress }: { row: AthleteHistoryRow; onPress: 
         style={{
           borderRadius: radius.lg,
           borderWidth: 1,
-          borderColor: colors.border,
-          backgroundColor: colors.graphite,
+          borderColor: colors.hairline,
+          backgroundColor: colors.card,
           padding: spacing.md,
           gap: spacing.xs,
           ...shadows.card,

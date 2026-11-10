@@ -86,7 +86,7 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
       <Animated.View entering={FadeIn.duration(220)} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg }}>
           <View style={{ width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
-            <MapPin size={28} color={colors.gold} />
+            <MapPin size={28} color={colors.accent} />
           </View>
           <AppText variant="title" accessibilityRole="header">
             ¿Seguimos con la pantalla apagada?
@@ -168,9 +168,9 @@ export function TrackingConsentFlow({ participantId, eventName, onStarted }: { p
 
 function Point({ icon: Icon, title, body }: { icon: LucideIcon; title: string; body: string }) {
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite }}>
+    <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
       <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
-        <Icon size={18} color={colors.gold} />
+        <Icon size={18} color={colors.accent} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{title}</AppText>

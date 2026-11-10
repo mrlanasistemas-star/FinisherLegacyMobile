@@ -1,22 +1,26 @@
 import { router } from 'expo-router';
 import { Bell, CalendarClock, ChevronRight, Search, Share2, Users } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
-import { CinematicHero } from '@/components/brand/cinematic-hero';
-import { HeroFallback } from '@/components/brand/hero-fallback';
 import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
 import { EventCard } from '@/components/event-card';
 import { GettingStarted } from '@/components/guide/getting-started';
+import { ActivateCard } from '@/components/home/activate-card';
 import { ActiveSupportBanner, OrderStatusChip } from '@/components/home/home-banners';
 import { MomentPreviewRow } from '@/components/home/moment-preview-row';
 import { PushPrimerCard } from '@/components/home/push-primer-card';
 import { LegacyTimelineCard } from '@/components/legacy/legacy-timeline-card';
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { Reveal } from '@/components/motion/reveal';
+import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { ProductCard } from '@/components/product-card';
 import { Skeleton } from '@/components/skeleton';
+import { Avatar } from '@/components/ui/avatar';
 import { IconButton } from '@/components/ui/icon-button';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useEvents } from '@/hooks/use-events';
@@ -26,14 +30,12 @@ import { useProfile } from '@/hooks/use-profile';
 import { useFeed } from '@/hooks/use-social';
 import { useProducts } from '@/hooks/use-store-products';
 import { useAuthStore } from '@/stores/authStore';
-import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { AthleteHistoryRow } from '@/types/models';
 import { formatLongDate } from '@/utils/dates';
 import { timeOfDayGreeting } from '@/utils/greeting';
 
-// Confirmed live (~17MB, Range-capable). `CinematicHero` only autoplays it
-// on Wi-Fi; every other case falls back to `HeroFallback`.
-const HERO_VIDEO_URL = 'https://finisherlegacy.com/media/home/hero/finisher-hero-desktop.mp4';
+const NAV_HEIGHT = 52;
 
 function todayIso(): string {
   const d = new Date();
@@ -49,13 +51,14 @@ function daysUntil(dateIso: string): number {
 }
 
 /**
- * Inicio — a personal front page, not a dashboard: who you are, what's
- * next, your latest chapter, anything live (support, an order on its way),
- * a glance at your people and the newest gear. Everything taps through to
- * where it really lives.
+ * Inicio — iOS-style large title that collapses into a frosted nav bar.
+ * Order: greeting → Activar (the main action) → anything live (support,
+ * order) → first steps → next race → latest chapter → community →
+ * Colecciones. Every block taps through to where it really lives.
  */
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useScrollY();
   const user = useAuthStore((state) => state.user);
   const profile = useProfile();
   const myEvents = useMyEvents();
@@ -85,70 +88,84 @@ export default function HomeScreen() {
   };
 
   const firstName = user?.first_name ?? profile.data?.athlete.full_name?.split(' ')[0] ?? 'atleta';
+  const fullName = profile.data?.athlete.full_name ?? user?.name;
+
+  const actions = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: -6 }}>
+      <IconButton icon={Search} label="Buscar atletas, eventos y productos" onPress={() => router.push('/search')} />
+      <IconButton icon={Bell} label={unread > 0 ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'} badge={unread} onPress={() => router.push('/notifications')} />
+      <PressableScale
+        onPress={() => router.push('/profile')}
+        accessibilityRole="button"
+        accessibilityLabel="Mi perfil"
+        scaleTo={0.92}
+        hitSlop={6}
+        style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}>
+        <Avatar uri={profile.data?.profile?.profile_photo_url} name={fullName} size={32} />
+      </PressableScale>
+    </View>
+  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black }}>
-      <ScrollView
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: spacing.xxl }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.gold} progressViewOffset={insets.top} />}>
-        <CinematicHero videoUri={HERO_VIDEO_URL} fallback={<HeroFallback />} height={250 + insets.top} gradient="full">
-          <View style={{ flex: 1, paddingTop: insets.top + spacing.xs, paddingHorizontal: spacing.lg, justifyContent: 'space-between', paddingBottom: spacing.lg }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
-                FINISHER LEGACY
-              </AppText>
-              <View style={{ flexDirection: 'row', marginRight: -10 }}>
-                <IconButton icon={Search} label="Buscar atletas, eventos y productos" onPress={() => router.push('/search')} />
-                <IconButton icon={Bell} label={unread > 0 ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'} badge={unread} onPress={() => router.push('/notifications')} />
-              </View>
+        contentContainerStyle={{ paddingTop: insets.top + NAV_HEIGHT, paddingBottom: spacing.xxl }}
+        refreshControl={<BrandRefreshControl refreshing={refreshing} onRefresh={refresh} progressViewOffset={insets.top + NAV_HEIGHT} />}>
+        <Reveal style={{ paddingHorizontal: spacing.lg, gap: 2, marginBottom: spacing.lg }}>
+          <AppText variant="body" tone="muted">
+            {timeOfDayGreeting()},
+          </AppText>
+          <AppText variant="display" accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+            {firstName}
+          </AppText>
+          {user?.legacy_id ? (
+            <View style={{ marginTop: spacing.xs }}>
+              <LegacyIdTag legacyId={user.legacy_id} />
             </View>
+          ) : null}
+        </Reveal>
 
-            <Reveal style={{ gap: spacing.xs }}>
-              <AppText variant="body" tone="muted">
-                {timeOfDayGreeting()},
-              </AppText>
-              <AppText variant="hero" style={{ fontSize: 36, lineHeight: 38 }} numberOfLines={1} adjustsFontSizeToFit>
-                {firstName}
-              </AppText>
-              {user?.legacy_id ? <LegacyIdTag legacyId={user.legacy_id} /> : null}
-            </Reveal>
-          </View>
-        </CinematicHero>
+        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl }}>
+          <Reveal delay={60}>
+            <ActivateCard />
+          </Reveal>
 
-        <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl, marginTop: spacing.lg }}>
-          <View style={{ gap: spacing.sm }}>
-            <ActiveSupportBanner />
-            <OrderStatusChip />
-          </View>
+          {/* Direct children: when both render nothing they must not leave an empty gap slot. */}
+          <ActiveSupportBanner />
+          <OrderStatusChip />
 
           {profile.data ? <GettingStarted profile={profile.data} /> : null}
 
           {myNextRace?.event_date ? (
-            <NextRaceCard row={myNextRace} days={daysUntil(myNextRace.event_date)} />
+            <Reveal delay={120}>
+              <NextRaceCard row={myNextRace} days={daysUntil(myNextRace.event_date)} />
+            </Reveal>
           ) : nextPublicEvent ? (
-            <View>
+            <Reveal delay={120}>
               <SectionHeader title="Tu próxima meta" actionLabel="Eventos" onAction={() => router.navigate('/explore')} />
               <EventCard edition={nextPublicEvent} onPress={() => router.push(`/events/${nextPublicEvent.event.slug}`)} />
-            </View>
+            </Reveal>
           ) : null}
 
           {myEvents.isPending && !myEvents.data ? (
-            <Skeleton height={190} radius={22} />
+            <Skeleton height={190} radius={radius.xl} />
           ) : latestRace ? (
-            <View>
-              <SectionHeader title="Tu último capítulo" actionLabel="Tu legado" onAction={() => router.navigate('/legacy')} />
+            <Reveal delay={160}>
+              <SectionHeader title="Tu último recuerdo" actionLabel="Recuerdos" onAction={() => router.navigate('/legacy')} />
               <LegacyTimelineCard row={latestRace} compact onPress={() => router.push(`/my-events/${latestRace.id}`)} />
-              <Pressable
+              <PressableScale
                 onPress={() => router.push(`/moments/create?type=race_completed&participantId=${latestRace.id}`)}
                 accessibilityRole="button"
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
-                <Share2 size={16} color={colors.gold} />
-                <AppText variant="caption" tone="gold">
-                  Compartir como momento
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44, alignSelf: 'flex-start' }}>
+                <Share2 size={16} color={colors.accent} />
+                <AppText variant="caption" tone="accent" style={{ fontWeight: '600' }}>
+                  Compartir con mi comunidad
                 </AppText>
-              </Pressable>
-            </View>
+              </PressableScale>
+            </Reveal>
           ) : null}
 
           <PushPrimerCard />
@@ -161,33 +178,49 @@ export default function HomeScreen() {
                 <Skeleton height={56} />
               </View>
             ) : recentMoments.length > 0 ? (
-              <View>
+              <View style={{ backgroundColor: colors.card, borderRadius: radius.lg, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.hairline, ...shadows.soft }}>
                 {recentMoments.map((moment) => (
                   <MomentPreviewRow key={moment.uuid} moment={moment} />
                 ))}
               </View>
             ) : (
-              <Pressable
+              <PressableScale
                 onPress={() => router.push('/search')}
                 accessibilityRole="button"
-                style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, opacity: pressed ? 0.7 : 1 })}>
-                <Users size={22} color={colors.gold} />
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: spacing.md,
+                  padding: spacing.md,
+                  backgroundColor: colors.card,
+                  borderRadius: radius.lg,
+                  borderWidth: 1,
+                  borderColor: colors.hairline,
+                }}>
+                <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
+                  <Users size={20} color={colors.accent} />
+                </View>
                 <View style={{ flex: 1 }}>
-                  <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>Encuentra a tu gente</AppText>
+                  <AppText variant="bodyStrong">Encuentra a tu gente</AppText>
                   <AppText variant="caption" tone="muted">
                     Sigue a otros atletas para ver sus carreras y logros aquí.
                   </AppText>
                 </View>
                 <ChevronRight size={18} color={colors.subtle} />
-              </Pressable>
+              </PressableScale>
             )}
           </View>
         </View>
 
         {featuredProducts.length > 0 ? (
           <View style={{ marginTop: spacing.xl }}>
-            <SectionHeader title="Lo nuevo en la tienda" actionLabel="Tienda" onAction={() => router.navigate('/store')} style={{ paddingHorizontal: spacing.lg }} />
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
+            <SectionHeader title="Colecciones" actionLabel="Ver tienda" onAction={() => router.navigate('/store')} style={{ paddingHorizontal: spacing.lg }} />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              decelerationRate="fast"
+              snapToInterval={156 + spacing.sm}
+              contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
               {featuredProducts.map((product) => (
                 <View key={product.uuid} style={{ width: 156 }}>
                   <ProductCard product={product} onPress={() => router.push(`/store/${product.slug}`)} />
@@ -196,44 +229,46 @@ export default function HomeScreen() {
             </ScrollView>
           </View>
         ) : null}
-      </ScrollView>
+      </Animated.ScrollView>
+
+      <ScrollHeader scrollY={scrollY} title="Inicio" threshold={70} right={actions} />
     </View>
   );
 }
 
 /** The athlete's own upcoming race, with a countdown — the most motivating number on the screen. */
 function NextRaceCard({ row, days }: { row: AthleteHistoryRow; days: number }) {
-  const countdown = days <= 0 ? 'HOY' : days === 1 ? 'MAÑANA' : String(days);
+  const countdown = days <= 0 ? 'Hoy' : days === 1 ? 'Mañana' : String(days);
   return (
-    <Pressable
+    <PressableScale
       onPress={() => router.push(`/my-events/${row.id}`)}
       accessibilityRole="button"
       accessibilityLabel={`Tu próxima carrera: ${row.event ?? 'evento'}, ${days <= 0 ? 'hoy' : days === 1 ? 'mañana' : `en ${days} días`}`}
-      style={({ pressed }) => ({
+      style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
         padding: spacing.md,
-        borderRadius: radius.xl,
-        backgroundColor: colors.graphite,
+        borderRadius: radius.lg,
+        backgroundColor: colors.card,
         borderWidth: 1,
-        borderColor: colors.border,
-        transform: [{ scale: pressed ? 0.98 : 1 }],
-      })}>
-      <View style={{ alignItems: 'center', minWidth: 72 }}>
-        <Text style={{ fontFamily: fontFamily.bold, fontSize: days > 1 ? 40 : 22, lineHeight: days > 1 ? 44 : 28, color: colors.goldSoft }}>{countdown}</Text>
+        borderColor: colors.hairline,
+        ...shadows.soft,
+      }}>
+      <View style={{ alignItems: 'center', justifyContent: 'center', width: 68, height: 68, borderRadius: 16, backgroundColor: colors.goldWash }}>
+        <AppText variant={days > 1 ? 'title' : 'bodyStrong'} tone="accent">
+          {countdown}
+        </AppText>
         {days > 1 ? (
-          <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
-            DÍAS
+          <AppText variant="eyebrow" style={{ fontSize: 9, letterSpacing: 1.5 }}>
+            días
           </AppText>
         ) : null}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <CalendarClock size={13} color={colors.gold} />
-          <AppText variant="label" tone="gold" style={{ letterSpacing: 1.5 }}>
-            TU PRÓXIMA CARRERA
-          </AppText>
+          <CalendarClock size={13} color={colors.accent} />
+          <AppText variant="eyebrow">Tu próxima carrera</AppText>
         </View>
         <AppText variant="subtitle" numberOfLines={2}>
           {row.event ?? 'Evento'}
@@ -243,6 +278,6 @@ function NextRaceCard({ row, days }: { row: AthleteHistoryRow; days: number }) {
         </AppText>
       </View>
       <ChevronRight size={18} color={colors.subtle} />
-    </Pressable>
+    </PressableScale>
   );
 }

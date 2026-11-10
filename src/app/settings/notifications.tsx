@@ -7,8 +7,7 @@ import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
-import { Screen } from '@/components/screen';
-import { ScreenHeader } from '@/components/screen-header';
+import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useUnregisterPushDevice } from '@/hooks/use-push-devices';
 import { usePushPermission } from '@/hooks/use-push';
 import { useUiStore } from '@/stores/uiStore';
@@ -46,8 +45,7 @@ export default function NotificationSettingsScreen() {
   const enabledHere = !!registeredUuid && permission === 'granted';
 
   return (
-    <Screen scroll>
-      <ScreenHeader title="Notificaciones push" />
+    <LargeTitleScroll title="Notificaciones">
 
       <View style={{ gap: spacing.md, marginTop: spacing.sm, paddingBottom: spacing.xl }}>
         <AppText variant="body" tone="muted">
@@ -57,7 +55,7 @@ export default function NotificationSettingsScreen() {
         {!available ? (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <CircleAlert size={18} color={colors.gold} />
+              <CircleAlert size={18} color={colors.accent} />
               <AppText variant="bodyStrong">No disponible en este teléfono</AppText>
             </View>
             <AppText variant="caption" tone="muted">
@@ -69,7 +67,7 @@ export default function NotificationSettingsScreen() {
         ) : enabledHere ? (
           <Card style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <Bell size={18} color={colors.gold} />
+              <Bell size={18} color={colors.accent} />
               <AppText variant="bodyStrong">Notificaciones activadas en este teléfono</AppText>
             </View>
             <AppButton label="Desactivar en este teléfono" variant="secondary" onPress={handleDisable} loading={unregisterDevice.isPending} />
@@ -99,6 +97,6 @@ export default function NotificationSettingsScreen() {
           </AppText>
         ) : null}
       </View>
-    </Screen>
+    </LargeTitleScroll>
   );
 }

@@ -104,7 +104,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
       {/* A Modal is a new native root: gestures need their own root view. */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1, justifyContent: 'flex-end' }}>
-          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(10,10,12,0.72)' }, backdropStyle]}>
+          <Animated.View style={[{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.backdrop }, backdropStyle]}>
             <Pressable style={{ flex: 1 }} onPress={close} accessibilityRole="button" accessibilityLabel="Cerrar mensajes" />
           </Animated.View>
 
@@ -113,7 +113,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
             style={[
               {
                 height: sheetHeight,
-                backgroundColor: colors.graphite,
+                backgroundColor: colors.card,
                 borderTopLeftRadius: radius.xl,
                 borderTopRightRadius: radius.xl,
                 borderWidth: 1,
@@ -125,7 +125,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
             <GestureDetector gesture={drag}>
               <View style={{ paddingTop: spacing.xs, paddingBottom: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
                 <View style={{ alignItems: 'center', paddingVertical: spacing.xs }}>
-                  <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.graphiteLight }} />
+                  <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: colors.surfaceMuted }} />
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg }}>
                   <AppText style={{ flex: 1, fontFamily: fontFamily.semibold, fontSize: 16 }} accessibilityRole="header">
@@ -152,7 +152,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
               )}
               onEndReachedThreshold={0.4}
               onEndReached={() => comments.hasNextPage && !comments.isFetchingNextPage && comments.fetchNextPage()}
-              ListFooterComponent={comments.isFetchingNextPage ? <ActivityIndicator color={colors.gold} style={{ marginVertical: spacing.sm }} /> : null}
+              ListFooterComponent={comments.isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.sm }} /> : null}
               ListEmptyComponent={
                 comments.isPending ? (
                   <View style={{ padding: spacing.lg, gap: spacing.sm }}>
@@ -172,7 +172,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                   </View>
                 ) : (
                   <View style={{ alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.xs }}>
-                    <MessageCircleHeart size={28} color={colors.goldDim} />
+                    <MessageCircleHeart size={28} color={colors.accent} />
                     <AppText variant="body" tone="muted" align="center">
                       Sé el primero en dejar un mensaje de apoyo.
                     </AppText>
@@ -199,7 +199,7 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                 placeholderTextColor={colors.subtle}
                 multiline
                 maxLength={MAX_COMMENT}
-                selectionColor={colors.gold}
+                selectionColor={colors.accent}
                 accessibilityLabel="Escribe un mensaje de apoyo"
                 style={{
                   flex: 1,
@@ -222,8 +222,8 @@ export function CommentsSheet({ momentUuid, commentsCount, onClose }: CommentsSh
                 disabled={!canSend}
                 accessibilityRole="button"
                 accessibilityLabel="Enviar mensaje"
-                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: canSend ? colors.gold : colors.graphiteLight }}>
-                {postComment.isPending ? <ActivityIndicator color={colors.black} size="small" /> : <SendHorizontal size={20} color={canSend ? colors.black : colors.subtle} />}
+                style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: canSend ? colors.black : colors.surfaceMuted }}>
+                {postComment.isPending ? <ActivityIndicator color={colors.onDark} size="small" /> : <SendHorizontal size={20} color={canSend ? colors.onDark : colors.subtle} />}
               </Pressable>
             </View>
           </Animated.View>

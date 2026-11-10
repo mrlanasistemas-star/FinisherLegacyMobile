@@ -1,7 +1,8 @@
 import { Minus, Plus, Trash2 } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { colors, fontFamily } from '@/theme/tokens';
 
 interface QuantityStepperProps {
@@ -23,22 +24,24 @@ export function QuantityStepper({ value, onChange, min = 1, max = 20, disabled, 
   const button = (icon: typeof Minus, label: string, onPress: () => void, isDisabled: boolean) => {
     const Icon = icon;
     return (
-      <Pressable
+      <PressableScale
         onPress={onPress}
+        haptic="selection"
+        scaleTo={0.88}
         disabled={isDisabled}
         hitSlop={6}
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={({ pressed }) => ({
+        style={{
           width: size,
           height: size,
           borderRadius: size / 2,
           alignItems: 'center',
           justifyContent: 'center',
-          opacity: isDisabled ? 0.3 : pressed ? 0.6 : 1,
-        })}>
+          opacity: isDisabled ? 0.3 : 1,
+        }}>
         <Icon size={compact ? 14 : 16} color={colors.foreground} />
-      </Pressable>
+      </PressableScale>
     );
   };
 
@@ -49,9 +52,9 @@ export function QuantityStepper({ value, onChange, min = 1, max = 20, disabled, 
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: colors.inputBorder,
+        borderColor: colors.hairline,
         borderRadius: size / 2 + 1,
-        backgroundColor: colors.input,
+        backgroundColor: colors.card,
       }}>
       {button(
         DecrementIcon,

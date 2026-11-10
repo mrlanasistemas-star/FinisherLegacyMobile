@@ -50,13 +50,13 @@ export function ConfirmDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} statusBarTranslucent>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,10,12,0.7)', padding: spacing.lg }}>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.backdrop, padding: spacing.lg }}>
         <Animated.View
           style={[
             {
               width: '100%',
               maxWidth: 360,
-              backgroundColor: colors.graphite,
+              backgroundColor: colors.card,
               borderRadius: radius.xl,
               borderWidth: 1,
               borderColor: colors.border,

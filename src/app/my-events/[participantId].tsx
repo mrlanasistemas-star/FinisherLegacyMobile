@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronLeft,
   Share2,
   Camera as CameraIcon,
   Globe,
@@ -14,9 +15,12 @@ import {
 } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
@@ -26,6 +30,8 @@ import { MediaUploadSheet } from '@/components/media/media-upload-sheet';
 import { MediaViewer } from '@/components/media/media-viewer';
 import { Reveal } from '@/components/motion/reveal';
 import { PressScale } from '@/components/motion/press-scale';
+import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
+import { IconButton } from '@/components/ui/icon-button';
 import { Screen } from '@/components/screen';
 import { ScreenHeader } from '@/components/screen-header';
 import { SectionTitle } from '@/components/brand/section-title';
@@ -52,7 +58,9 @@ export default function MyEventDetailScreen() {
   const parsedParticipantId = Number(participantIdParam);
   const participantId = Number.isFinite(parsedParticipantId) ? parsedParticipantId : null;
 
-  const { data, isPending, isError, refetch } = useEventParticipant(participantId);
+  const { data, isPending, isError, error, refetch } = useEventParticipant(participantId);
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useScrollY();
   const media = useEventMedia(participantId);
 
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -124,7 +132,7 @@ export default function MyEventDetailScreen() {
     return (
       <Screen edges={['top', 'left', 'right']}>
         <ScreenHeader title="Mi evento" />
-        <ErrorState message="No pudimos cargar esta participación." onRetry={refetch} />
+        <ErrorState error={error} message="No pudimos cargar esta participación." onRetry={refetch} />
       </Screen>
     );
   }
@@ -177,26 +185,31 @@ export default function MyEventDetailScreen() {
   }
 
   return (
-    <Screen scroll padded={false} edges={['top', 'left', 'right']}>
-      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.xl }}>
-        <ScreenHeader title="Mi evento" />
-
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: insets.top + 52, paddingBottom: insets.bottom + spacing.xl }}>
+      <View style={{ paddingHorizontal: spacing.lg, gap: spacing.xl }}>
         <Reveal style={{ gap: spacing.xs }}>
-          <AppText variant="display">{participant.event ?? 'Evento'}</AppText>
+          {participant.event_date ? <AppText variant="eyebrow">{formatLongDate(participant.event_date)}</AppText> : null}
+          <AppText variant="display" accessibilityRole="header">
+            {participant.event ?? 'Evento'}
+          </AppText>
           {subtitle ? (
             <AppText variant="body" tone="muted">
               {subtitle}
             </AppText>
           ) : null}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs }}>
-            {participant.event_date ? <Badge label={formatLongDate(participant.event_date)} variant="gold" /> : null}
             {participant.bib_number ? <Badge label={`Dorsal ${participant.bib_number}`} /> : null}
           </View>
         </Reveal>
 
         {/* Suggested, never automatic: the athlete decides what to share. */}
         <AppButton
-          label="Compartir como Legacy Moment"
+          label="Compartir con mi comunidad"
           icon={Share2}
           variant="secondary"
           size="md"
@@ -207,7 +220,7 @@ export default function MyEventDetailScreen() {
           <View style={{ gap: spacing.sm }}>
             <SectionTitle title="Resultado" />
             <Card>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg, justifyContent: 'space-around' }}>
                 {result.official_time ? (
                   <View>
                     <AppText variant="title" tone="gold">
@@ -238,8 +251,8 @@ export default function MyEventDetailScreen() {
 
               {result.splits.length > 0 ? (
                 <View style={{ marginTop: spacing.md, gap: spacing.xs }}>
-                  <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
-                    SPLITS
+                  <AppText variant="eyebrow" tone="muted">
+                    Splits
                   </AppText>
                   {result.splits.map((split, index) => (
                     <View
@@ -249,7 +262,7 @@ export default function MyEventDetailScreen() {
                         justifyContent: 'space-between',
                         paddingVertical: spacing.xxs,
                         borderTopWidth: index === 0 ? 0 : 1,
-                        borderTopColor: colors.border,
+                        borderTopColor: colors.hairline,
                       }}>
                       <AppText variant="caption">{split.label}</AppText>
                       <AppText variant="caption" tone="muted">
@@ -273,7 +286,7 @@ export default function MyEventDetailScreen() {
               {medals.map((medal) => (
                 <PressScale key={medal.id} haptic onPress={() => router.push(`/medals/${medal.id}`)}>
                   <Card style={{ width: 140, alignItems: 'center', gap: spacing.xs }}>
-                    <MedalIcon color={colors.gold} size={22} />
+                    <MedalIcon color={colors.accent} size={22} />
                     <AppText variant="caption" numberOfLines={2} align="center">
                       {medal.title ?? 'Medalla'}
                     </AppText>
@@ -295,7 +308,7 @@ export default function MyEventDetailScreen() {
                     height: 44,
                     borderRadius: radius.sm,
                     overflow: 'hidden',
-                    backgroundColor: colors.graphiteLight,
+                    backgroundColor: colors.surfaceMuted,
                   }}>
                   <Image
                     source={{ uri: legacyPlate.model.preview_image_url }}
@@ -333,10 +346,10 @@ export default function MyEventDetailScreen() {
                   paddingHorizontal: spacing.sm,
                   paddingVertical: 6,
                   borderRadius: radius.pill,
-                  borderWidth: 1,
-                  borderColor: colors.goldDim,
+                  backgroundColor: colors.goldWash,
+                  minHeight: 32,
                 }}>
-                <Plus color={colors.gold} size={14} />
+                <Plus color={colors.accent} size={14} />
                 <AppText variant="caption" tone="gold">
                   Agregar
                 </AppText>
@@ -375,16 +388,12 @@ export default function MyEventDetailScreen() {
 
           {imagesFull && videosFull ? (
             <Card style={{ alignItems: 'center', gap: spacing.xs }}>
-              <AppText variant="body" align="center">
+              <AppText variant="bodyStrong" align="center">
                 Tus recuerdos incluidos están completos.
               </AppText>
-              <AppButton
-                label="Ver opciones"
-                variant="secondary"
-                fullWidth={false}
-                onPress={() => router.push('/my-events/memory-upgrades')}
-                style={{ paddingHorizontal: spacing.lg }}
-              />
+              <AppText variant="caption" tone="muted" align="center">
+                Para agregar otro, elimina una foto o video de esta carrera.
+              </AppText>
             </Card>
           ) : null}
         </View>
@@ -401,10 +410,10 @@ export default function MyEventDetailScreen() {
                   paddingHorizontal: spacing.sm,
                   paddingVertical: 6,
                   borderRadius: radius.pill,
-                  borderWidth: 1,
-                  borderColor: colors.goldDim,
+                  backgroundColor: colors.goldWash,
+                  minHeight: 32,
                 }}>
-                <Plus color={colors.gold} size={14} />
+                <Plus color={colors.accent} size={14} />
                 <AppText variant="caption" tone="gold">
                   Agregar
                 </AppText>
@@ -484,6 +493,14 @@ export default function MyEventDetailScreen() {
           </View>
         ) : null}
       </View>
+      </Animated.ScrollView>
+
+      <ScrollHeader
+        scrollY={scrollY}
+        title={participant.event ?? 'Mi carrera'}
+        threshold={60}
+        left={<IconButton icon={ChevronLeft} label="Volver" onPress={() => (router.canGoBack() ? router.back() : router.replace('/legacy'))} size={26} />}
+      />
 
       <MediaViewer
         key={viewerIndex ?? 'closed'}
@@ -499,7 +516,7 @@ export default function MyEventDetailScreen() {
         onClose={() => setUploadOpen(false)}
         participantId={participantId}
         entitlement={entitlement.data}
-        onLimitReached={() => router.push('/my-events/memory-upgrades')}
+        onLimitReached={() => showToast('Llegaste al límite de recuerdos de esta carrera. Elimina uno para agregar otro.', 'default')}
       />
 
       <Sheet visible={actionsFor !== null} onClose={() => setActionsFor(null)}>
@@ -532,7 +549,7 @@ export default function MyEventDetailScreen() {
             ) : null}
             <SheetActionRow
               icon={Share2}
-              label="Compartir como Legacy Moment"
+              label="Compartir con mi comunidad"
               onPress={() => {
                 const uuid = actionsFor.uuid;
                 setActionsFor(null);
@@ -567,13 +584,17 @@ export default function MyEventDetailScreen() {
         ) : (
           <View style={{ gap: spacing.xs, paddingBottom: spacing.sm }}>
             {availableGear.map((product) => (
-              <Pressable
+              <PressableScale
+                dim
+                scaleTo={0.98}
                 key={product.uuid}
                 onPress={() => {
                   handleAddGear(product);
                   setAddGearOpen(false);
                 }}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm }}>
+                accessibilityRole="button"
+                accessibilityLabel={`Agregar ${product.product_name}`}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: 52, paddingVertical: spacing.sm }}>
                 <View style={{ flex: 1 }}>
                   <AppText variant="bodyStrong">{product.product_name}</AppText>
                   {product.variant_name ? (
@@ -582,8 +603,8 @@ export default function MyEventDetailScreen() {
                     </AppText>
                   ) : null}
                 </View>
-                <Plus color={colors.gold} size={18} />
-              </Pressable>
+                <Plus color={colors.accent} size={18} />
+              </PressableScale>
             ))}
           </View>
         )}
@@ -598,6 +619,6 @@ export default function MyEventDetailScreen() {
         onConfirm={handleRemoveGear}
         onCancel={() => setRemovingGearUuid(null)}
       />
-    </Screen>
+    </View>
   );
 }

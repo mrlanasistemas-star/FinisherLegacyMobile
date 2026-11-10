@@ -1,17 +1,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { CircleCheck } from 'lucide-react-native';
+import { CircleCheck, Lock } from 'lucide-react-native';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View } from 'react-native';
+import Animated, { FadeIn, ZoomIn, useReducedMotion } from 'react-native-reanimated';
 
 import { resetPassword } from '@/api/account';
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
-import { AppText } from '@/components/app-text';
+import { AuthFormError, AuthShell } from '@/components/auth/auth-shell';
 import { FormInput } from '@/components/form-input';
-import { InlineError } from '@/components/ui/inline-error';
-import { TopBar } from '@/components/ui/top-bar';
 import { colors, spacing } from '@/theme/tokens';
+import { haptics } from '@/utils/haptics';
 
 /**
  * New password from the reset email. Opened by the deep link
@@ -19,6 +18,7 @@ import { colors, spacing } from '@/theme/tokens';
  * token from the email link.
  */
 export default function ResetPasswordScreen() {
+  const reduceMotion = useReducedMotion();
   const params = useLocalSearchParams<{ token?: string; email?: string }>();
   const [email, setEmail] = useState(params.email ?? '');
   const [token, setToken] = useState(params.token ?? '');
@@ -43,6 +43,7 @@ export default function ResetPasswordScreen() {
     setSaving(true);
     try {
       await resetPassword({ token: token.trim(), email: email.trim().toLowerCase(), password, password_confirmation: confirmation });
+      haptics.success();
       setDone(true);
     } catch (caught) {
       if (caught instanceof AppError && caught.fieldErrors) {
@@ -60,39 +61,42 @@ export default function ResetPasswordScreen() {
 
   if (done) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.black, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.md }}>
-        <CircleCheck size={56} color={colors.gold} />
-        <AppText variant="title" align="center">
-          Contraseña actualizada
-        </AppText>
-        <AppText variant="body" tone="muted" align="center">
-          Por seguridad cerramos tu sesión en otros dispositivos. Entra con tu nueva contraseña.
-        </AppText>
-        <AppButton label="Iniciar sesión" onPress={() => router.replace('/login')} />
-      </SafeAreaView>
+      <AuthShell
+        back={false}
+        eyebrow="Listo"
+        title="Contraseña actualizada"
+        subtitle="Por seguridad cerramos tu sesión en otros dispositivos. Entra con tu nueva contraseña."
+        footer={<AppButton label="Iniciar sesión" onPress={() => router.replace('/login')} />}>
+        <Animated.View entering={reduceMotion ? FadeIn : ZoomIn.springify().damping(14)} style={{ alignItems: 'center', paddingVertical: spacing.lg }}>
+          <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.successWash, alignItems: 'center', justifyContent: 'center' }}>
+            <CircleCheck size={40} color={colors.success} strokeWidth={1.6} />
+          </View>
+        </Animated.View>
+      </AuthShell>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.black }}>
-      <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar />
-      </View>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing.xl }}>
-          <AppText variant="title" accessibilityRole="header">
-            Crea una nueva contraseña
-          </AppText>
-          {!params.email ? <FormInput label="Correo electrónico" kind="email" value={email} onChangeText={setEmail} error={fieldErrors.email} /> : null}
-          {!params.token ? (
-            <FormInput label="Código del correo" hint="Está al final del enlace que te enviamos." autoCapitalize="none" autoCorrect={false} value={token} onChangeText={setToken} error={fieldErrors.token} />
-          ) : null}
-          <FormInput label="Nueva contraseña" kind="new-password" value={password} onChangeText={setPassword} error={fieldErrors.password} hint="Mínimo 8 caracteres." />
-          <FormInput label="Confirma tu contraseña" kind="new-password" value={confirmation} onChangeText={setConfirmation} error={fieldErrors.password_confirmation} onSubmitEditing={submit} />
-          <InlineError message={error} />
-          <AppButton label="Guardar contraseña" onPress={submit} loading={saving} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <AuthShell
+      eyebrow="Recuperar acceso"
+      title="Crea una nueva contraseña"
+      footer={<AppButton label="Guardar contraseña" onPress={submit} loading={saving} />}>
+      <AuthFormError message={error} />
+      {!params.email ? <FormInput label="Correo electrónico" kind="email" placeholder="tu@correo.com" value={email} onChangeText={setEmail} error={fieldErrors.email} /> : null}
+      {!params.token ? (
+        <FormInput label="Código del correo" hint="Está al final del enlace que te enviamos." autoCapitalize="none" autoCorrect={false} value={token} onChangeText={setToken} error={fieldErrors.token} />
+      ) : null}
+      <FormInput label="Nueva contraseña" icon={Lock} kind="new-password" value={password} onChangeText={setPassword} error={fieldErrors.password} hint="Mínimo 8 caracteres." />
+      <FormInput
+        label="Confirma tu contraseña"
+        icon={Lock}
+        kind="new-password"
+        value={confirmation}
+        onChangeText={setConfirmation}
+        error={fieldErrors.password_confirmation}
+        returnKeyType="done"
+        onSubmitEditing={submit}
+      />
+    </AuthShell>
   );
 }

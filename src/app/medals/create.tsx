@@ -1,6 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
-import { X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
@@ -11,6 +10,8 @@ import { AppText } from '@/components/app-text';
 import { FormInput } from '@/components/form-input';
 import { ImagePickerTile, type PickedImage } from '@/components/image-picker-tile';
 import { Screen } from '@/components/screen';
+import { InlineError } from '@/components/ui/inline-error';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { useCreateMedal } from '@/hooks/use-medal-mutations';
 import { manualMedalSchema, type ManualMedalFormValues } from '@/schemas/medal';
 import { colors, spacing } from '@/theme/tokens';
@@ -68,21 +69,22 @@ export default function CreateMedalScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Screen scroll>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm }}>
-          <AppText variant="subtitle">Nueva medalla</AppText>
-          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
-            <X color={colors.foreground} size={24} />
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52 }}>
+          <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cancelar" style={{ minWidth: 80, minHeight: 44, justifyContent: 'center' }}>
+            <AppText variant="body" tone="accent">
+              Cancelar
+            </AppText>
           </Pressable>
+          <AppText variant="bodyStrong" align="center" style={{ flex: 1 }} accessibilityRole="header">
+            Nueva medalla
+          </AppText>
+          <View style={{ minWidth: 80 }} />
         </View>
 
         <View style={{ gap: spacing.md, paddingBottom: spacing.xl }}>
-          {formError ? (
-            <AppText variant="caption" tone="destructive">
-              {formError}
-            </AppText>
-          ) : null}
+          <InlineError message={formError} />
 
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <ImagePickerTile label="Foto frontal" value={frontImage} onChange={setFrontImage} style={{ flex: 1 }} />
@@ -188,20 +190,17 @@ export default function CreateMedalScreen() {
             control={control}
             name="visibility"
             render={({ field }) => (
-              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                <AppButton
-                  label="Público"
-                  variant={field.value === 'public' ? 'primary' : 'secondary'}
-                  fullWidth={false}
-                  onPress={() => field.onChange('public')}
-                  style={{ flex: 1 }}
-                />
-                <AppButton
-                  label="Privado"
-                  variant={field.value === 'private' ? 'primary' : 'secondary'}
-                  fullWidth={false}
-                  onPress={() => field.onChange('private')}
-                  style={{ flex: 1 }}
+              <View style={{ gap: spacing.xs }}>
+                <AppText variant="caption" tone="muted">
+                  ¿Quién puede verla?
+                </AppText>
+                <SegmentedControl
+                  options={[
+                    { value: 'public', label: 'Pública' },
+                    { value: 'private', label: 'Solo yo' },
+                  ]}
+                  value={field.value ?? 'public'}
+                  onChange={field.onChange}
                 />
               </View>
             )}

@@ -38,9 +38,9 @@ export function PushPrimerCard({ message = 'Entérate cuando tu gente te apoye, 
     <Animated.View
       entering={FadeIn.duration(240)}
       exiting={FadeOut.duration(160)}
-      style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.border }}>
+      style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }}>
       <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
-        <BellRing size={20} color={colors.gold} />
+        <BellRing size={20} color={colors.accent} />
       </View>
       <View style={{ flex: 1, gap: spacing.xs }}>
         <AppText variant="bodyStrong">Activa los avisos</AppText>

@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Check, Lock, X } from 'lucide-react-native';
 import { useEffect } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { ErrorState } from '@/components/error-state';
@@ -15,7 +16,7 @@ import { orderTimeline, PAYMENT_STATE_LABEL, type StepState } from '@/features/c
 import { useOrder } from '@/hooks/use-orders';
 import { usePaymentFlow } from '@/hooks/use-payment-flow';
 import { PAYMENT_PHASE_COPY } from '@/payments/payment-flow';
-import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import type { Order } from '@/types/models';
 import { formatDateTime } from '@/utils/dates';
 import { formatMoney } from '@/utils/money';
@@ -25,14 +26,15 @@ export default function OrderDetailScreen() {
   const { data: order, isPending, isError, error, refetch, isRefetching } = useOrder(uuid, { watchSettlement: true });
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar title={order ? `Pedido #${order.order_number}` : 'Pedido'} />
       </View>
       {isPending ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
-          <Skeleton height={80} />
-          <Skeleton height={160} />
+          <Skeleton height={34} width="60%" />
+          <Skeleton height={160} radius={18} />
+          <Skeleton height={120} radius={18} />
         </View>
       ) : isError || !order ? (
         <ErrorState error={error} message="No pudimos cargar este pedido." onRetry={refetch} />
@@ -69,7 +71,7 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
     <>
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.gold} />}>
+        refreshControl={<BrandRefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={{ gap: 4 }}>
           <AppText variant="title" style={{ fontSize: 24 }} accessibilityRole="header">
             {statusTitle}
@@ -89,16 +91,14 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
           ) : null}
         </View>
 
-        <View accessibilityRole="list">
+        <View accessibilityRole="list" style={{ padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
           {steps.map((step, index) => (
             <TimelineRow key={step.key} label={step.label} state={step.state} at={step.at} last={index === steps.length - 1} />
           ))}
         </View>
 
-        <View style={{ gap: spacing.sm }}>
-          <AppText variant="label" tone="muted">
-            PRODUCTOS
-          </AppText>
+        <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
+          <AppText variant="eyebrow" tone="subtle">Productos</AppText>
           {(current.items ?? []).map((item) => (
             <View key={item.uuid} style={{ flexDirection: 'row', gap: spacing.sm }}>
               <AppText variant="body" tone="muted" style={{ width: 28 }}>
@@ -124,7 +124,7 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
           ))}
         </View>
 
-        <View style={{ gap: spacing.xs, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+        <View style={{ gap: spacing.xs, paddingHorizontal: spacing.md }}>
           <Row label="Subtotal" value={formatMoney(current.subtotal_minor, current.currency)} />
           {current.discount_minor > 0 ? <Row label={`Descuento${current.coupon_code ? ` (${current.coupon_code})` : ''}`} value={`−${formatMoney(current.discount_minor, current.currency)}`} /> : null}
           {current.tax_minor > 0 ? <Row label="Impuestos" value={formatMoney(current.tax_minor, current.currency)} /> : null}
@@ -149,7 +149,7 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
 }
 
 function TimelineRow({ label, state, at, last }: { label: string; state: StepState; at?: string | null; last: boolean }) {
-  const dotColor = state === 'done' ? colors.gold : state === 'current' ? colors.goldSoft : state === 'failed' ? colors.destructive : colors.graphiteLight;
+  const dotColor = state === 'done' ? colors.gold : state === 'current' ? colors.gold : state === 'failed' ? colors.destructive : colors.surfaceMuted;
   return (
     <View style={{ flexDirection: 'row', gap: spacing.md }} accessibilityLabel={`${label}${state === 'done' ? ', completado' : state === 'current' ? ', en curso' : ''}`}>
       <View style={{ alignItems: 'center', width: 22 }}>
@@ -166,7 +166,7 @@ function TimelineRow({ label, state, at, last }: { label: string; state: StepSta
           }}>
           {state === 'done' ? <Check size={13} color={colors.black} strokeWidth={3} /> : state === 'failed' ? <X size={13} color={colors.white} strokeWidth={3} /> : null}
         </View>
-        {!last ? <View style={{ width: 2, flex: 1, minHeight: 20, backgroundColor: state === 'done' ? colors.goldDim : colors.graphiteLight }} /> : null}
+        {!last ? <View style={{ width: 2, flex: 1, minHeight: 20, backgroundColor: state === 'done' ? colors.goldDim : colors.surfaceMuted }} /> : null}
       </View>
       <View style={{ flex: 1, paddingBottom: last ? 0 : spacing.md }}>
         <AppText style={{ fontFamily: state === 'upcoming' ? fontFamily.regular : fontFamily.semibold, fontSize: 15, color: state === 'upcoming' ? colors.subtle : colors.foreground }}>{label}</AppText>
@@ -184,7 +184,7 @@ function Row({ label, value, strong = false }: { label: string; value: string; s
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <AppText style={{ fontFamily: strong ? fontFamily.semibold : fontFamily.regular, fontSize: strong ? 17 : 15, color: strong ? colors.foreground : colors.muted }}>{label}</AppText>
-      <AppText style={{ fontFamily: strong ? fontFamily.bold : fontFamily.medium, fontSize: strong ? 18 : 15, color: colors.foreground }}>{value}</AppText>
+      <AppText style={{ fontFamily: strong ? fontFamily.heading : fontFamily.medium, fontSize: strong ? 18 : 15, color: colors.foreground }}>{value}</AppText>
     </View>
   );
 }

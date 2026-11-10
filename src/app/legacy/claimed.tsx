@@ -4,7 +4,8 @@ import * as Haptics from 'expo-haptics';
 import { Check } from 'lucide-react-native';
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
@@ -21,6 +22,8 @@ export default function LegacyClaimedScreen() {
   const medals = useMedals();
   const isFirstMedal = medals.data?.pages[0]?.meta.total === 1;
 
+  const insets = useSafeAreaInsets();
+  const reduceMotion = useReducedMotion();
   const glow = useSharedValue(0);
   const badgeScale = useSharedValue(0.4);
   const contentOpacity = useSharedValue(0);
@@ -28,11 +31,18 @@ export default function LegacyClaimedScreen() {
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    if (reduceMotion) {
+      glow.value = 1;
+      badgeScale.value = 1;
+      imageScale.value = 1;
+      contentOpacity.value = withTiming(1, { duration: 150 });
+      return;
+    }
     glow.value = withTiming(1, { duration: 900 });
-    badgeScale.value = withSpring(1, { damping: 10, stiffness: 120 });
+    badgeScale.value = withSpring(1, { damping: 12, stiffness: 140 });
     imageScale.value = withDelay(200, withSpring(1, { damping: 14, stiffness: 100 }));
     contentOpacity.value = withDelay(350, withTiming(1, { duration: 500 }));
-  }, [badgeScale, contentOpacity, glow, imageScale]);
+  }, [badgeScale, contentOpacity, glow, imageScale, reduceMotion]);
 
   const glowStyle = useAnimatedStyle(() => ({ opacity: glow.value, transform: [{ scale: 0.6 + glow.value * 0.6 }] }));
   const badgeStyle = useAnimatedStyle(() => ({ transform: [{ scale: badgeScale.value }] }));
@@ -40,7 +50,7 @@ export default function LegacyClaimedScreen() {
   const imageStyle = useAnimatedStyle(() => ({ transform: [{ scale: imageScale.value }], opacity: contentOpacity.value }));
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black }}>
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, paddingHorizontal: spacing.xl }}>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={[{ position: 'absolute' }, glowStyle]}>
@@ -74,8 +84,8 @@ export default function LegacyClaimedScreen() {
         </View>
 
         <Animated.View style={[{ alignItems: 'center', gap: spacing.xs }, contentStyle]}>
-          <AppText variant="title" align="center">
-            {isFirstMedal ? 'Tu primera historia ya está aquí.' : 'Esta historia ya forma parte de tu Legacy.'}
+          <AppText variant="title" align="center" accessibilityRole="header">
+            {isFirstMedal ? 'Tu primera historia ya está aquí.' : 'Esta historia ya forma parte de tus recuerdos.'}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
             Legacy Code {code}
@@ -83,14 +93,14 @@ export default function LegacyClaimedScreen() {
         </Animated.View>
       </View>
 
-      <Animated.View style={[{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg }, contentStyle]}>
+      <Animated.View style={[{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.md }, contentStyle]}>
         {medalUuid ? (
           <>
-            <AppButton label="Compartir como Legacy Moment" onPress={() => router.replace(`/moments/create?medalUuid=${medalUuid}`)} />
+            <AppButton label="Compartir con mi comunidad" onPress={() => router.replace(`/moments/create?medalUuid=${medalUuid}`)} />
             <AppButton label="Ver mi medalla" variant="secondary" onPress={() => router.replace(`/medals/${medalUuid}`)} />
           </>
         ) : (
-          <AppButton label="Ir a mi Legacy" onPress={() => router.replace('/legacy')} />
+          <AppButton label="Ver mis recuerdos" onPress={() => router.replace('/legacy')} />
         )}
       </Animated.View>
     </View>

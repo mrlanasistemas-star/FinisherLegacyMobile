@@ -35,12 +35,12 @@ export function LiveTrackingCard({ participantId }: { participantId?: number }) 
           gap: spacing.sm,
           padding: spacing.md,
           borderRadius: radius.lg,
-          backgroundColor: live ? colors.goldWash : colors.graphite,
+          backgroundColor: live ? colors.goldWash : colors.card,
           borderWidth: 1,
           borderColor: live ? colors.goldDim : colors.hairline,
         }}>
         <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: live ? colors.gold : colors.goldWash }}>
-          {live ? <Radio size={20} color={colors.black} /> : <MapPin size={20} color={colors.gold} />}
+          {live ? <Radio size={20} color={colors.black} /> : <MapPin size={20} color={colors.accent} />}
         </View>
         <View style={{ flex: 1 }}>
           <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{live ? 'Seguimiento en vivo activo' : 'Iniciar seguimiento'}</AppText>

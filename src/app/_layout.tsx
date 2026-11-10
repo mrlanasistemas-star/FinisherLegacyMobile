@@ -1,17 +1,15 @@
 import '@/global.css';
 
-import {
-  InstrumentSans_400Regular,
-  InstrumentSans_500Medium,
-  InstrumentSans_600SemiBold,
-  InstrumentSans_700Bold,
-  useFonts,
-} from '@expo-google-fonts/instrument-sans';
+import { Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold } from '@expo-google-fonts/manrope';
+import { Montserrat_600SemiBold, Montserrat_700Bold, Montserrat_800ExtraBold } from '@expo-google-fonts/montserrat';
+import { Syncopate_700Bold } from '@expo-google-fonts/syncopate';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useReducedMotion } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { OfflineBanner } from '@/components/ui/offline-banner';
@@ -25,17 +23,30 @@ import { colors } from '@/theme/tokens';
 // Live tracking: the background location task must be defined at module scope.
 import '@/features/tracking/tracking-task';
 import { useLiveTrackingBootstrap } from '@/features/tracking/tracking-controller';
+import { usePendingActivationRecovery } from '@/features/nfc/use-activation';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootNavigator() {
   const status = useAuthStore((state) => state.status);
+  const reduceMotion = useReducedMotion();
   useDeepLinks();
   usePushLifecycle();
   useLiveTrackingBootstrap(status === 'authenticated');
+  // Finish an NFC activation whose write succeeded but whose confirm never arrived.
+  usePendingActivationRecovery();
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        // Native-stack transitions run on the platform UI thread; with Reduce
+        // Motion on, the slide becomes a short cross-fade.
+        animation: reduceMotion ? 'fade' : 'slide_from_right',
+        animationDuration: reduceMotion ? 150 : 300,
+        fullScreenGestureEnabled: true,
+      }}>
       <Stack.Protected guard={status === 'authenticated'}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="feed" />
@@ -53,12 +64,12 @@ function RootNavigator() {
         <Stack.Screen name="events/[slug]" />
         <Stack.Screen name="my-events/index" />
         <Stack.Screen name="my-events/[participantId]" />
-        <Stack.Screen name="my-events/memory-upgrades" options={{ presentation: 'modal' }} />
         <Stack.Screen name="gear/index" />
         <Stack.Screen name="gear/[uuid]" />
         <Stack.Screen name="gear/claim" options={{ presentation: 'fullScreenModal' }} />
         <Stack.Screen name="gear/claimed" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
         <Stack.Screen name="store/[slug]" />
+        <Stack.Screen name="store/collection/[slug]" />
         <Stack.Screen name="cart/index" />
         <Stack.Screen name="checkout/index" options={{ gestureEnabled: false }} />
         <Stack.Screen name="orders/index" />
@@ -81,14 +92,20 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    InstrumentSans_400Regular,
-    InstrumentSans_500Medium,
-    InstrumentSans_600SemiBold,
-    InstrumentSans_700Bold,
+  // Manual §4: Manrope (UI/body), Montserrat (headings), Syncopate Bold (brand moments only).
+  const [fontsLoaded, fontError] = useFonts({
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
+    Montserrat_800ExtraBold,
+    Syncopate_700Bold,
   });
   const sessionReady = useSessionBootstrap();
-  const appReady = fontsLoaded && sessionReady;
+  // A font load failure must never brick the app — fall back to system fonts.
+  const appReady = (fontsLoaded || !!fontError) && sessionReady;
 
   useEffect(() => {
     if (appReady) {
@@ -104,7 +121,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <QueryProvider>
-          <StatusBar style="light" />
+          <StatusBar style="dark" />
           <RootNavigator />
           <OfflineBanner />
           <ToastHost />

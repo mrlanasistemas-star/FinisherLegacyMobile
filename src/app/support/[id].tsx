@@ -68,10 +68,10 @@ function AudioMessageButton({ url }: { url: string }) {
         borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: colors.goldDim,
-        backgroundColor: 'rgba(201,161,89,0.1)',
+        backgroundColor: 'rgba(201,174,139,0.1)',
       }}
       accessibilityRole="button">
-      {playing ? <Pause size={14} color={colors.gold} /> : <Play size={14} color={colors.gold} />}
+      {playing ? <Pause size={14} color={colors.accent} /> : <Play size={14} color={colors.accent} />}
       <AppText variant="caption" tone="gold">
         Mensaje de voz
       </AppText>
@@ -153,7 +153,7 @@ export default function SupportSessionDetailScreen() {
             onPress={handleShare}
             style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs }}
             accessibilityRole="button">
-            <Share2 size={16} color={colors.gold} />
+            <Share2 size={16} color={colors.accent} />
             <AppText variant="bodyStrong" tone="gold">
               Compartir enlace
             </AppText>

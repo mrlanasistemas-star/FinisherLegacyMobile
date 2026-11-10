@@ -20,7 +20,7 @@ const ICONS: Record<ToastTone, typeof CheckCircle2 | null> = {
 
 const ICON_COLORS: Record<ToastTone, string> = {
   default: colors.foreground,
-  success: colors.gold,
+  success: colors.success,
   destructive: colors.destructive,
 };
 
@@ -45,7 +45,7 @@ export function ToastHost() {
       entering={FadeInDown.duration(220)}
       exiting={FadeOutDown.duration(180)}
       pointerEvents="none"
-      style={{ position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: insets.bottom + spacing.md }}>
+      style={{ position: 'absolute', left: spacing.lg, right: spacing.lg, bottom: insets.bottom + 84 }}>
       <GlassSurface rounded={false} intensity={60} style={{ borderRadius: radius.lg }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm, paddingHorizontal: spacing.md }}>
           {Icon ? <Icon color={ICON_COLORS[toast.tone]} size={18} /> : null}

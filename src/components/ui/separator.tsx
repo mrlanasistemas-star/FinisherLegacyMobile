@@ -9,5 +9,5 @@ interface SeparatorProps {
 
 /** A subtle 1px line to structure sections without reaching for another Card (AGENTS.md §139). */
 export function Separator({ style, inset = 0 }: SeparatorProps) {
-  return <View style={[{ height: 1, backgroundColor: colors.border, marginLeft: inset }, style]} />;
+  return <View style={[{ height: 1, backgroundColor: colors.hairline, marginLeft: inset }, style]} />;
 }

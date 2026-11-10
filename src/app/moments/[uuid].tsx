@@ -57,12 +57,12 @@ export default function MomentDetailScreen() {
   const shareUrl = webLinks.moment(uuid);
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar title="Momento" right={<IconButton icon={Share2} label="Compartir momento" onPress={() => Share.share({ message: shareUrl, url: shareUrl })} />} />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={insets.top + 52}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={insets.top + 52}>
         {moment.isPending && !moment.data ? (
           <View style={{ padding: spacing.lg, gap: spacing.md }}>
             <Skeleton height={48} width="70%" />
@@ -100,7 +100,7 @@ export default function MomentDetailScreen() {
             )}
             onEndReachedThreshold={0.4}
             onEndReached={() => comments.hasNextPage && !comments.isFetchingNextPage && comments.fetchNextPage()}
-            ListFooterComponent={comments.isFetchingNextPage ? <ActivityIndicator color={colors.gold} style={{ marginTop: spacing.sm }} /> : null}
+            ListFooterComponent={comments.isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.sm }} /> : null}
             ListEmptyComponent={
               comments.isPending ? (
                 <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm }}>
@@ -108,7 +108,7 @@ export default function MomentDetailScreen() {
                 </View>
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.xs }}>
-                  <MessageCircleHeart size={28} color={colors.goldDim} />
+                  <MessageCircleHeart size={28} color={colors.accent} />
                   <AppText variant="body" tone="muted" align="center">
                     Sé el primero en dejar un mensaje de apoyo.
                   </AppText>
@@ -129,7 +129,7 @@ export default function MomentDetailScreen() {
               paddingBottom: Math.max(insets.bottom, spacing.sm),
               borderTopWidth: 1,
               borderTopColor: colors.hairline,
-              backgroundColor: colors.black,
+              backgroundColor: colors.background,
             }}>
             <TextInput
               ref={inputRef}
@@ -140,7 +140,7 @@ export default function MomentDetailScreen() {
               autoFocus={focus === 'comment'}
               multiline
               maxLength={MAX_COMMENT}
-              selectionColor={colors.gold}
+              selectionColor={colors.accent}
               accessibilityLabel="Escribe un mensaje de apoyo"
               style={{
                 flex: 1,
@@ -169,12 +169,12 @@ export default function MomentDetailScreen() {
                 borderRadius: 22,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: canSend ? colors.gold : colors.graphite,
+                backgroundColor: canSend ? colors.black : colors.surfaceMuted,
               }}>
               {postComment.isPending ? (
-                <ActivityIndicator color={colors.black} size="small" />
+                <ActivityIndicator color={colors.onDark} size="small" />
               ) : (
-                <SendHorizontal size={20} color={canSend ? colors.black : colors.subtle} />
+                <SendHorizontal size={20} color={canSend ? colors.onDark : colors.subtle} />
               )}
             </Pressable>
           </View>

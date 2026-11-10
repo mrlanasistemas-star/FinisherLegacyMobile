@@ -1,6 +1,6 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { KeyRound, Nfc, X } from 'lucide-react-native';
+import { ChevronRight, KeyRound, Nfc, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,8 @@ import { extractGearCode, normalizeGearCode } from '@/api/gear';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { GearIconBadge } from '@/components/brand/gear-icon-badge';
+import { PressableScale } from '@/components/motion/pressable-scale';
+import { InlineError } from '@/components/ui/inline-error';
 import { FormInput } from '@/components/form-input';
 import { Skeleton } from '@/components/skeleton';
 import { useClaimGear, usePublicGear } from '@/hooks/use-gear';
@@ -59,14 +61,14 @@ export default function GearClaimScreen() {
 
   if (detectedCode) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black, paddingTop: insets.top }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View style={{ flexDirection: 'row', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
           <Pressable onPress={reset} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cancelar">
             <X color={colors.foreground} size={26} />
           </Pressable>
         </View>
 
-        <View style={{ flex: 1, paddingHorizontal: spacing.lg, justifyContent: 'center', gap: spacing.lg }}>
+        <View style={{ flex: 1, paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.lg, justifyContent: 'center', gap: spacing.lg }}>
           {preview.isPending ? (
             <View style={{ gap: spacing.md }}>
               <Skeleton height={100} width={100} radius={radius.lg} style={{ alignSelf: 'center' }} />
@@ -105,11 +107,7 @@ export default function GearClaimScreen() {
                 </AppText>
               ) : null}
 
-              {claimError ? (
-                <AppText variant="caption" tone="destructive" align="center">
-                  {claimError}
-                </AppText>
-              ) : null}
+              <InlineError message={claimError} />
 
               <AppButton label="Reclamar este equipo" onPress={handleClaim} loading={claim.isPending} style={{ marginTop: spacing.md }} />
               <AppButton label="Probar otro código" variant="ghost" onPress={reset} disabled={claim.isPending} />
@@ -121,18 +119,16 @@ export default function GearClaimScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black, paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
           <X color={colors.foreground} size={26} />
         </Pressable>
       </View>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: spacing.lg, gap: spacing.xl, paddingBottom: insets.bottom + spacing.xl }}>
           <View style={{ gap: spacing.xs }}>
-            <AppText variant="label" tone="gold" style={{ letterSpacing: 3 }}>
-              MI EQUIPO
-            </AppText>
+            <AppText variant="eyebrow">Mi equipo</AppText>
             <AppText variant="title" accessibilityRole="header">
               Conecta tu producto
             </AppText>
@@ -155,12 +151,17 @@ export default function GearClaimScreen() {
             />
             <AppButton label="Buscar" onPress={submitManualCode} disabled={manualCode.trim().length < 4} />
           </View>
-          <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite }}>
-            <Nfc size={22} color={colors.gold} />
+          <PressableScale
+            onPress={() => router.replace('/activate' as Href)}
+            accessibilityRole="button"
+            accessibilityLabel="¿Tu producto tiene NFC? Actívalo acercando tu teléfono"
+            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
+            <Nfc size={22} color={colors.accent} />
             <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
               ¿Tu producto tiene NFC? Acerca tu teléfono a la etiqueta y se conectará solo.
             </AppText>
-          </View>
+            <ChevronRight size={18} color={colors.subtle} />
+          </PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

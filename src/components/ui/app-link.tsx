@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Pressable } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 
 import { colors } from '@/theme/tokens';
@@ -17,21 +17,23 @@ export function AppLink({ label, onPress, tone = 'gold', small = false }: AppLin
   const [hovered, setHovered] = useState(false);
 
   return (
-    <Pressable
+    <PressableScale
+      dim
+      scaleTo={0.98}
       onPress={onPress}
       hitSlop={12}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
       accessibilityRole="button"
-      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+      style={{ }}>
       <AppText
         variant={small ? 'caption' : 'bodyStrong'}
         style={{
-          color: tone === 'gold' ? colors.gold : colors.foreground,
+          color: tone === 'gold' ? colors.accent : colors.foreground,
           textDecorationLine: hovered ? 'underline' : 'none',
         }}>
         {label}
       </AppText>
-    </Pressable>
+    </PressableScale>
   );
 }

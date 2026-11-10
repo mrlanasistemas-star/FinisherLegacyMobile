@@ -1,10 +1,13 @@
 import { router } from 'expo-router';
 import { CalendarDays, Compass, Plus, Search, Users, WifiOff } from 'lucide-react-native';
 import { memo, useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, ScrollView, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { PressableScale } from '@/components/motion/pressable-scale';
+import { StaggerItem } from '@/components/motion/reveal';
 import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
@@ -19,30 +22,40 @@ import { SegmentedControl } from '@/components/ui/segmented-control';
 import { useEvents } from '@/hooks/use-events';
 import { useProfile } from '@/hooks/use-profile';
 import { useExplore, useFeed } from '@/hooks/use-social';
-import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
+import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
 import type { AthleteSummary, LegacyMoment } from '@/types/social';
 
 type Section = 'following' | 'discover' | 'events';
 
 /**
- * Explorar — the community. Siguiendo / Descubrir are the cursor-paginated
+ * Comunidad (formerly Explorar) — the community. Siguiendo / Descubrir are the cursor-paginated
  * feed (`meta.next_cursor`), Eventos is discovery. Search lives one tap
  * away (top right). Cached pages stay readable offline; errors never wipe
  * what's already on screen.
  */
 export default function ExploreTab() {
   const [section, setSection] = useState<Section>('following');
+  const myProfile = useProfile();
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg, gap: spacing.sm, paddingBottom: spacing.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: spacing.xs }}>
-          <AppText variant="hero" style={{ fontSize: 34, lineHeight: 38, flex: 1 }} accessibilityRole="header">
-            EXPLORAR
+          <AppText variant="display" style={{ flex: 1 }} accessibilityRole="header">
+            Comunidad
           </AppText>
           <IconButton icon={Search} label="Buscar atletas, eventos y productos" onPress={() => router.push('/search')} />
-          <IconButton icon={Plus} label="Compartir un momento" onPress={() => router.push('/moments/create')} color={colors.gold} style={{ marginRight: -10 }} />
+          <IconButton icon={Plus} label="Compartir un momento" onPress={() => router.push('/moments/create')} />
+          <PressableScale
+            onPress={() => router.push('/profile')}
+            accessibilityRole="button"
+            accessibilityLabel="Mi perfil"
+            scaleTo={0.92}
+            hitSlop={6}
+            style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: -6 }}>
+            <Avatar uri={myProfile.data?.profile?.profile_photo_url} name={myProfile.data?.athlete.full_name} size={32} />
+          </PressableScale>
         </View>
         <SegmentedControl
           value={section}
@@ -70,7 +83,14 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
   const moments = useMemo<LegacyMoment[]>(() => feed.data?.pages.flatMap((p) => p.data) ?? [], [feed.data]);
   const suggestions = useMemo(() => (explore.data?.athletes ?? []).filter((a) => a.username && a.is_following !== true).slice(0, 10), [explore.data]);
 
-  const renderItem = useCallback(({ item }: { item: LegacyMoment }) => <MomentCard moment={item} />, []);
+  const renderItem = useCallback(
+    ({ item, index }: { item: LegacyMoment; index: number }) => (
+      <StaggerItem index={index}>
+        <MomentCard moment={item} />
+      </StaggerItem>
+    ),
+    [],
+  );
 
   if (feed.isPending && !feed.data) {
     return (
@@ -101,7 +121,7 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
       keyExtractor={(item) => item.uuid}
       renderItem={renderItem}
       contentContainerStyle={{ paddingBottom: spacing.xxl, flexGrow: 1 }}
-      refreshControl={<RefreshControl refreshing={feed.isRefetching && !feed.isFetchingNextPage} onRefresh={() => { feed.refetch(); explore.refetch(); }} tintColor={colors.gold} />}
+      refreshControl={<BrandRefreshControl refreshing={feed.isRefetching && !feed.isFetchingNextPage} onRefresh={() => { feed.refetch(); explore.refetch(); }} />}
       onEndReachedThreshold={0.6}
       onEndReached={() => feed.hasNextPage && !feed.isFetchingNextPage && !feed.isError && feed.fetchNextPage()}
       // Media-heavy rows: render few, keep a small window, recycle off-screen views.
@@ -115,7 +135,7 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
           {showingStale ? (
             <Animated.View
               entering={FadeIn}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginHorizontal: spacing.lg, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radius.md, backgroundColor: colors.graphite }}>
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginHorizontal: spacing.lg, marginBottom: spacing.sm, padding: spacing.sm, borderRadius: radius.md, backgroundColor: colors.card }}>
               <WifiOff size={16} color={colors.muted} />
               <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
                 {offline ? 'Sin conexión. Te mostramos lo último que guardamos.' : 'No pudimos actualizar. Te mostramos lo último que guardamos.'}
@@ -170,8 +190,8 @@ function CommunityFeed({ scope, onSwitchToDiscover }: { scope: 'following' | 'di
 function AthleteSuggestions({ athletes }: { athletes: AthleteSummary[] }) {
   return (
     <View style={{ paddingBottom: spacing.md, marginBottom: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
-      <AppText variant="label" tone="muted" style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.sm, letterSpacing: 1.5 }}>
-        ATLETAS PARA SEGUIR
+      <AppText variant="eyebrow" tone="subtle" style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.sm }}>
+        Atletas para seguir
       </AppText>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
         {athletes.map((athlete) => (
@@ -186,7 +206,7 @@ const SuggestionCard = memo(function SuggestionCard({ athlete }: { athlete: Athl
   const myUsername = useProfile().data?.profile?.username;
   const username = athlete.username as string;
   return (
-    <View style={{ width: 148, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: spacing.xs }}>
+    <View style={{ width: 148, padding: spacing.sm, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, alignItems: 'center', gap: spacing.xs, ...shadows.soft }}>
       <Pressable
         onPress={() => router.push(`/athlete/${username}`)}
         accessibilityRole="button"
@@ -232,16 +252,20 @@ function EventsDiscovery() {
       data={upcoming.length > 0 ? upcoming : rows}
       keyExtractor={(item) => String(item.id)}
       contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md, flexGrow: 1 }}
-      renderItem={({ item }) => <EventCard edition={item} onPress={() => router.push(`/events/${item.event.slug}`)} />}
-      refreshControl={<RefreshControl refreshing={events.isRefetching && !events.isFetchingNextPage} onRefresh={events.refetch} tintColor={colors.gold} />}
+      renderItem={({ item, index }) => (
+        <StaggerItem index={index}>
+          <EventCard edition={item} onPress={() => router.push(`/events/${item.event.slug}`)} />
+        </StaggerItem>
+      )}
+      refreshControl={<BrandRefreshControl refreshing={events.isRefetching && !events.isFetchingNextPage} onRefresh={events.refetch} />}
       onEndReachedThreshold={0.5}
       onEndReached={() => events.hasNextPage && !events.isFetchingNextPage && events.fetchNextPage()}
       initialNumToRender={4}
       windowSize={7}
       ListHeaderComponent={
         upcoming.length > 0 ? (
-          <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
-            PRÓXIMAS CARRERAS
+          <AppText variant="eyebrow" tone="subtle">
+            Próximas carreras
           </AppText>
         ) : null
       }

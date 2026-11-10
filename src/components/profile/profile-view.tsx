@@ -3,11 +3,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Award, BookHeart, ChevronLeft, Ban, Flag, MapPin, MoreHorizontal, Pencil, Settings, Share2, Shirt, Trophy, UserRoundPlus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Share, View, useWindowDimensions } from 'react-native';
+import { Pressable, Share, View, useWindowDimensions } from 'react-native';
+import Animated, { Extrapolation, interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { StaggerItem } from '@/components/motion/reveal';
+import { useScrollY } from '@/components/motion/scroll-header';
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { GearIconBadge } from '@/components/brand/gear-icon-badge';
 import { LegacyIdTag } from '@/components/brand/legacy-id-tag';
@@ -60,6 +65,13 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [confirmBlock, setConfirmBlock] = useState(false);
+  // Own profile left the tab bar: it is pushed from the Home/Comunidad avatar, so it gets a back button.
+  const canGoBack = router.canGoBack();
+  // Status-bar scrim: once the cover scrolls away, content must not run under the clock/icons.
+  const { scrollY, onScroll } = useScrollY();
+  const scrimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [COVER_HEIGHT - 40, COVER_HEIGHT], [0, 1], Extrapolation.CLAMP),
+  }));
 
   const athlete = useAthlete(username ?? '');
   const moments = useAthleteMoments(username ?? '');
@@ -74,8 +86,9 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   // ----- Own profile without a public username yet -----
   if (own && myProfile.data && !myProfile.data.profile?.username) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black, paddingTop: insets.top }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: spacing.sm }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.sm, minHeight: 52, alignItems: 'center' }}>
+          {canGoBack ? <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} /> : <View />}
           <IconButton icon={Settings} label="Configuración" onPress={() => router.push('/settings')} />
         </View>
         <EmptyState
@@ -92,7 +105,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   const loadingPublic = !!username && athlete.isPending;
   if ((own && myProfile.isPending) || loadingPublic) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         <Skeleton height={COVER_HEIGHT + insets.top} radius={0} />
         <View style={{ padding: spacing.lg, gap: spacing.sm, marginTop: -AVATAR_SIZE / 2 }}>
           <Skeleton width={AVATAR_SIZE} height={AVATAR_SIZE} radius={AVATAR_SIZE / 2} />
@@ -106,10 +119,14 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   if (!own && (athlete.isError || !athlete.data)) {
     const notFound = athlete.error instanceof AppError && athlete.error.kind === 'not_found';
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black, paddingTop: insets.top }}>
-        <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} />
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+        <View style={{ paddingHorizontal: spacing.sm, minHeight: 52, justifyContent: 'center' }}>
+          <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} />
+        </View>
         <ErrorState
           error={notFound ? undefined : athlete.error}
+          title={notFound ? 'Perfil no disponible' : undefined}
+          onBack={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           message={notFound ? 'Este perfil no está disponible. Puede ser privado o ya no existir.' : 'No pudimos cargar este perfil.'}
           onRetry={notFound ? undefined : athlete.refetch}
         />
@@ -157,15 +174,17 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   const header = (
     <View>
       {/* Cover — the athlete's own image, full-bleed */}
-      <View style={{ height: COVER_HEIGHT + insets.top, backgroundColor: colors.graphite }}>
+      <View style={{ height: COVER_HEIGHT + insets.top, backgroundColor: colors.card }}>
         {coverUrl ? (
           <Image source={{ uri: coverUrl }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={200} />
         ) : (
-          <LinearGradient colors={[colors.graphiteLight, colors.black]} style={{ flex: 1 }} />
+          <LinearGradient colors={[colors.goldSoft, colors.surfaceMuted, colors.background]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }} />
         )}
-        <LinearGradient colors={['rgba(10,10,12,0.55)', 'rgba(10,10,12,0)', 'rgba(10,10,12,0.9)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+        {coverUrl ? (
+          <LinearGradient colors={['rgba(11,11,12,0.35)', 'rgba(11,11,12,0)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top + 72 }} />
+        ) : null}
         <View style={{ position: 'absolute', top: insets.top + 4, left: spacing.sm, right: spacing.sm, flexDirection: 'row', justifyContent: 'space-between' }}>
-          {own ? <View /> : <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled size={24} />}
+          {own && !canGoBack ? <View /> : <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled size={24} />}
           <View style={{ flexDirection: 'row', gap: spacing.xs }}>
             <IconButton icon={Share2} label="Compartir perfil" onPress={() => Share.share({ message: shareUrl, url: shareUrl })} filled size={20} />
             {own ? (
@@ -179,7 +198,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
 
       <View style={{ paddingHorizontal: spacing.lg, marginTop: -AVATAR_SIZE / 2, gap: spacing.sm }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <Avatar uri={photoUrl} name={name} size={AVATAR_SIZE} ring style={{ borderColor: colors.black, borderWidth: 4 }} />
+          <Avatar uri={photoUrl} name={name} size={AVATAR_SIZE} ring style={{ borderColor: colors.background, borderWidth: 4 }} />
         </View>
 
         <View style={{ gap: 2 }}>
@@ -226,7 +245,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
           {own ? (
             <>
               <AppButton label="Editar perfil" icon={Pencil} variant="secondary" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/settings/account')} />
-              <AppButton label="Nuevo momento" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/moments/create')} />
+              <AppButton label="Compartir momento" size="md" fullWidth={false} style={{ flex: 1 }} onPress={() => router.push('/moments/create')} />
             </>
           ) : pub && handle && pub.viewer.can_follow ? (
             <View style={{ flex: 1 }}>
@@ -290,7 +309,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
             compact
             icon={Award}
             title="Sin medallas todavía"
-            message={own ? 'Acerca tu Legacy Plate al teléfono o agrega tu medalla a mano.' : 'Aún no hay medallas públicas.'}
+            message={own ? 'Acerca tu pieza Finisher Legacy al teléfono o agrega tu medalla a mano.' : 'Aún no hay medallas públicas.'}
             actionLabel={own ? 'Agregar medalla' : undefined}
             onAction={own ? () => router.push('/medals/create') : undefined}
           />
@@ -306,11 +325,11 @@ export function ProfileView({ username, own }: ProfileViewProps) {
               disabled={!own}
               accessibilityRole={own ? 'button' : 'image'}
               accessibilityLabel={tile.title}
-              style={{ width: size, height: size, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.graphite, alignItems: 'center', justifyContent: 'center' }}>
+              style={{ width: size, height: size, borderRadius: 14, borderCurve: 'continuous', overflow: 'hidden', backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
               {tile.image ? (
                 <Image source={{ uri: tile.image }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
               ) : (
-                <Award size={28} color={colors.goldDim} />
+                <Award size={28} color={colors.accent} />
               )}
             </Pressable>
           ))}
@@ -328,11 +347,13 @@ export function ProfileView({ username, own }: ProfileViewProps) {
       return (
         <View style={{ paddingHorizontal: spacing.lg }}>
           {gear.map((item) => (
-            <Pressable
+            <PressableScale
+              dim
+              scaleTo={0.98}
               key={item.uuid}
               onPress={() => router.push(`/gear/${item.uuid}`)}
               accessibilityRole="button"
-              style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.hairline, opacity: pressed ? 0.7 : 1 })}>
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.hairline }}>
               <GearIconBadge productName={item.product_name} size={44} />
               <View style={{ flex: 1 }}>
                 <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }} numberOfLines={1}>
@@ -342,7 +363,7 @@ export function ProfileView({ username, own }: ProfileViewProps) {
                   {item.variant_name ?? item.asset_code}
                 </AppText>
               </View>
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       );
@@ -354,11 +375,17 @@ export function ProfileView({ username, own }: ProfileViewProps) {
   const showMoments = section === 'moments';
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black }}>
-      <FlatList
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         data={showMoments ? momentList : []}
         keyExtractor={(item) => item.uuid}
-        renderItem={({ item }) => <MomentCard moment={item} />}
+        renderItem={({ item, index }) => (
+          <StaggerItem index={index}>
+            <MomentCard moment={item} />
+          </StaggerItem>
+        )}
         ListHeaderComponent={header}
         ListFooterComponent={
           showMoments ? (moments.isFetchingNextPage ? <Skeleton height={160} radius={0} style={{ marginTop: spacing.md }} /> : null) : <View style={{ paddingTop: spacing.sm }}>{renderSectionBody()}</View>
@@ -383,11 +410,15 @@ export function ProfileView({ username, own }: ProfileViewProps) {
         }
         onEndReachedThreshold={0.5}
         onEndReached={() => showMoments && moments.hasNextPage && !moments.isFetchingNextPage && moments.fetchNextPage()}
-        refreshControl={<RefreshControl refreshing={athlete.isRefetching || myProfile.isRefetching} onRefresh={refresh} tintColor={colors.gold} progressViewOffset={insets.top} />}
+        refreshControl={<BrandRefreshControl refreshing={athlete.isRefetching || myProfile.isRefetching} onRefresh={refresh} progressViewOffset={insets.top} />}
         contentContainerStyle={{ paddingBottom: spacing.xxl }}
         showsVerticalScrollIndicator={false}
         initialNumToRender={3}
         windowSize={7}
+      />
+      <Animated.View
+        pointerEvents="none"
+        style={[{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: colors.background }, scrimStyle]}
       />
 
       {menuOpen && handle ? (

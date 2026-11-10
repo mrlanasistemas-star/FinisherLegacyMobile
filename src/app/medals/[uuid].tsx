@@ -1,39 +1,47 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ChevronLeft, EllipsisVertical, Pencil, Trash2 } from 'lucide-react-native';
+import { ChevronLeft, Ellipsis, Medal as MedalIcon, Pencil, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
-import { GoldGlow } from '@/components/brand/gold-glow';
 import { MetricNumber } from '@/components/brand/metric-number';
-import { GlassSurface } from '@/components/brand/glass-surface';
-import { Badge } from '@/components/ui/badge';
-import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Sheet } from '@/components/ui/sheet';
-import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { ErrorState } from '@/components/error-state';
 import { Reveal } from '@/components/motion/reveal';
-import { Screen } from '@/components/screen';
+import { ScrollHeader, useParallax, useScrollY } from '@/components/motion/scroll-header';
 import { Skeleton } from '@/components/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { IconButton } from '@/components/ui/icon-button';
+import { InlineError } from '@/components/ui/inline-error';
+import { Sheet } from '@/components/ui/sheet';
+import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { useDeleteMedal } from '@/hooks/use-medal-mutations';
 import { useMedal } from '@/hooks/use-medals';
 import { showToast } from '@/stores/toastStore';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
-import { colors, radius, spacing } from '@/theme/tokens';
+
+const HERO_HEIGHT = 340;
 
 export default function MedalDetailScreen() {
   const { uuid } = useLocalSearchParams<{ uuid: string }>();
-  const { data: medal, isPending, isError, refetch } = useMedal(uuid);
+  const { data: medal, isPending, isError, error, refetch } = useMedal(uuid);
   const deleteMedal = useDeleteMedal();
   const insets = useSafeAreaInsets();
+  // Short pages must still scroll far enough for the compact bar to become fully opaque.
+  const { height: windowHeight } = useWindowDimensions();
+  const { scrollY, onScroll } = useScrollY();
+  const parallax = useParallax(scrollY, HERO_HEIGHT);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const title = medal?.title ?? medal?.event_name ?? medal?.event_name_manual ?? 'Medalla';
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/medals'));
 
   async function handleDelete() {
     setDeleteError(null);
@@ -42,135 +50,133 @@ export default function MedalDetailScreen() {
       setConfirmingDelete(false);
       router.back();
       showToast('Medalla eliminada.', 'success');
-    } catch (error) {
+    } catch (caught) {
       setConfirmingDelete(false);
-      setDeleteError(error instanceof AppError ? error.message : 'No pudimos eliminar tu medalla.');
+      setDeleteError(caught instanceof AppError ? caught.message : 'No pudimos eliminar tu medalla.');
     }
   }
 
-  if (isPending) {
+  const backButton = <IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />;
+
+  if (isPending || isError || !medal) {
     return (
-      <Screen scroll edges={['top', 'left', 'right']}>
-        <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-          <Skeleton height={280} radius={20} />
-          <Skeleton height={24} width="60%" />
-          <Skeleton height={16} width="40%" />
-        </View>
-      </Screen>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+        <View style={{ paddingHorizontal: spacing.sm, minHeight: 52, justifyContent: 'center' }}>{backButton}</View>
+        {isPending ? (
+          <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg }}>
+            <Skeleton height={280} radius={radius.xl} />
+            <Skeleton height={28} width="60%" />
+            <Skeleton height={16} width="40%" />
+          </View>
+        ) : (
+          <ErrorState error={error} message="No pudimos cargar esta medalla." onRetry={refetch} />
+        )}
+      </View>
     );
   }
 
-  if (isError || !medal) {
-    return (
-      <Screen edges={['top', 'left', 'right']}>
-        <ErrorState message="No pudimos cargar esta medalla." onRetry={refetch} />
-      </Screen>
-    );
-  }
+  const stats = [
+    medal.distance_label ? { label: 'Distancia', value: medal.distance_label } : null,
+    medal.official_time ? { label: 'Tiempo oficial', value: medal.official_time } : null,
+    medal.pace ? { label: 'Ritmo', value: medal.pace } : null,
+  ].filter((s): s is { label: string; value: string } => s !== null);
 
   return (
-    <Screen scroll padded={false} edges={['left', 'right']}>
-      <View style={{ height: 300, backgroundColor: colors.graphite, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <GoldGlow size={260} />
-        {medal.front_image_url ? (
-          <Image
-            source={{ uri: medal.front_image_url }}
-            style={{ position: 'absolute', width: '70%', height: '70%' }}
-            contentFit="contain"
-            transition={200}
-          />
-        ) : null}
-
-        <View style={{ position: 'absolute', top: insets.top + spacing.xs, left: spacing.md, right: spacing.md, flexDirection: 'row', justifyContent: 'space-between' }}>
-          <GlassSurface style={{ width: 40, height: 40 }}>
-            <Pressable
-              onPress={() => router.back()}
-              style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-              accessibilityRole="button"
-              accessibilityLabel="Volver">
-              <ChevronLeft color={colors.foreground} size={22} />
-            </Pressable>
-          </GlassSurface>
-
-          <GlassSurface style={{ width: 40, height: 40 }}>
-            <Pressable
-              onPress={() => setActionsOpen(true)}
-              style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-              accessibilityRole="button"
-              accessibilityLabel="Más acciones">
-              <EllipsisVertical color={colors.foreground} size={20} />
-            </Pressable>
-          </GlassSurface>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xl, minHeight: windowHeight + HERO_HEIGHT }}>
+        <View style={{ height: HERO_HEIGHT + insets.top, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
+          <Animated.View style={[{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: insets.top }, parallax]}>
+            {medal.front_image_url ? (
+              <Image
+                source={{ uri: medal.front_image_url }}
+                style={{ width: '72%', height: '78%' }}
+                contentFit="contain"
+                transition={250}
+                accessibilityLabel={`Foto de la medalla ${title}`}
+              />
+            ) : (
+              <MedalIcon size={72} color={colors.accent} strokeWidth={1.2} />
+            )}
+          </Animated.View>
         </View>
-      </View>
 
-      <Reveal style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl }}>
-        {deleteError ? (
-          <AppText variant="caption" tone="destructive">
-            {deleteError}
-          </AppText>
-        ) : null}
+        <Reveal style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg }}>
+          <InlineError message={deleteError} />
 
-        <View>
-          <Badge label={medal.visibility === 'public' ? 'Público' : 'Privado'} variant={medal.visibility === 'public' ? 'gold' : 'neutral'} style={{ marginBottom: spacing.xs }} />
-          <AppText variant="display">{title}</AppText>
-          {medal.race_name ? (
-            <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs }}>
-              {medal.race_name}
+          <View style={{ gap: spacing.xxs }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              {medal.event_date ? <AppText variant="eyebrow">{formatLongDate(medal.event_date)}</AppText> : null}
+              <Badge label={medal.visibility === 'public' ? 'Pública' : 'Privada'} variant={medal.visibility === 'public' ? 'gold' : 'neutral'} />
+            </View>
+            <AppText variant="display" accessibilityRole="header">
+              {title}
             </AppText>
-          ) : null}
-          {medal.event_date ? (
-            <AppText variant="caption" tone="gold" style={{ marginTop: spacing.xs, letterSpacing: 1 }}>
-              {formatLongDate(medal.event_date).toUpperCase()}
-            </AppText>
-          ) : null}
-        </View>
-
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg }}>
-          {medal.distance_label ? <MetricNumber value={medal.distance_label} label="Distancia" size={44} tone="gold" /> : null}
-          {medal.official_time ? <MetricNumber value={medal.official_time} label="Tiempo oficial" size={44} /> : null}
-        </View>
-
-        {medal.pace || medal.city || medal.country ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-            {medal.pace ? <Badge label={`Ritmo ${medal.pace}`} /> : null}
-            {(medal.city || medal.country) && <Badge label={[medal.city, medal.country].filter(Boolean).join(', ')} />}
+            {medal.race_name || medal.city || medal.country ? (
+              <AppText variant="body" tone="muted">
+                {[medal.race_name, [medal.city, medal.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}
+              </AppText>
+            ) : null}
           </View>
-        ) : null}
 
-        {medal.story ? (
-          <View>
-            <AppText variant="label" tone="muted">
-              HISTORIA
-            </AppText>
-            <AppText variant="body" style={{ marginTop: spacing.xs }}>
-              {medal.story}
-            </AppText>
-          </View>
-        ) : null}
+          {stats.length > 0 ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                backgroundColor: colors.card,
+                borderRadius: radius.lg,
+                borderCurve: 'continuous',
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                paddingVertical: spacing.md,
+                ...shadows.soft,
+              }}>
+              {stats.map((stat, i) => (
+                <View key={stat.label} style={{ flex: 1, alignItems: 'center', borderLeftWidth: i === 0 ? 0 : 1, borderLeftColor: colors.hairline, paddingHorizontal: spacing.xs }}>
+                  <MetricNumber value={stat.value} label={stat.label} size={22} tone={i === 0 ? 'gold' : 'foreground'} style={{ alignItems: 'center' }} />
+                </View>
+              ))}
+            </View>
+          ) : null}
 
-        {medal.gallery_images.length > 0 ? (
-          <View>
-            <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xs }}>
-              GALERÍA
-            </AppText>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          {medal.story ? (
+            <View style={{ gap: spacing.xs }}>
+              <AppText variant="eyebrow" tone="muted">
+                Historia
+              </AppText>
+              <AppText variant="body">{medal.story}</AppText>
+            </View>
+          ) : null}
+
+          {medal.gallery_images.length > 0 ? (
+            <View style={{ gap: spacing.xs }}>
+              <AppText variant="eyebrow" tone="muted">
+                Galería
+              </AppText>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -spacing.lg }} contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg }}>
                 {medal.gallery_images.map((image) =>
                   image.url ? (
                     <Image
                       key={image.id}
                       source={{ uri: image.url }}
-                      style={{ width: 120, height: 120, borderRadius: radius.md }}
+                      style={{ width: 132, height: 132, borderRadius: radius.md, backgroundColor: colors.surfaceMuted }}
                       contentFit="cover"
+                      transition={200}
                     />
                   ) : null,
                 )}
-              </View>
-            </ScrollView>
-          </View>
-        ) : null}
-      </Reveal>
+              </ScrollView>
+            </View>
+          ) : null}
+        </Reveal>
+      </Animated.ScrollView>
+
+      <ScrollHeader
+        scrollY={scrollY}
+        title={title}
+        threshold={HERO_HEIGHT - 60}
+        left={backButton}
+        right={<IconButton icon={Ellipsis} label="Más acciones" onPress={() => setActionsOpen(true)} />}
+      />
 
       <Sheet visible={actionsOpen} onClose={() => setActionsOpen(false)}>
         <SheetActionRow
@@ -195,12 +201,12 @@ export default function MedalDetailScreen() {
       <ConfirmDialog
         visible={confirmingDelete}
         title="Eliminar medalla"
-        description="Esta medalla se quitará de tu Legacy Vault. Esta acción no se puede deshacer."
+        description="Esta medalla se quitará de tus recuerdos. Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         loading={deleteMedal.isPending}
         onConfirm={handleDelete}
         onCancel={() => setConfirmingDelete(false)}
       />
-    </Screen>
+    </View>
   );
 }

@@ -34,13 +34,13 @@ export async function presentStripePaymentSheet(
     paymentIntentClientSecret: clientSecret,
     merchantDisplayName: payment.client_payload.merchant_display_name ?? 'Finisher Legacy',
     returnURL: RETURN_URL,
-    style: 'alwaysDark',
+    style: 'alwaysLight',
     allowsDelayedPaymentMethods: false,
     defaultBillingDetails: { name: customer.name, email: customer.email },
     appearance: {
       colors: {
-        primary: colors.gold,
-        background: colors.black,
+        primary: colors.accent,
+        background: colors.background,
         componentBackground: colors.input,
         componentBorder: colors.inputBorder,
         componentDivider: colors.hairline,
@@ -51,8 +51,8 @@ export async function presentStripePaymentSheet(
         icon: colors.muted,
         error: colors.destructive,
       },
-      shapes: { borderRadius: 12 },
-      primaryButton: { colors: { background: colors.gold, text: colors.black } },
+      shapes: { borderRadius: 14 },
+      primaryButton: { colors: { background: colors.black, text: colors.onDark } },
     },
   });
 

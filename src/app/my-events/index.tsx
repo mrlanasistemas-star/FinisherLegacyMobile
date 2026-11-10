@@ -1,21 +1,26 @@
 import { router } from 'expo-router';
-import { Trophy } from 'lucide-react-native';
+import { ChevronLeft, Trophy } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
-import { MascotTip } from '@/components/brand/mascot-tip';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { StaggerItem } from '@/components/motion/reveal';
+import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { MyEventRow } from '@/components/my-event-row';
-import { Screen } from '@/components/screen';
-import { ScreenHeader } from '@/components/screen-header';
 import { Skeleton } from '@/components/skeleton';
+import { IconButton } from '@/components/ui/icon-button';
 import { useMyEvents } from '@/hooks/use-my-events';
-import { spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 import type { AthleteHistoryRow } from '@/types/models';
 
 type Section = { year: string; rows: AthleteHistoryRow[] };
+
+const NAV_HEIGHT = 52;
 
 function groupByYear(rows: AthleteHistoryRow[]): Section[] {
   const buckets = new Map<string, AthleteHistoryRow[]>();
@@ -28,72 +33,73 @@ function groupByYear(rows: AthleteHistoryRow[]): Section[] {
   return Array.from(buckets.entries()).map(([year, bucketRows]) => ({ year, rows: bucketRows }));
 }
 
+/** Mis carreras — every participation grouped by year, large title collapsing into the nav bar. */
 export default function MyEventsScreen() {
-  const { data, isPending, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useMyEvents();
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useScrollY();
+  const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useMyEvents();
 
   const rows = useMemo<AthleteHistoryRow[]>(() => data?.pages.flatMap((page) => page.rows) ?? [], [data]);
   const sections = useMemo(() => groupByYear(rows), [rows]);
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/legacy'));
 
   const header = (
-    <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md }}>
-      <ScreenHeader title="Mi Legado" />
-      <AppText variant="hero" style={{ fontSize: 36, lineHeight: 38, marginTop: spacing.xs }}>
-        MIS EVENTOS
+    <View style={{ paddingBottom: spacing.sm, gap: 2 }}>
+      <AppText variant="display" accessibilityRole="header">
+        Mis carreras
       </AppText>
-      <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs, marginBottom: spacing.md }}>
+      <AppText variant="body" tone="muted">
         Cada carrera que corriste, en un solo lugar.
       </AppText>
-      <MascotTip
-        id="my-events-intro"
-        message="Toca cualquier carrera para revivirla: tu resultado, tus medallas, tus recuerdos y tu equipo."
-      />
     </View>
   );
 
   return (
-    <Screen edges={['top', 'left', 'right']} padded={false}>
-      {isPending ? (
-        <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
-          <Skeleton height={32} width={200} />
-          <Skeleton height={110} radius={16} />
-          <Skeleton height={110} radius={16} />
-        </View>
-      ) : isError ? (
-        <ErrorState message="No pudimos cargar tu historia." onRetry={refetch} />
-      ) : rows.length === 0 ? (
-        <View>
-          {header}
-          <EmptyState
-            icon={Trophy}
-            title="Tu historia empieza aquí"
-            message="Cuando tu Legacy Code se vincule a una participación real, aparecerá en tu línea de tiempo."
-          />
-        </View>
-      ) : (
-        <FlatList
-          data={sections}
-          keyExtractor={(section) => section.year}
-          ListHeaderComponent={header}
-          contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.lg }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-          onEndReachedThreshold={0.4}
-          onEndReached={() => hasNextPage && fetchNextPage()}
-          ListFooterComponent={isFetchingNextPage ? <Skeleton height={60} style={{ marginTop: spacing.sm }} /> : null}
-          renderItem={({ item: section }) => (
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        data={isPending || isError ? [] : sections}
+        keyExtractor={(section) => section.year}
+        ListHeaderComponent={header}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingTop: insets.top + NAV_HEIGHT, paddingBottom: insets.bottom + spacing.xl, gap: spacing.lg, flexGrow: 1 }}
+        refreshControl={<BrandRefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={insets.top + NAV_HEIGHT} />}
+        onEndReachedThreshold={0.4}
+        onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
+        ListFooterComponent={isFetchingNextPage ? <Skeleton height={96} radius={16} /> : null}
+        ListEmptyComponent={
+          isPending ? (
             <View style={{ gap: spacing.sm }}>
-              <AppText variant="label" tone="muted" style={{ letterSpacing: 2 }}>
-                {section.year}
-              </AppText>
-              <View style={{ gap: spacing.sm }}>
-                {section.rows.map((row) => (
-                  <MyEventRow key={row.id} row={row} onPress={() => router.push(`/my-events/${row.id}`)} />
-                ))}
-              </View>
+              <Skeleton height={96} radius={16} />
+              <Skeleton height={96} radius={16} />
+              <Skeleton height={96} radius={16} />
             </View>
-          )}
-        />
-      )}
-    </Screen>
+          ) : isError ? (
+            <ErrorState error={error} message="No pudimos cargar tu historia." onRetry={refetch} />
+          ) : (
+            <EmptyState
+              icon={Trophy}
+              title="Tu historia empieza aquí"
+              message="Cuando una participación real se vincule a tu cuenta, aparecerá en esta línea de tiempo."
+            />
+          )
+        }
+        renderItem={({ item: section, index }) => (
+          <StaggerItem index={index} style={{ gap: spacing.sm }}>
+            <AppText variant="eyebrow" tone="muted" accessibilityRole="header">
+              {section.year}
+            </AppText>
+            <View style={{ gap: spacing.sm }}>
+              {section.rows.map((row) => (
+                <MyEventRow key={row.id} row={row} onPress={() => router.push(`/my-events/${row.id}`)} />
+              ))}
+            </View>
+          </StaggerItem>
+        )}
+      />
+
+      <ScrollHeader scrollY={scrollY} title="Mis carreras" threshold={60} left={<IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />} />
+    </View>
   );
 }

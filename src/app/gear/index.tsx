@@ -1,76 +1,91 @@
-import { router } from 'expo-router';
-import { Shirt } from 'lucide-react-native';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { router, type Href } from 'expo-router';
+import { ChevronLeft, KeyRound, Nfc, Shirt } from 'lucide-react-native';
+import { View } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
-import { MascotTip } from '@/components/brand/mascot-tip';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { GearCard } from '@/components/gear-card';
-import { Screen } from '@/components/screen';
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { StaggerItem } from '@/components/motion/reveal';
+import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { Skeleton } from '@/components/skeleton';
+import { IconButton } from '@/components/ui/icon-button';
 import { useMyGear } from '@/hooks/use-gear';
-import { spacing } from '@/theme/tokens';
+import { colors, spacing } from '@/theme/tokens';
 
+const NAV_HEIGHT = 52;
+const ACTIVATE_HREF = '/activate' as Href;
+
+/** Mi equipo — every Finisher piece connected to your story. New pieces join by an NFC tap. */
 export default function GearScreen() {
-  const { data, isPending, isError, refetch, isRefetching } = useMyGear();
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useScrollY();
+  const { data, isPending, isError, error, refetch, isRefetching } = useMyGear();
   const gear = data ?? [];
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/legacy'));
 
   const header = (
-    <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.md }}>
-      <AppText variant="hero" style={{ fontSize: 40, lineHeight: 40 }}>
-        MI EQUIPO
-      </AppText>
-      <AppText variant="body" tone="muted" style={{ marginTop: spacing.xxs, marginBottom: spacing.md }}>
-        Mi equipo — tus productos conectados a tu historia
-      </AppText>
-      <MascotTip
-        id="gear-intro"
-        message="Acerca tu teléfono a la etiqueta NFC de tu placa, prenda o accesorio y quedará aquí, listo para acompañarte en tu próxima carrera."
-        style={{ marginBottom: spacing.md }}
-      />
-      <AppButton
-        label="Tengo un código impreso"
-        variant="secondary"
-        onPress={() => router.push('/gear/claim')}
-        fullWidth={false}
-        style={{ paddingHorizontal: spacing.xl }}
-      />
+    <View style={{ paddingBottom: spacing.md, gap: spacing.md }}>
+      <View style={{ gap: 2 }}>
+        <AppText variant="display" accessibilityRole="header">
+          Mi equipo
+        </AppText>
+        <AppText variant="body" tone="muted">
+          Tus piezas Finisher Legacy, conectadas a tu historia.
+        </AppText>
+      </View>
+      {gear.length > 0 ? (
+        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+          <AppButton label="Activar con NFC" icon={Nfc} size="md" onPress={() => router.push(ACTIVATE_HREF)} style={{ flex: 1 }} />
+          <AppButton label="Código impreso" icon={KeyRound} size="md" variant="secondary" onPress={() => router.push('/gear/claim')} style={{ flex: 1 }} />
+        </View>
+      ) : null}
     </View>
   );
 
   return (
-    <Screen edges={['top', 'left', 'right']} padded={false}>
-      {isPending ? (
-        <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.lg }}>
-          <Skeleton height={40} width={220} />
-          <Skeleton height={80} radius={16} />
-          <Skeleton height={80} radius={16} />
-        </View>
-      ) : isError ? (
-        <ErrorState message="No pudimos cargar tu equipo." onRetry={refetch} />
-      ) : gear.length === 0 ? (
-        <View>
-          {header}
-          <EmptyState
-            icon={Shirt}
-            title="Aún no conectas tu equipo"
-            message="Acerca tu teléfono a la etiqueta de tu placa, prenda o accesorio Finisher Legacy y aparecerá aquí."
-            actionLabel="Tengo un código impreso"
-            onAction={() => router.push('/gear/claim')}
-          />
-        </View>
-      ) : (
-        <FlatList
-          data={gear}
-          keyExtractor={(item) => item.uuid}
-          ListHeaderComponent={header}
-          contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
-          renderItem={({ item }) => <GearCard gear={item} onPress={() => router.push(`/gear/${item.uuid}`)} />}
-        />
-      )}
-    </Screen>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.FlatList
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        data={isPending || isError ? [] : gear}
+        keyExtractor={(item) => item.uuid}
+        ListHeaderComponent={header}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: insets.top + NAV_HEIGHT, paddingBottom: insets.bottom + spacing.xl, flexGrow: 1 }}
+        refreshControl={<BrandRefreshControl refreshing={isRefetching} onRefresh={refetch} progressViewOffset={insets.top + NAV_HEIGHT} />}
+        renderItem={({ item, index }) => (
+          <StaggerItem index={index}>
+            <GearCard gear={item} onPress={() => router.push(`/gear/${item.uuid}`)} />
+          </StaggerItem>
+        )}
+        ListEmptyComponent={
+          isPending ? (
+            <View style={{ gap: spacing.sm }}>
+              <Skeleton height={80} radius={16} />
+              <Skeleton height={80} radius={16} />
+            </View>
+          ) : isError ? (
+            <ErrorState error={error} message="No pudimos cargar tu equipo." onRetry={refetch} />
+          ) : (
+            <EmptyState
+              icon={Shirt}
+              title="Conecta tu primera pieza"
+              message="Acerca tu teléfono a la etiqueta NFC de tu Tag, prenda o accesorio Finisher Legacy y aparecerá aquí."
+              actionLabel="Activar con NFC"
+              onAction={() => router.push(ACTIVATE_HREF)}
+              secondaryLabel="Tengo un código impreso"
+              onSecondary={() => router.push('/gear/claim')}
+            />
+          )
+        }
+      />
+
+      <ScrollHeader scrollY={scrollY} title="Mi equipo" threshold={60} left={<IconButton icon={ChevronLeft} label="Volver" onPress={goBack} size={26} />} />
+    </View>
   );
 }

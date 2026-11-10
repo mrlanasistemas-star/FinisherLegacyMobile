@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, View } from 'react-native';
+import { ActivityIndicator, FlatList, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { Skeleton } from '@/components/skeleton';
@@ -25,7 +26,7 @@ export default function ConnectionsScreen() {
   const rows = useMemo<AthleteSummary[]>(() => list.data?.pages.flatMap((p) => p.data) ?? [], [list.data]);
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm }}>
         <TopBar title={`@${username}`} />
         <SegmentedControl
@@ -52,10 +53,10 @@ export default function ConnectionsScreen() {
           keyExtractor={(item) => item.username ?? item.name}
           renderItem={({ item }) => <AthleteRow athlete={item} />}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}
-          refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={list.refetch} tintColor={colors.gold} />}
+          refreshControl={<BrandRefreshControl refreshing={list.isRefetching} onRefresh={list.refetch} />}
           onEndReachedThreshold={0.4}
           onEndReached={() => list.hasNextPage && !list.isFetchingNextPage && list.fetchNextPage()}
-          ListFooterComponent={list.isFetchingNextPage ? <ActivityIndicator color={colors.gold} style={{ marginVertical: spacing.md }} /> : null}
+          ListFooterComponent={list.isFetchingNextPage ? <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} /> : null}
           ListEmptyComponent={
             <EmptyState
               compact

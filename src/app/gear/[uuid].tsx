@@ -24,7 +24,7 @@ export default function GearDetailScreen() {
   const gear = data?.find((item) => item.uuid === uuid) ?? null;
 
   return (
-    <Screen scroll edges={['top', 'left', 'right']}>
+    <Screen scroll edges={['top', 'left', 'right', 'bottom']}>
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}>
         <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Volver">
           <ChevronLeft color={colors.foreground} size={26} />

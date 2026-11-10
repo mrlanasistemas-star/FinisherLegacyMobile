@@ -2,9 +2,12 @@ import { router, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Award, Bell, CheckCheck, Flag, Heart, MessageCircle, Package, UserPlus } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Pressable, RefreshControl, SectionList, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SectionList, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { PressableScale } from '@/components/motion/pressable-scale';
+import { StaggerItem } from '@/components/motion/reveal';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
@@ -37,6 +40,7 @@ function openNotification(notification: AppNotification) {
 }
 
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const { data, isPending, isError, error, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -56,11 +60,11 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar
           title="Notificaciones"
-          right={hasUnread ? <IconButton icon={CheckCheck} label="Marcar todas como leídas" onPress={() => markAllRead.mutate()} color={colors.gold} /> : null}
+          right={hasUnread ? <IconButton icon={CheckCheck} label="Marcar todas como leídas" onPress={() => markAllRead.mutate()} color={colors.accent} /> : null}
         />
       </View>
 
@@ -77,16 +81,20 @@ export default function NotificationsScreen() {
           sections={sections}
           keyExtractor={(item) => item.id}
           stickySectionHeadersEnabled={false}
-          contentContainerStyle={{ paddingBottom: spacing.xxl, flexGrow: 1 }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.gold} />}
+          contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl, flexGrow: 1 }}
+          refreshControl={<BrandRefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReachedThreshold={0.4}
           onEndReached={() => hasNextPage && !isFetchingNextPage && fetchNextPage()}
           renderSectionHeader={({ section }) => (
-            <AppText variant="label" tone="muted" style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xs }}>
-              {section.title.toUpperCase()}
+            <AppText variant="eyebrow" tone="subtle" style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.xs }}>
+              {section.title}
             </AppText>
           )}
-          renderItem={({ item }) => <NotificationRow notification={item} onPress={() => handlePress(item)} />}
+          renderItem={({ item, index }) => (
+            <StaggerItem index={index}>
+              <NotificationRow notification={item} onPress={() => handlePress(item)} />
+            </StaggerItem>
+          )}
           ListHeaderComponent={
             <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xs }}>
               <PushPrimerCard message="Recibe estos avisos aunque no tengas la app abierta." />
@@ -98,7 +106,7 @@ export default function NotificationsScreen() {
               icon={Bell}
               title="Todo al día"
               message="Aquí verás cuando alguien te siga o apoye tus momentos, y novedades de tus pedidos y eventos."
-              actionLabel="Explorar la comunidad"
+              actionLabel="Ir a Comunidad"
               onAction={() => router.navigate('/explore')}
             />
           }
@@ -113,19 +121,20 @@ function NotificationRow({ notification, onPress }: { notification: AppNotificat
   const Icon = TYPE_ICON[notification.type ?? ''] ?? Bell;
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      scaleTo={0.985}
       accessibilityRole="button"
       accessibilityLabel={`${unread ? 'No leída. ' : ''}${notification.title ?? ''}. ${notification.message ?? ''}`}
-      style={({ pressed }) => ({
+      style={{
         flexDirection: 'row',
         gap: spacing.sm,
-        paddingVertical: spacing.sm,
+        paddingVertical: spacing.sm + 2,
         paddingHorizontal: spacing.lg,
-        backgroundColor: pressed ? colors.graphite : unread ? 'rgba(201,161,89,0.05)' : 'transparent',
-      })}>
-      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: unread ? colors.goldWash : colors.graphite, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon size={18} color={unread ? colors.gold : colors.muted} />
+        backgroundColor: unread ? 'rgba(201,174,139,0.08)' : 'transparent',
+      }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: unread ? colors.goldWash : colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={18} color={unread ? colors.accent : colors.muted} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -143,6 +152,6 @@ function NotificationRow({ notification, onPress }: { notification: AppNotificat
         ) : null}
       </View>
       {unread ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.gold, marginTop: 6 }} /> : null}
-    </Pressable>
+    </PressableScale>
   );
 }

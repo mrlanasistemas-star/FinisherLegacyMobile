@@ -17,14 +17,16 @@ export function StickyFooter({ children, withTabBar = false }: PropsWithChildren
     <View style={{ position: 'relative' }}>
       <LinearGradient
         pointerEvents="none"
-        colors={['rgba(10,10,12,0)', colors.black]}
+        colors={['rgba(248,247,243,0)', colors.background]}
         style={{ position: 'absolute', top: -24, left: 0, right: 0, height: 24 }}
       />
       <View
         style={{
-          backgroundColor: colors.black,
+          backgroundColor: colors.background,
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.sm,
+          borderTopWidth: 1,
+          borderTopColor: colors.hairline,
           paddingBottom: withTabBar ? spacing.sm : Math.max(insets.bottom, spacing.sm) + spacing.xs,
           gap: spacing.xs,
         }}>

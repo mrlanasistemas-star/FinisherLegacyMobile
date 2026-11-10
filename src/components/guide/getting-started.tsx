@@ -1,8 +1,9 @@
 import { router, type Href } from 'expo-router';
 import { Check, ChevronRight, X } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { IconButton } from '@/components/ui/icon-button';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
@@ -29,7 +30,7 @@ export function gettingStartedSteps(profile: MyProfileResponse): Step[] {
     {
       id: 'medal',
       label: 'Reclama tu primera medalla',
-      hint: 'Acerca tu Legacy Plate al teléfono o agrégala a mano.',
+      hint: 'Acerca tu pieza Finisher Legacy al teléfono o agrégala a mano.',
       done: profile.stats.medal_count > 0,
       href: '/medals/create',
     },
@@ -63,7 +64,7 @@ export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
   if (dismissed || completed === steps.length) return null;
 
   return (
-    <View style={{ borderRadius: 20, backgroundColor: colors.graphite, padding: spacing.md, gap: spacing.sm }}>
+    <View style={{ borderRadius: 18, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, padding: spacing.md, gap: spacing.sm }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View style={{ flex: 1 }}>
           <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 17 }}>Primeros pasos</AppText>
@@ -75,7 +76,7 @@ export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
       </View>
 
       <View
-        style={{ height: 4, borderRadius: 2, backgroundColor: colors.graphiteLight, overflow: 'hidden' }}
+        style={{ height: 4, borderRadius: 2, backgroundColor: colors.surfaceMuted, overflow: 'hidden' }}
         accessibilityRole="progressbar"
         accessibilityValue={{ min: 0, max: steps.length, now: completed }}>
         <View style={{ width: `${(completed / steps.length) * 100}%`, height: '100%', backgroundColor: colors.gold }} />
@@ -83,14 +84,16 @@ export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
 
       <View>
         {steps.map((step) => (
-          <Pressable
+          <PressableScale
+            dim
+            scaleTo={0.98}
             key={step.id}
             onPress={() => router.push(step.href)}
             disabled={step.done}
             accessibilityRole="button"
             accessibilityState={{ checked: step.done, disabled: step.done }}
             accessibilityLabel={`${step.label}${step.done ? ', completado' : ''}`}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 52, opacity: pressed ? 0.6 : 1 })}>
+            style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 52, paddingVertical: spacing.xs }}>
             <View
               style={{
                 width: 24,
@@ -121,7 +124,7 @@ export function GettingStarted({ profile }: { profile: MyProfileResponse }) {
               ) : null}
             </View>
             {!step.done ? <ChevronRight size={18} color={colors.subtle} /> : null}
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
     </View>

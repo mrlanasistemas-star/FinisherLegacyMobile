@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { colors, fontFamily } from '@/theme/tokens';
 
@@ -17,7 +18,7 @@ export function StatStrip({ items }: { items: StatItem[] }) {
       {items.map((item, index) => {
         const content = (
           <View style={{ alignItems: 'center', paddingVertical: 6 }}>
-            <AppText style={{ fontFamily: fontFamily.bold, fontSize: 20, color: colors.foreground }}>{item.value}</AppText>
+            <AppText style={{ fontFamily: fontFamily.heading, fontSize: 20, color: colors.foreground }}>{item.value}</AppText>
             <AppText variant="caption" tone="muted" numberOfLines={1} style={{ fontSize: 12 }}>
               {item.label}
             </AppText>
@@ -28,13 +29,15 @@ export function StatStrip({ items }: { items: StatItem[] }) {
           <Fragment key={item.label}>
             {index > 0 ? <View style={{ width: 1, height: 28, backgroundColor: colors.hairline }} /> : null}
             {item.onPress ? (
-              <Pressable
+              <PressableScale
+                dim
+                scaleTo={0.98}
                 onPress={item.onPress}
                 accessibilityRole="button"
                 accessibilityLabel={`${item.value} ${item.label}`}
-                style={({ pressed }) => ({ flex: 1, minHeight: 44, opacity: pressed ? 0.6 : 1 })}>
+                style={{ flex: 1, minHeight: 44 }}>
                 {content}
-              </Pressable>
+              </PressableScale>
             ) : (
               <View style={{ flex: 1 }} accessible accessibilityLabel={`${item.value} ${item.label}`}>
                 {content}

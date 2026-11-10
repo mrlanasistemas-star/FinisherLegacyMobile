@@ -42,13 +42,16 @@ export function ImagePickerTile({ label, value, existingUrl, onChange, aspect = 
   return (
     <Pressable
       onPress={pick}
+      accessibilityRole="button"
+      accessibilityLabel={previewUri ? `Cambiar ${label.toLowerCase()}` : `Agregar ${label.toLowerCase()}`}
       style={[
         {
           aspectRatio: aspect[0] / aspect[1],
           borderRadius: radius.md,
+          borderStyle: previewUri ? 'solid' : 'dashed',
           borderWidth: 1,
           borderColor: colors.border,
-          backgroundColor: colors.graphite,
+          backgroundColor: colors.card,
           alignItems: 'center',
           justifyContent: 'center',
           overflow: 'hidden',

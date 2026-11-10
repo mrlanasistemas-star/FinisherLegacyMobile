@@ -36,7 +36,7 @@ async function ensureAndroidChannel() {
   await Notifications.setNotificationChannelAsync('default', {
     name: 'Finisher Legacy',
     importance: Notifications.AndroidImportance.DEFAULT,
-    lightColor: '#C9A159',
+    lightColor: '#C9AE8B',
   });
 }
 

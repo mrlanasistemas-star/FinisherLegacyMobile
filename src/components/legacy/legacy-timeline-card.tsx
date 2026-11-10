@@ -32,9 +32,9 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
 
   return (
     <PressScale onPress={onPress} haptic scaleTo={0.98} accessibilityRole="button" accessibilityLabel={`${row.event ?? 'Evento'}${time ? `, tiempo oficial ${time}` : ''}. Ver la historia completa`}>
-      <View style={{ borderRadius: radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: colors.border, minHeight: compact ? 0 : 228 }}>
+      <View style={{ borderRadius: radius.xl, borderCurve: 'continuous', overflow: 'hidden', borderWidth: 1, borderColor: colors.hairline, backgroundColor: colors.card, minHeight: compact ? 0 : 228 }}>
         <LinearGradient
-          colors={['#232328', '#151518', '#1C1C21']}
+          colors={[colors.card, colors.card, '#FBFAF6']}
           locations={[0, 0.55, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -42,7 +42,7 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
         />
         {/* Brushed-steel sheen along the top edge. */}
         <LinearGradient
-          colors={['rgba(223,192,142,0)', 'rgba(223,192,142,0.35)', 'rgba(223,192,142,0)']}
+          colors={['rgba(201,174,139,0)', 'rgba(201,174,139,0.9)', 'rgba(201,174,139,0)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1 }}
@@ -51,14 +51,14 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
           <Text
             accessibilityElementsHidden
             importantForAccessibility="no-hide-descendants"
-            style={{ position: 'absolute', right: -8, bottom: -24, fontFamily: fontFamily.bold, fontSize: compact ? 96 : 132, color: 'rgba(245,245,245,0.045)', letterSpacing: -4 }}>
+            style={{ position: 'absolute', right: -8, bottom: -24, fontFamily: fontFamily.headingBlack, fontSize: compact ? 96 : 132, color: 'rgba(11,11,12,0.04)', letterSpacing: -4 }}>
             {year}
           </Text>
         ) : null}
 
         <View style={{ padding: spacing.lg, gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-            <AppText variant="label" tone="gold" style={{ letterSpacing: 2, flex: 1 }} numberOfLines={1}>
+            <AppText variant="eyebrow" style={{ flex: 1 }} numberOfLines={1}>
               {row.event_date ? formatLongDate(row.event_date).toUpperCase() : 'TU CARRERA'}
             </AppText>
             <ChevronRight size={18} color={colors.subtle} />
@@ -78,7 +78,7 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
           {time ? (
             <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: spacing.lg, marginTop: spacing.xs }}>
               <View>
-                <Text style={{ fontFamily: fontFamily.bold, fontSize: compact ? 34 : 44, lineHeight: compact ? 38 : 48, color: colors.goldSoft, letterSpacing: -1 }}>{time}</Text>
+                <Text style={{ fontFamily: fontFamily.heading, fontSize: compact ? 32 : 42, lineHeight: compact ? 36 : 46, color: colors.foreground, letterSpacing: -1 }}>{time}</Text>
                 <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
                   TIEMPO OFICIAL
                 </AppText>
@@ -86,8 +86,8 @@ export const LegacyTimelineCard = memo(function LegacyTimelineCard({ row, onPres
               {position ? (
                 <View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    <Trophy size={16} color={colors.gold} />
-                    <Text style={{ fontFamily: fontFamily.bold, fontSize: 22, color: colors.foreground }}>{position}°</Text>
+                    <Trophy size={16} color={colors.accent} />
+                    <Text style={{ fontFamily: fontFamily.heading, fontSize: 22, color: colors.foreground }}>{position}°</Text>
                   </View>
                   <AppText variant="label" tone="muted" style={{ letterSpacing: 1.5 }}>
                     GENERAL

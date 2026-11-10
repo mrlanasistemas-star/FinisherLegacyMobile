@@ -1,5 +1,7 @@
 import { Text, View, type ViewStyle } from 'react-native';
 
+import { AnimatedCounter } from '@/components/motion/animated-counter';
+
 import { colors, fontFamily, fontSize, spacing } from '@/theme/tokens';
 
 interface MetricNumberProps {
@@ -10,16 +12,28 @@ interface MetricNumberProps {
   size?: number;
   tone?: 'gold' | 'foreground';
   style?: ViewStyle;
+  /** Count up to a real numeric value on mount (UI thread; instant with Reduce Motion). */
+  animate?: boolean;
 }
 
-export function MetricNumber({ value, label, decorative = false, size = fontSize.metric, tone = 'foreground', style }: MetricNumberProps) {
-  const color = decorative ? 'rgba(245,245,245,0.08)' : tone === 'gold' ? colors.gold : colors.foreground;
+export function MetricNumber({ value, label, decorative = false, size = fontSize.metric, tone = 'foreground', style, animate = false }: MetricNumberProps) {
+  const color = decorative ? 'rgba(11,11,12,0.05)' : tone === 'gold' ? colors.accent : colors.foreground;
+  const counting = animate && !decorative && typeof value === 'number';
 
   return (
     <View style={style}>
+      {counting ? (
+        <AnimatedCounter
+          value={value as number}
+          accessibilityLabel={label ? `${value} ${label}` : String(value)}
+          style={{ fontFamily: fontFamily.heading, fontSize: size, lineHeight: size * 1.1, color, letterSpacing: -0.5 }}
+        />
+      ) : (
       <Text
+        maxFontSizeMultiplier={1.3}
         style={{
-          fontFamily: fontFamily.bold,
+          fontFamily: fontFamily.heading,
+          letterSpacing: -0.5,
           fontSize: size,
           lineHeight: size * 1.02,
           color,
@@ -29,6 +43,7 @@ export function MetricNumber({ value, label, decorative = false, size = fontSize
         importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}>
         {value}
       </Text>
+      )}
       {label && !decorative ? (
         <Text
           style={{

@@ -14,7 +14,7 @@ import { colors, radius } from '@/theme/tokens';
  */
 function renderProductIcon(productName: string, size: number) {
   const name = productName.toLowerCase();
-  const props = { color: colors.gold, size, strokeWidth: 1.6 };
+  const props = { color: colors.accent, size, strokeWidth: 1.6 };
 
   if (name.includes('placa') || name.includes('plate')) return <CreditCard {...props} />;
   if (name.includes('trisuit') || name.includes('traje')) return <Shirt {...props} />;
@@ -38,9 +38,9 @@ export function GearIconBadge({ productName, size = 56, style }: GearIconBadgePr
           width: size,
           height: size,
           borderRadius: radius.lg,
-          backgroundColor: colors.graphiteLight,
+          backgroundColor: colors.surfaceMuted,
           borderWidth: 1,
-          borderColor: colors.goldDim,
+          borderColor: colors.border,
           alignItems: 'center',
           justifyContent: 'center',
         },

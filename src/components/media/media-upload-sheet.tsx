@@ -126,7 +126,7 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
     <Sheet visible={visible} onClose={close}>
       {uploadedUuid ? (
         <View style={{ paddingBottom: spacing.lg, gap: spacing.md, alignItems: 'center' }}>
-          <CircleCheck size={40} color={colors.gold} />
+          <CircleCheck size={40} color={colors.accent} />
           <AppText variant="subtitle" align="center">
             Guardado en tu Legacy
           </AppText>
@@ -166,12 +166,12 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
           {asset.kind === 'image' ? (
             <Image
               source={{ uri: asset.uri }}
-              style={{ width: '100%', aspectRatio: asset.width && asset.height ? asset.width / asset.height : 1, maxHeight: 360, borderRadius: radius.md, backgroundColor: colors.graphiteLight }}
+              style={{ width: '100%', aspectRatio: asset.width && asset.height ? asset.width / asset.height : 1, maxHeight: 360, borderRadius: radius.md, backgroundColor: colors.surfaceMuted }}
               contentFit="cover"
             />
           ) : (
-            <View style={{ width: '100%', height: 180, borderRadius: radius.md, backgroundColor: colors.graphiteLight, alignItems: 'center', justifyContent: 'center' }}>
-              <Video color={colors.gold} size={32} />
+            <View style={{ width: '100%', height: 180, borderRadius: radius.md, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
+              <Video color={colors.accent} size={32} />
               <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xs }}>
                 Video listo para subir
               </AppText>
@@ -180,7 +180,7 @@ export function MediaUploadSheet({ visible, onClose, participantId, entitlement,
 
           {upload.isPending ? (
             <View style={{ gap: spacing.xxs }} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: progress }}>
-              <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.graphiteLight, overflow: 'hidden' }}>
+              <View style={{ height: 6, borderRadius: 3, backgroundColor: colors.surfaceMuted, overflow: 'hidden' }}>
                 <View style={{ height: '100%', width: `${progress}%`, backgroundColor: colors.gold }} />
               </View>
               <AppText variant="caption" tone="muted">

@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
+import { Medal as MedalIcon } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { AppText } from './app-text';
-import { GradientOverlay } from './brand/gradient-overlay';
-import { PressScale } from './motion/press-scale';
+import { PressableScale } from './motion/pressable-scale';
 
 import { formatShortDate } from '@/utils/dates';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
@@ -15,65 +15,61 @@ interface MedalCardProps {
   aspectRatio?: number;
 }
 
-/** Image-dominant, edge-to-edge medal tile — the medal as a trophy, not an icon next to two lines of text (AGENTS.md §23/§79). */
-export function MedalCard({ medal, onPress, aspectRatio = 0.82 }: MedalCardProps) {
+/** The medal as an object on a warm plinth, with its title on clean white below — light, gallery-like. */
+export function MedalCard({ medal, onPress, aspectRatio = 1 }: MedalCardProps) {
   const title = medal.title ?? medal.event_name ?? medal.event_name_manual ?? 'Medalla';
 
   return (
-    <PressScale onPress={onPress} haptic style={{ flex: 1 }}>
-      <View
-        style={{
-          aspectRatio,
-          borderRadius: radius.lg,
-          overflow: 'hidden',
-          backgroundColor: colors.graphite,
-          borderWidth: 1,
-          borderColor: colors.border,
-          ...shadows.card,
-        }}>
+    <PressableScale
+      onPress={onPress}
+      haptic
+      accessibilityRole="button"
+      accessibilityLabel={`${title}${medal.event_date ? `, ${formatShortDate(medal.event_date)}` : ''}`}
+      style={{
+        flex: 1,
+        borderRadius: radius.lg,
+        borderCurve: 'continuous',
+        backgroundColor: colors.card,
+        borderWidth: 1,
+        borderColor: colors.hairline,
+        overflow: 'hidden',
+        ...shadows.soft,
+      }}>
+      <View style={{ aspectRatio, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
         {medal.front_image_url ? (
-          <Image
-            source={{ uri: medal.front_image_url }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-            transition={200}
-          />
+          <Image source={{ uri: medal.front_image_url }} style={{ width: '86%', height: '86%' }} contentFit="contain" transition={200} />
         ) : (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ width: '55%', height: '55%', borderRadius: 999, backgroundColor: colors.graphiteLight }} />
-          </View>
+          <MedalIcon size={40} color={colors.accent} strokeWidth={1.4} />
         )}
-
-        <GradientOverlay variant="bottom" />
-
         {medal.distance_label ? (
           <View
             style={{
               position: 'absolute',
               top: spacing.xs,
               right: spacing.xs,
-              backgroundColor: 'rgba(10,10,12,0.75)',
+              backgroundColor: colors.card,
               borderRadius: radius.pill,
               paddingHorizontal: spacing.xs,
               paddingVertical: 2,
+              borderWidth: 1,
+              borderColor: colors.border,
             }}>
-            <AppText variant="caption" tone="gold">
+            <AppText variant="caption" tone="accent" style={{ fontSize: 12, fontWeight: '600' }}>
               {medal.distance_label}
             </AppText>
           </View>
         ) : null}
-
-        <View style={{ position: 'absolute', left: spacing.sm, right: spacing.sm, bottom: spacing.sm }}>
-          <AppText variant="bodyStrong" numberOfLines={1}>
-            {title}
-          </AppText>
-          {medal.event_date ? (
-            <AppText variant="caption" tone="muted">
-              {formatShortDate(medal.event_date)}
-            </AppText>
-          ) : null}
-        </View>
       </View>
-    </PressScale>
+      <View style={{ paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, gap: 2 }}>
+        <AppText variant="bodyStrong" numberOfLines={1} style={{ fontSize: 15 }}>
+          {title}
+        </AppText>
+        {medal.event_date ? (
+          <AppText variant="caption" tone="muted" style={{ fontSize: 13 }}>
+            {formatShortDate(medal.event_date)}
+          </AppText>
+        ) : null}
+      </View>
+    </PressableScale>
   );
 }

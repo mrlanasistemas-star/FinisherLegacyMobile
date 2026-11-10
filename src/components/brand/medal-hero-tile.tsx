@@ -2,7 +2,7 @@ import { Image } from 'expo-image';
 import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
-import { PressScale } from '@/components/motion/press-scale';
+import { PressableScale } from '@/components/motion/pressable-scale';
 
 import { formatShortDate } from '@/utils/dates';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
@@ -19,18 +19,19 @@ export function MedalHeroTile({ medal, onPress, width = 168 }: MedalHeroTileProp
   const title = medal.title ?? medal.event_name ?? medal.event_name_manual ?? 'Medalla';
 
   return (
-    <PressScale onPress={onPress} haptic style={{ width }}>
+    <PressableScale onPress={onPress} haptic accessibilityRole="button" accessibilityLabel={title} style={{ width }}>
       <View
         style={{
           width,
           height: width,
-          borderRadius: radius.xl,
-          backgroundColor: colors.graphite,
+          borderRadius: radius.lg,
+          borderCurve: 'continuous',
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: colors.border,
+          borderColor: colors.hairline,
           alignItems: 'center',
           justifyContent: 'center',
-          ...shadows.card,
+          ...shadows.soft,
         }}>
         {medal.front_image_url ? (
           <Image
@@ -40,7 +41,7 @@ export function MedalHeroTile({ medal, onPress, width = 168 }: MedalHeroTileProp
             transition={200}
           />
         ) : (
-          <View style={{ width: '55%', height: '55%', borderRadius: 999, backgroundColor: colors.graphiteLight }} />
+          <View style={{ width: '55%', height: '55%', borderRadius: 999, backgroundColor: colors.surfaceMuted }} />
         )}
         {medal.distance_label ? (
           <View
@@ -48,12 +49,12 @@ export function MedalHeroTile({ medal, onPress, width = 168 }: MedalHeroTileProp
               position: 'absolute',
               top: spacing.xs,
               right: spacing.xs,
-              backgroundColor: 'rgba(10,10,12,0.75)',
+              backgroundColor: colors.goldWash,
               borderRadius: radius.pill,
               paddingHorizontal: spacing.xs,
               paddingVertical: 2,
             }}>
-            <AppText variant="caption" tone="gold">
+            <AppText variant="caption" tone="accent" style={{ fontWeight: '600', fontSize: 12 }}>
               {medal.distance_label}
             </AppText>
           </View>
@@ -67,6 +68,6 @@ export function MedalHeroTile({ medal, onPress, width = 168 }: MedalHeroTileProp
           {formatShortDate(medal.event_date)}
         </AppText>
       ) : null}
-    </PressScale>
+    </PressableScale>
   );
 }

@@ -31,7 +31,7 @@ export function Avatar({ uri, name, size = 40, ring = false, style }: AvatarProp
           height: size,
           borderRadius: size / 2,
           overflow: 'hidden',
-          backgroundColor: colors.graphiteLight,
+          backgroundColor: colors.surfaceMuted,
           alignItems: 'center',
           justifyContent: 'center',
           borderWidth: ring ? 2 : 0,
@@ -42,7 +42,7 @@ export function Avatar({ uri, name, size = 40, ring = false, style }: AvatarProp
       {uri ? (
         <Image source={{ uri }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} cachePolicy="memory-disk" />
       ) : (
-        <AppText style={{ fontFamily: fontFamily.semibold, fontSize: Math.max(11, size * 0.36), color: colors.goldSoft }}>
+        <AppText style={{ fontFamily: fontFamily.semibold, fontSize: Math.max(11, size * 0.36), color: colors.accent }}>
           {initials(name)}
         </AppText>
       )}

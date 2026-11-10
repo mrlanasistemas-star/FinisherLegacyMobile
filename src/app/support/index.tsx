@@ -1,8 +1,11 @@
 import { router } from 'expo-router';
-import { HeartHandshake } from 'lucide-react-native';
+import { HeartHandshake, Plus } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, View } from 'react-native';
+import { FlatList, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { StaggerItem } from '@/components/motion/reveal';
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
@@ -45,6 +48,7 @@ export default function SupportScreen() {
   const { data, isPending, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useSupportSessions();
   const createSession = useCreateSupportSession();
+  const insets = useSafeAreaInsets();
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
@@ -68,20 +72,20 @@ export default function SupportScreen() {
   }
 
   const header = (
-    <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: spacing.sm }}>
+    <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm }}>
       <ScreenHeader title="Mi equipo de apoyo" />
       <MascotTip
         id="support-intro"
         message="Las personas que te apoyan pueden dejarte mensajes que aparecen mientras corres. Comparte tu código con ellas."
       />
-      <AppButton label="Nueva sesión de apoyo" onPress={() => setCreating(true)} fullWidth={false} style={{ alignSelf: 'flex-start', paddingHorizontal: spacing.lg }} />
+      <AppButton label="Nueva sesión de apoyo" icon={Plus} size="md" onPress={() => setCreating(true)} fullWidth={false} />
     </View>
   );
 
   return (
     <Screen edges={['top', 'left', 'right']} padded={false}>
       {isPending ? (
-        <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
+        <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg }}>
           <ScreenHeader title="Mi equipo de apoyo" />
           <Skeleton height={90} radius={16} />
           <Skeleton height={90} radius={16} />
@@ -105,12 +109,16 @@ export default function SupportScreen() {
           data={sessions}
           keyExtractor={(item) => String(item.id)}
           ListHeaderComponent={header}
-          contentContainerStyle={{ gap: spacing.sm, paddingHorizontal: spacing.lg, paddingBottom: spacing.xl }}
-          refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
+          contentContainerStyle={{ gap: spacing.sm, paddingBottom: insets.bottom + spacing.xl }}
+          refreshControl={<BrandRefreshControl refreshing={isRefetching} onRefresh={refetch} />}
           onEndReachedThreshold={0.4}
           onEndReached={() => hasNextPage && fetchNextPage()}
           ListFooterComponent={isFetchingNextPage ? <Skeleton height={60} /> : null}
-          renderItem={({ item }) => <SessionRow session={item} onPress={() => router.push(`/support/${item.id}`)} />}
+          renderItem={({ item, index }) => (
+            <StaggerItem index={index} style={{ paddingHorizontal: spacing.lg }}>
+              <SessionRow session={item} onPress={() => router.push(`/support/${item.id}`)} />
+            </StaggerItem>
+          )}
         />
       )}
 

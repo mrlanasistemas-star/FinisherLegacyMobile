@@ -1,29 +1,32 @@
 import type { PropsWithChildren } from 'react';
-import { Pressable, View, type ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme/tokens';
+import { PressableScale } from '@/components/motion/pressable-scale';
+import { colors, radius, shadows, spacing } from '@/theme/tokens';
 
 interface CardProps extends PropsWithChildren {
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
+  /** `dark` = carbon accent block (brand moments); default white card. */
+  tone?: 'light' | 'dark';
+  accessibilityLabel?: string;
 }
 
-export function Card({ children, onPress, style }: CardProps) {
+export function Card({ children, onPress, style, tone = 'light', accessibilityLabel }: CardProps) {
   const base: ViewStyle = {
-    backgroundColor: colors.card,
+    backgroundColor: tone === 'dark' ? colors.black : colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: tone === 'dark' ? colors.graphiteLight : colors.hairline,
     padding: spacing.md,
+    ...shadows.soft,
   };
 
   if (onPress) {
     return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => [base, style, pressed && { opacity: 0.85 }]}>
+      <PressableScale onPress={onPress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={[base, style]}>
         {children}
-      </Pressable>
+      </PressableScale>
     );
   }
 

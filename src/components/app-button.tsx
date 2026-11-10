@@ -1,14 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { ArrowRight, type LucideIcon } from 'lucide-react-native';
-import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { ActivityIndicator, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 import { AppText } from './app-text';
 import { GlassSurface } from './brand/glass-surface';
+import { PressableScale } from './motion/pressable-scale';
 
-import { colors, fontFamily, fontSize, radius, spacing, tracking } from '@/theme/tokens';
+import { gradients } from '@/theme/gradients';
+import { colors, fontFamily, fontSize, spacing, springs } from '@/theme/tokens';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'destructive' | 'glass' | 'legacy';
 type Size = 'sm' | 'md' | 'lg';
@@ -21,22 +21,25 @@ interface AppButtonProps {
   loading?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   /** Optional leading icon (non-legacy variants). */
   icon?: LucideIcon;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
   /** Light haptic on press — on by default; turn off for high-frequency buttons. */
   haptic?: boolean;
 }
 
-/** Solid-color variants get a faint top highlight so they read as lit metal, not a flat fill (AGENTS.md §109/§196). */
-const HIGHLIGHT_VARIANTS: Variant[] = ['destructive'];
-const BUTTON_RADIUS = 14;
-/** True capsule/pill (AGENTS.md §220): `radius.pill` always clamps to exactly
- * half the button's rendered height, so it stays a perfect stadium shape at
- * any size instead of a rounded rectangle. */
-const LEGACY_RADIUS = radius.pill;
-
+/**
+ * Brand buttons (manual "Carbono + Oro"):
+ * - `primary`  — Negro Carbono pill, bone label. The everyday CTA.
+ * - `legacy`   — Oro gradient pill + carbon label + travelling arrow. Brand
+ *                moments only (activate, claim, checkout) — gold stays rare.
+ * - `secondary`— soft warm fill (iOS tinted button).
+ * - `ghost`    — text button; `glass` — frosted, for use over media.
+ * - `destructive` — solid red.
+ * All share the spring press scale + haptic from PressableScale.
+ */
 export function AppButton({
   label,
   onPress,
@@ -48,178 +51,93 @@ export function AppButton({
   style,
   icon: Icon,
   accessibilityLabel,
+  accessibilityHint,
   haptic = true,
 }: AppButtonProps) {
   const isDisabled = disabled || loading;
-  const [hovered, setHovered] = useState(false);
   const isLegacy = variant === 'legacy';
-  // `primary` renders through the same gradient-fill branch as `legacy` —
-  // both are solid gold CTAs and both need the same insurance against a flat
-  // `backgroundColor` rendering as a flat gray/dark surface.
-  const isGoldFill = isLegacy || variant === 'primary';
-  // Arrow travels 4px on press/hover — a directional cue, not a bounce
-  // (AGENTS.md §221). Declared unconditionally; only driven for `legacy`.
+  const reduceMotion = useReducedMotion();
+  // Arrow travels 4px on press/hover — a directional cue, not a bounce.
   const arrowX = useSharedValue(0);
   const arrowStyle = useAnimatedStyle(() => ({ transform: [{ translateX: arrowX.value }] }));
 
-  function handlePress() {
-    if (isDisabled) return;
-    if (haptic) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    onPress();
+  function nudgeArrow(to: number) {
+    if (!isLegacy || isDisabled || reduceMotion) return;
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value write (UI thread), not React state
+    arrowX.value = to === 0 ? withTiming(0, { duration: 180 }) : withSpring(to, springs.snappy);
   }
 
-  function handlePressIn() {
-    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutation is the documented API (not React state)
-    if (isLegacy && !isDisabled) arrowX.value = withTiming(4, { duration: 100 });
-  }
-
-  function handlePressOut() {
-    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutation is the documented API (not React state)
-    if (isLegacy && !isDisabled) arrowX.value = withTiming(hovered ? 4 : 0, { duration: 150 });
-  }
-
-  const buttonRadius = isLegacy ? LEGACY_RADIUS : BUTTON_RADIUS;
   const textColor = TEXT_COLOR[variant];
+  const labelSize = size === 'lg' ? fontSize.md : fontSize.sm + 1;
 
   const content = loading ? (
-    <ActivityIndicator color={variant === 'primary' || isLegacy ? colors.black : colors.gold} />
-  ) : isLegacy ? (
-    <>
+    <ActivityIndicator color={textColor} />
+  ) : (
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs }}>
+      {Icon && !isLegacy ? <Icon size={size === 'sm' ? 16 : 18} color={textColor} strokeWidth={2.2} /> : null}
       <AppText
-        variant="bodyStrong"
         numberOfLines={1}
         adjustsFontSizeToFit
-        minimumFontScale={0.88}
-        style={{
-          fontFamily: fontFamily.bold,
-          fontSize: fontSize.md,
-          letterSpacing: tracking.normal,
-          color: textColor,
-          flexShrink: 1,
-        }}>
+        minimumFontScale={0.85}
+        maxFontSizeMultiplier={1.3}
+        style={{ fontFamily: fontFamily.semibold, fontSize: labelSize, letterSpacing: 0, color: textColor, flexShrink: 1 }}>
         {label}
       </AppText>
-      <Animated.View style={[arrowStyle, { flexShrink: 0 }]}>
-        <ArrowRight size={20} color={textColor} strokeWidth={2.5} />
-      </Animated.View>
-    </>
-  ) : (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-      {Icon ? <Icon size={size === 'sm' ? 16 : 18} color={textColor} strokeWidth={2.2} /> : null}
-      <AppText
-        variant="bodyStrong"
-        numberOfLines={1}
-        style={{ fontFamily: fontFamily.semibold, fontSize: size === 'sm' ? fontSize.sm : fontSize.md, color: textColor }}>
-        {label}
-      </AppText>
+      {isLegacy ? (
+        <Animated.View style={[arrowStyle, { flexShrink: 0 }]}>
+          <ArrowRight size={19} color={textColor} strokeWidth={2.5} />
+        </Animated.View>
+      ) : null}
     </View>
   );
 
-  const sizeStyle = isLegacy ? styles.legacy : size === 'lg' ? styles.lg : size === 'sm' ? styles.sm : styles.md;
-  // Pointer devices only (tablet trackpad, Expo Web) — onHoverIn/Out never
-  // fire from a touch press, so this is purely additive (AGENTS.md §110/§202).
-  const hoverHandlers = {
-    onHoverIn: () => {
-      setHovered(true);
-      // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutation is the documented API (not React state)
-      if (isLegacy && !isDisabled) arrowX.value = withTiming(4, { duration: 180 });
-    },
-    onHoverOut: () => {
-      setHovered(false);
-      // eslint-disable-next-line react-hooks/immutability -- Reanimated shared value mutation is the documented API (not React state)
-      if (isLegacy && !isDisabled) arrowX.value = withTiming(0, { duration: 200 });
-    },
-  };
+  const sizeStyle = size === 'lg' || isLegacy ? styles.lg : size === 'sm' ? styles.sm : styles.md;
 
-  if (isGoldFill) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityState={{ disabled: isDisabled, busy: loading }}
-        disabled={isDisabled}
-        onPress={handlePress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        hitSlop={8}
-        {...hoverHandlers}
-        style={({ pressed }) => [
-          { borderRadius: buttonRadius },
-          fullWidth && styles.fullWidth,
-          !disabled && styles.goldGlow,
-          hovered && !isDisabled && !pressed && HOVER_STYLE[variant],
-          pressed && !isDisabled && styles.pressed,
-          disabled && styles.disabled,
-          style,
-        ]}>
-        {/* Real two-stop gradient fill, not a flat color: makes the gold
-            impossible to mistake for a flat gray/dark surface, and directly
-            delivers the "gold blended with another tone" look requested. */}
+  let body;
+  if (isLegacy) {
+    body = (
+      <LinearGradient colors={gradients.gold} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.base, sizeStyle, styles.pill]}>
         <LinearGradient
-          colors={[colors.goldSoft, colors.gold]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.base, isLegacy && styles.legacyContent, sizeStyle, { borderRadius: buttonRadius, overflow: 'hidden' }]}>
-          <LinearGradient
-            colors={['rgba(255,255,255,0.32)', 'rgba(255,255,255,0)']}
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%' }}
-            pointerEvents="none"
-          />
-          {content}
-        </LinearGradient>
-      </Pressable>
+          colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)']}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%' }}
+          pointerEvents="none"
+        />
+        {content}
+      </LinearGradient>
     );
-  }
-
-  if (variant === 'glass') {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? label}
-        accessibilityState={{ disabled: isDisabled, busy: loading }}
-        disabled={isDisabled}
-        onPress={handlePress}
-        hitSlop={8}
-        {...hoverHandlers}
-        style={({ pressed }) => [fullWidth && styles.fullWidth, disabled && styles.disabled, pressed && !isDisabled && styles.pressed, style]}>
-        <GlassSurface rounded={false} style={[{ borderRadius: BUTTON_RADIUS }, hovered && !isDisabled && styles.glassHovered]}>
-          <View style={[styles.base, sizeStyle]}>{content}</View>
-        </GlassSurface>
-      </Pressable>
+  } else if (variant === 'glass') {
+    body = (
+      <GlassSurface rounded={false} style={[styles.base, sizeStyle, styles.pill]}>
+        {content}
+      </GlassSurface>
     );
+  } else {
+    body = <View style={[styles.base, sizeStyle, styles.pill, VARIANT_STYLE[variant]]}>{content}</View>;
   }
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
-      onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
+      onPress={onPress}
+      onPressIn={() => nudgeArrow(4)}
+      onPressOut={() => nudgeArrow(0)}
+      onHoverIn={() => nudgeArrow(4)}
+      onHoverOut={() => nudgeArrow(0)}
+      haptic={haptic ? 'light' : 'none'}
+      scaleTo={size === 'sm' ? 0.95 : 0.97}
       hitSlop={8}
-      {...hoverHandlers}
-      style={({ pressed }) => [
-        styles.base,
-        { borderRadius: buttonRadius },
-        VARIANT_STYLE[variant],
-        sizeStyle,
-        fullWidth && styles.fullWidth,
-        hovered && !isDisabled && !pressed && HOVER_STYLE[variant],
-        pressed && !isDisabled && styles.pressed,
-        disabled && styles.disabled,
+      style={[
+        fullWidth ? styles.fullWidth : styles.inline,
+        (isLegacy || variant === 'primary') && !isDisabled ? (isLegacy ? styles.goldShadow : styles.carbonShadow) : null,
+        isDisabled && !loading && styles.disabled,
         style,
       ]}>
-      {HIGHLIGHT_VARIANTS.includes(variant) && !disabled ? (
-        <LinearGradient
-          colors={['rgba(255,255,255,0.22)', 'rgba(255,255,255,0)']}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '55%', borderTopLeftRadius: buttonRadius, borderTopRightRadius: buttonRadius }}
-          pointerEvents="none"
-        />
-      ) : null}
-      {content}
-    </Pressable>
+      {body}
+    </PressableScale>
   );
 }
 
@@ -229,87 +147,65 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexDirection: 'row',
   },
+  pill: {
+    // iOS-style continuous rounded rect (12–16pt), not a chunky capsule.
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    overflow: 'hidden',
+  },
   sm: {
     paddingVertical: 6,
     paddingHorizontal: 14,
-    minHeight: 36,
+    minHeight: 34,
   },
   md: {
     paddingVertical: 10,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
   },
   lg: {
-    paddingVertical: 14,
-    paddingHorizontal: spacing.xl,
-    minHeight: 52,
-  },
-  legacy: {
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: spacing.lg,
-    minHeight: 54,
-  },
-  legacyContent: {
-    // Grouped as one centered unit (label + arrow together), not spread to
-    // the two edges — `space-between` with a single child (the loading
-    // spinner) collapsed to the left edge instead of centering, and with
-    // both children it read as the label jammed against the left border.
-    justifyContent: 'center',
-    gap: spacing.sm,
+    minHeight: 50,
   },
   fullWidth: {
     alignSelf: 'stretch',
   },
-  goldGlow: {
-    shadowColor: colors.gold,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    // 0, not a small positive value: Android's elevation shadow ignores
-    // shadowColor and always renders as a flat grey/black halo — against
-    // the pure-black app background that halo read as a dirty smudge around
-    // the gold shape. The gold glow only needs to exist on iOS, where
-    // shadowColor is actually honored.
+  inline: {
+    alignSelf: 'flex-start',
+  },
+  carbonShadow: {
+    shadowColor: colors.black,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    // 0 on Android: elevation ignores shadowColor and paints a grey halo.
     elevation: 0,
   },
-  glassHovered: {
-    borderColor: colors.goldDim,
-  },
-  pressed: {
-    opacity: 0.88,
-    transform: [{ scale: 0.985 }, { translateY: 1 }],
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 1,
+  goldShadow: {
+    shadowColor: colors.goldDim,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 0,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
 });
 
-const VARIANT_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
-  // Unused: `primary` and `legacy` render their own gradient fill in a
-  // dedicated branch above (kept here only so this record stays exhaustive).
-  primary: { backgroundColor: colors.gold },
-  secondary: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.gold },
+const VARIANT_STYLE: Record<Exclude<Variant, 'glass' | 'legacy'>, ViewStyle> = {
+  primary: { backgroundColor: colors.black },
+  secondary: { backgroundColor: colors.surfaceMuted },
   ghost: { backgroundColor: 'transparent' },
   destructive: { backgroundColor: colors.destructive },
-  legacy: { backgroundColor: colors.gold },
-};
-
-const HOVER_STYLE: Record<Exclude<Variant, 'glass'>, ViewStyle> = {
-  primary: { transform: [{ translateY: -1 }] },
-  secondary: { backgroundColor: 'rgba(201,161,89,0.1)', borderColor: colors.goldSoft },
-  ghost: { backgroundColor: 'rgba(245,245,245,0.06)' },
-  destructive: { transform: [{ translateY: -1 }] },
-  legacy: { transform: [{ translateY: -1 }] },
 };
 
 const TEXT_COLOR: Record<Variant, string> = {
-  primary: colors.black,
-  secondary: colors.gold,
-  ghost: colors.foreground,
+  primary: colors.onDark,
+  secondary: colors.foreground,
+  ghost: colors.accent,
   destructive: colors.white,
   glass: colors.foreground,
-  legacy: colors.black,
+  legacy: colors.onGold,
 };

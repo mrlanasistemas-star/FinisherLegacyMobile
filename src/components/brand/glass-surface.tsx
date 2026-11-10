@@ -8,6 +8,8 @@ interface GlassSurfaceProps extends PropsWithChildren {
   style?: StyleProp<ViewStyle>;
   intensity?: number;
   rounded?: boolean;
+  /** `light` (default) for the light product; `dark` over photos/video. */
+  tone?: 'light' | 'dark';
 }
 
 const ABSOLUTE_FILL: ViewStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
@@ -34,18 +36,18 @@ const ABSOLUTE_FILL: ViewStyle = { position: 'absolute', top: 0, left: 0, right:
  * trickery for callers to work around, whether they pass explicit
  * dimensions (icon buttons) or just padding (content-sized panels).
  */
-export function GlassSurface({ children, style, intensity = 40, rounded = true }: GlassSurfaceProps) {
+export function GlassSurface({ children, style, intensity = 40, rounded = true, tone = 'light' }: GlassSurfaceProps) {
   return (
     <View
       style={[
-        { overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+        { overflow: 'hidden', borderWidth: 1, borderColor: tone === 'dark' ? 'rgba(248,247,243,0.16)' : colors.border },
         rounded && { borderRadius: radius.pill },
         style,
       ]}>
       <BlurView
         intensity={Platform.OS === 'android' ? 0 : intensity}
-        tint="dark"
-        style={[ABSOLUTE_FILL, { backgroundColor: surface.glassTint }]}
+        tint={tone}
+        style={[ABSOLUTE_FILL, { backgroundColor: tone === 'dark' ? surface.glassTintDark : surface.glassTint }]}
       />
       {children}
     </View>

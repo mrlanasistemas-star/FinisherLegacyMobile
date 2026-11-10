@@ -75,7 +75,7 @@ export function PreregistrationSheet({ visible, onClose, editionId, eventName, r
     <Sheet visible={visible} onClose={onClose}>
       {done ? (
         <View style={{ alignItems: 'center', gap: spacing.md, paddingBottom: spacing.lg }}>
-          <CircleCheck size={44} color={colors.gold} />
+          <CircleCheck size={44} color={colors.accent} />
           <AppText variant="subtitle" align="center">
             ¡Listo! Ya estás prerregistrado
           </AppText>

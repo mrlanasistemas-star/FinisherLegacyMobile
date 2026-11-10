@@ -35,7 +35,7 @@ export function MomentMediaPager({ media, width: widthProp, interactiveVideo = f
   const height = Math.round(width / aspect);
 
   return (
-    <View style={{ width, height, backgroundColor: colors.graphite }}>
+    <View style={{ width, height, backgroundColor: colors.surfaceMuted }}>
       <FlatList
         data={media}
         horizontal
@@ -50,7 +50,7 @@ export function MomentMediaPager({ media, width: widthProp, interactiveVideo = f
                 <InlineVideo url={item.url} />
               ) : (
                 <Pressable onPress={onOpen} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Ver video">
-                  <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(10,10,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
                     <Play size={24} color={colors.white} fill={colors.white} />
                   </View>
                 </Pressable>
@@ -84,7 +84,7 @@ function InlineVideo({ url }: { url: string }) {
   if (!playing) {
     return (
       <Pressable onPress={() => setPlaying(true)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }} accessibilityRole="button" accessibilityLabel="Reproducir video">
-        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(10,10,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
           <Play size={28} color={colors.white} fill={colors.white} />
         </View>
       </Pressable>

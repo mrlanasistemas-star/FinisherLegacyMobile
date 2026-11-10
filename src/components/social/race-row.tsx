@@ -1,5 +1,6 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 
@@ -20,20 +21,21 @@ export function RaceRow({ event, race, date, time, pace, onPress }: RaceRowProps
   const hasDate = !!year && !!month && !!day;
 
   return (
-    <Pressable
+    <PressableScale
+      dim
+      scaleTo={0.98}
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? 'button' : 'text'}
       accessibilityLabel={[event, race, time].filter(Boolean).join(', ')}
-      style={({ pressed }) => ({
+      style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.md,
         paddingVertical: spacing.sm,
         borderBottomWidth: 1,
         borderBottomColor: colors.hairline,
-        opacity: pressed ? 0.7 : 1,
-      })}>
+      }}>
       <View style={{ width: 44, alignItems: 'center' }}>
         {hasDate ? (
           <>
@@ -56,7 +58,7 @@ export function RaceRow({ event, race, date, time, pace, onPress }: RaceRowProps
       </View>
       {time ? (
         <View style={{ alignItems: 'flex-end' }}>
-          <AppText style={{ fontFamily: fontFamily.bold, fontSize: 16, color: colors.goldSoft }}>{time}</AppText>
+          <AppText style={{ fontFamily: fontFamily.bold, fontSize: 16, color: colors.accent }}>{time}</AppText>
           {pace ? (
             <AppText variant="caption" style={{ color: colors.subtle, fontSize: 12 }}>
               {pace}
@@ -64,6 +66,6 @@ export function RaceRow({ event, race, date, time, pace, onPress }: RaceRowProps
           ) : null}
         </View>
       ) : null}
-    </Pressable>
+    </PressableScale>
   );
 }

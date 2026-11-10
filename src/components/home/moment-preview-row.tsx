@@ -2,8 +2,9 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Heart, MessageCircle } from 'lucide-react-native';
 import { memo } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { Avatar } from '@/components/ui/avatar';
 import { MOMENT_TYPE_LABEL } from '@/features/social/moment-state';
@@ -18,11 +19,13 @@ export const MomentPreviewRow = memo(function MomentPreviewRow({ moment }: { mom
   const time = moment.activity?.official_time ?? moment.metrics?.pace ?? null;
 
   return (
-    <Pressable
+    <PressableScale
+      dim
+      scaleTo={0.98}
       onPress={() => router.push(`/moments/${moment.uuid}`)}
       accessibilityRole="button"
       accessibilityLabel={`${moment.author.name}: ${headline}`}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, opacity: pressed ? 0.75 : 1 })}>
+      style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
       <Avatar uri={moment.author.photo_url} name={moment.author.name} size={40} />
       <View style={{ flex: 1, gap: 2 }}>
         <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 14 }} numberOfLines={1}>
@@ -42,9 +45,9 @@ export const MomentPreviewRow = memo(function MomentPreviewRow({ moment }: { mom
         </View>
       </View>
       {thumb ? (
-        <Image source={{ uri: thumb }} style={{ width: 56, height: 56, borderRadius: radius.md, backgroundColor: colors.graphite }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={moment.uuid} />
+        <Image source={{ uri: thumb }} style={{ width: 56, height: 56, borderRadius: radius.md, backgroundColor: colors.surfaceMuted }} contentFit="cover" cachePolicy="memory-disk" recyclingKey={moment.uuid} />
       ) : null}
-    </Pressable>
+    </PressableScale>
   );
 });
 

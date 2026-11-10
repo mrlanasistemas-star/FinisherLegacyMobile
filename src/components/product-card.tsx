@@ -28,7 +28,7 @@ export const ProductCard = memo(function ProductCard({ product, onPress, feature
       accessibilityLabel={`${product.name}${price ? `, desde ${price}` : ''}${soldOut ? ', agotado' : ''}`}
       style={{ flex: featured ? undefined : 1 }}>
       <View style={{ gap: spacing.xs }}>
-        <View style={{ aspectRatio: featured ? 16 / 10 : 4 / 5, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.graphite }}>
+        <View style={{ aspectRatio: featured ? 16 / 10 : 4 / 5, borderRadius: 16, overflow: 'hidden', borderCurve: 'continuous', backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.hairline }}>
           {product.image_url ? (
             <Image
               source={{ uri: product.image_url }}
@@ -40,26 +40,26 @@ export const ProductCard = memo(function ProductCard({ product, onPress, feature
             />
           ) : (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ShoppingBag size={32} color={colors.goldDim} />
+              <ShoppingBag size={32} color={colors.accent} strokeWidth={1.5} />
             </View>
           )}
           {soldOut ? (
-            <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(10,10,12,0.8)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: colors.foreground }}>Agotado</AppText>
+            <View style={{ position: 'absolute', top: 8, left: 8, backgroundColor: 'rgba(11,11,12,0.8)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
+              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: colors.onDark }}>Agotado</AppText>
             </View>
           ) : null}
         </View>
         <View style={{ gap: 1 }}>
           {product.brand ? (
-            <AppText variant="label" tone="gold" numberOfLines={1} style={{ fontSize: 11 }}>
+            <AppText variant="eyebrow" numberOfLines={1} style={{ fontSize: 10, letterSpacing: 1.6 }}>
               {product.brand.toUpperCase()}
             </AppText>
           ) : null}
-          <AppText style={{ fontFamily: fontFamily.medium, fontSize: featured ? 17 : 14 }} numberOfLines={2}>
+          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: featured ? 17 : 14, lineHeight: featured ? 17 * 1.3 : 19 }} numberOfLines={2}>
             {product.name}
           </AppText>
           {price ? (
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: featured ? 16 : 14, color: colors.goldSoft }}>
+            <AppText style={{ fontFamily: fontFamily.bold, fontSize: featured ? 16 : 14, color: colors.foreground }}>
               {product.from_price_minor !== null ? price : ''}
             </AppText>
           ) : null}

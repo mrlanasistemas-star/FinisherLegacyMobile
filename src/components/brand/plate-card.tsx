@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 
-import { colors, radius, shadows, spacing } from '@/theme/tokens';
+import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 
 interface PlateCardProps extends PropsWithChildren {
   code: string;
@@ -21,19 +21,20 @@ export function PlateCard({ code, children }: PlateCardProps) {
         borderRadius: radius.xl,
         borderWidth: 1,
         borderColor: colors.goldDim,
-        backgroundColor: colors.graphite,
+        backgroundColor: colors.card,
         padding: spacing.lg,
+        borderCurve: 'continuous',
         ...shadows.card,
       }}>
-      <AppText variant="label" tone="muted" style={{ letterSpacing: 3 }}>
+      <AppText variant="eyebrow">
         LEGACY CODE
       </AppText>
       <AppText
         style={{
-          fontFamily: 'InstrumentSans_700Bold',
+          fontFamily: fontFamily.heading,
           fontSize: 34,
           letterSpacing: 4,
-          color: colors.gold,
+          color: colors.foreground,
           marginTop: spacing.xxs,
         }}>
         {code}

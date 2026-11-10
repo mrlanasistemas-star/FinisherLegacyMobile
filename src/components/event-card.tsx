@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { AppText } from './app-text';
 import { GradientOverlay } from './brand/gradient-overlay';
-import { PressScale } from './motion/press-scale';
+import { PressableScale } from './motion/pressable-scale';
 
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import type { EventEditionCard } from '@/types/models';
@@ -26,7 +26,7 @@ function DateBadge({ isoDate }: { isoDate: string }) {
         position: 'absolute',
         top: spacing.sm,
         left: spacing.sm,
-        backgroundColor: colors.black,
+        backgroundColor: colors.card,
         borderRadius: radius.md,
         width: 52,
         alignItems: 'center',
@@ -35,7 +35,7 @@ function DateBadge({ isoDate }: { isoDate: string }) {
       <AppText variant="title" style={{ fontSize: 20, lineHeight: 22 }}>
         {String(day).padStart(2, '0')}
       </AppText>
-      <AppText variant="label" tone="gold">
+      <AppText variant="label" tone="accent">
         {MONTHS[month - 1]}
       </AppText>
     </View>
@@ -44,17 +44,19 @@ function DateBadge({ isoDate }: { isoDate: string }) {
 
 export function EventCard({ edition, onPress, featured = false }: EventCardProps) {
   const location = [edition.city, edition.state, edition.country].filter(Boolean).join(', ');
+  const label = [edition.event.name + ' ' + edition.year, location].filter(Boolean).join(', ');
 
   return (
-    <PressScale onPress={onPress} haptic>
+    <PressableScale onPress={onPress} haptic accessibilityRole="button" accessibilityLabel={label}>
       <View
         style={{
           borderRadius: radius.lg,
+          borderCurve: 'continuous',
           overflow: 'hidden',
-          backgroundColor: colors.graphite,
+          backgroundColor: colors.card,
           borderWidth: 1,
-          borderColor: colors.border,
-          ...shadows.card,
+          borderColor: colors.hairline,
+          ...shadows.soft,
         }}>
         <View style={{ aspectRatio: featured ? 4 / 3 : 16 / 10, backgroundColor: colors.graphite }}>
           {edition.event.cover_url ? (
@@ -64,11 +66,11 @@ export function EventCard({ edition, onPress, featured = false }: EventCardProps
           <DateBadge isoDate={edition.event_date} />
 
           <View style={{ position: 'absolute', left: spacing.md, right: spacing.md, bottom: spacing.md }}>
-            <AppText variant={featured ? 'title' : 'subtitle'} numberOfLines={2}>
+            <AppText variant={featured ? 'title' : 'subtitle'} tone="onDark" numberOfLines={2}>
               {edition.event.name} {edition.year}
             </AppText>
             {location ? (
-              <AppText variant="caption" tone="muted" style={{ marginTop: spacing.xxs }}>
+              <AppText variant="caption" tone="onDarkMuted" style={{ marginTop: spacing.xxs }}>
                 {location}
               </AppText>
             ) : null}
@@ -84,8 +86,7 @@ export function EventCard({ edition, onPress, featured = false }: EventCardProps
                   paddingVertical: 4,
                   paddingHorizontal: spacing.sm,
                   borderRadius: radius.pill,
-                  borderWidth: 1,
-                  borderColor: colors.border,
+                  backgroundColor: colors.surfaceMuted,
                 }}>
                 <AppText variant="caption">{distance}</AppText>
               </View>
@@ -93,6 +94,6 @@ export function EventCard({ edition, onPress, featured = false }: EventCardProps
           </View>
         ) : null}
       </View>
-    </PressScale>
+    </PressableScale>
   );
 }

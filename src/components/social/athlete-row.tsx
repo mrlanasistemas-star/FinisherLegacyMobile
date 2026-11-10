@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
 import { memo } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { FollowButton } from '@/components/social/follow-button';
 import { Avatar } from '@/components/ui/avatar';
@@ -23,12 +24,12 @@ export const AthleteRow = memo(function AthleteRow({ athlete, showFollow = true,
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 10 }}>
-      <Pressable
+      <PressableScale dim scaleTo={0.98}
         onPress={() => username && router.push(`/athlete/${username}`)}
         disabled={!username}
         accessibilityRole="button"
         accessibilityLabel={`Ver perfil de ${athlete.name}`}
-        style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, opacity: pressed ? 0.7 : 1 })}>
+        style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
         <Avatar uri={athlete.photo_url} name={athlete.name} size={44} />
         <View style={{ flex: 1 }}>
           <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }} numberOfLines={1}>
@@ -39,7 +40,7 @@ export const AthleteRow = memo(function AthleteRow({ athlete, showFollow = true,
             {athlete.city ? ` · ${athlete.city}` : ''}
           </AppText>
         </View>
-      </Pressable>
+      </PressableScale>
       {trailing ??
         (showFollow && username && !isMe && athlete.is_following !== undefined ? (
           <FollowButton username={username} isFollowing={athlete.is_following} firstName={athlete.name.split(' ')[0]} />

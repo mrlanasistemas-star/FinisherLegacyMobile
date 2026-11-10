@@ -2,9 +2,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { ChevronRight, HeartHandshake, Package } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { PAYMENT_STATE_LABEL } from '@/features/commerce/order-timeline';
 import { useOrders } from '@/hooks/use-orders';
@@ -29,18 +30,20 @@ export function ActiveSupportBanner() {
 
   return (
     <Animated.View entering={FadeIn.duration(260)}>
-      <Pressable
+      <PressableScale
+        dim
+        scaleTo={0.98}
         onPress={() => router.push(`/support/${live.id}`)}
         accessibilityRole="button"
         accessibilityLabel={`${isActive ? 'Apoyo en vivo' : 'Tu equipo de apoyo está recibiendo mensajes'}: ${live.title}`}
-        style={({ pressed }) => ({ borderRadius: radius.lg, overflow: 'hidden', opacity: pressed ? 0.85 : 1 })}>
+        style={{ borderRadius: radius.lg, overflow: 'hidden' }}>
         <LinearGradient
-          colors={['rgba(201,161,89,0.22)', 'rgba(201,161,89,0.06)']}
+          colors={['rgba(201,174,139,0.22)', 'rgba(201,174,139,0.06)']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.goldDim, borderRadius: radius.lg }}>
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.black, alignItems: 'center', justifyContent: 'center' }}>
-            <HeartHandshake size={20} color={colors.gold} />
+          style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.gold, borderRadius: radius.lg }}>
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' }}>
+            <HeartHandshake size={20} color={colors.accent} />
           </View>
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -53,9 +56,9 @@ export function ActiveSupportBanner() {
               {live.title}
             </AppText>
           </View>
-          <ChevronRight size={18} color={colors.gold} />
+          <ChevronRight size={18} color={colors.accent} />
         </LinearGradient>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }
@@ -81,11 +84,13 @@ export function OrderStatusChip() {
   const needsPayment = open.payable && open.payment_state !== 'paid';
 
   return (
-    <Pressable
+    <PressableScale
+      dim
+      scaleTo={0.98}
       onPress={() => router.push(`/orders/${open.uuid}`)}
       accessibilityRole="button"
       accessibilityLabel={`Pedido ${open.order_number}: ${orderStatusLabel(open)}`}
-      style={({ pressed }) => ({
+      style={{
         alignSelf: 'flex-start',
         flexDirection: 'row',
         alignItems: 'center',
@@ -95,8 +100,8 @@ export function OrderStatusChip() {
         borderRadius: radius.pill,
         borderWidth: 1,
         borderColor: needsPayment ? colors.goldDim : colors.border,
-        backgroundColor: pressed ? colors.graphiteLight : colors.graphite,
-      })}>
+        backgroundColor: colors.card,
+      }}>
       <Package size={15} color={needsPayment ? colors.gold : colors.muted} />
       <AppText variant="caption" style={{ fontFamily: fontFamily.medium }}>
         Pedido {open.order_number}
@@ -105,6 +110,6 @@ export function OrderStatusChip() {
         · {orderStatusLabel(open)}
       </AppText>
       <ChevronRight size={14} color={colors.subtle} />
-    </Pressable>
+    </PressableScale>
   );
 }

@@ -71,7 +71,7 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
       <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xl }}>
         <Animated.View entering={FadeInDown.duration(320)} style={{ gap: spacing.sm }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            {stopRequested ? <CloudOff size={14} color={colors.goldSoft} /> : <LivePulse />}
+            {stopRequested ? <CloudOff size={14} color={colors.accent} /> : <LivePulse />}
             <AppText variant="label" tone="gold" accessibilityLiveRegion="polite">
               {stopRequested ? 'ENVIANDO TUS ÚLTIMOS PUNTOS' : 'EN VIVO'}
             </AppText>
@@ -109,7 +109,7 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
         ) : null}
 
         {!stopRequested ? (
-          <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite }}>
+          <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
             <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Compartir seguimiento</AppText>
             <AppText variant="caption" tone="muted">
               Quien abra el enlace verá tu avance en un mapa. No necesita cuenta.
@@ -146,7 +146,7 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
         {support.messages.length > 0 ? (
           <View style={{ gap: spacing.sm }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-              <HeartHandshake size={18} color={colors.gold} />
+              <HeartHandshake size={18} color={colors.accent} />
               <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Mensajes de tu equipo de apoyo</AppText>
             </View>
             {support.messages.map((message) => (
@@ -208,11 +208,11 @@ function LivePulse() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <View style={{ flex: 1, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}`}>
+    <View style={{ flex: 1, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, gap: 2 }} accessible accessibilityLabel={`${label}: ${value}`}>
       <AppText variant="caption" tone="muted">
         {label}
       </AppText>
-      <AppText style={{ fontFamily: fontFamily.bold, fontSize: 30, color: colors.foreground, fontVariant: ['tabular-nums'] }}>{value}</AppText>
+      <AppText style={{ fontFamily: fontFamily.heading, fontSize: 28, color: colors.foreground, fontVariant: ['tabular-nums'] }}>{value}</AppText>
     </View>
   );
 }
@@ -223,7 +223,7 @@ function StatusLine({ label, value, tone = 'default' }: { label: string; value: 
       <AppText variant="caption" tone="muted">
         {label}
       </AppText>
-      <AppText variant="caption" style={{ color: tone === 'warn' ? colors.goldSoft : colors.foreground, fontFamily: fontFamily.medium }}>
+      <AppText variant="caption" style={{ color: tone === 'warn' ? colors.accent : colors.foreground, fontFamily: fontFamily.medium }}>
         {value}
       </AppText>
     </View>
@@ -233,7 +233,7 @@ function StatusLine({ label, value, tone = 'default' }: { label: string; value: 
 function Notice({ icon: Icon, text, subtle = false }: { icon: typeof TriangleAlert; text: string; subtle?: boolean }) {
   return (
     <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start', padding: subtle ? 0 : spacing.md, borderRadius: radius.lg, backgroundColor: subtle ? 'transparent' : colors.goldWash }}>
-      <Icon size={16} color={subtle ? colors.subtle : colors.goldSoft} />
+      <Icon size={16} color={subtle ? colors.subtle : colors.accent} />
       <AppText variant="caption" style={{ flex: 1, color: subtle ? colors.subtle : colors.foreground }}>
         {text}
       </AppText>
@@ -268,7 +268,7 @@ function AudioButton({ url }: { url: string }) {
       accessibilityRole="button"
       accessibilityLabel={playing ? 'Pausar mensaje de voz' : 'Escuchar mensaje de voz'}
       style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs, alignSelf: 'flex-start', minHeight: 44, paddingHorizontal: spacing.md, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.goldDim }}>
-      {playing ? <Pause size={14} color={colors.gold} /> : <Play size={14} color={colors.gold} />}
+      {playing ? <Pause size={14} color={colors.accent} /> : <Play size={14} color={colors.accent} />}
       <AppText variant="caption" tone="gold">
         Mensaje de voz
       </AppText>

@@ -2,15 +2,14 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { ExternalLink, ShieldCheck } from 'lucide-react-native';
 import { useMemo } from 'react';
-import { ActivityIndicator, ScrollView, Switch, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Switch, View } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { AthleteRow } from '@/components/social/athlete-row';
-import { ListRow } from '@/components/ui/list-row';
-import { TopBar } from '@/components/ui/top-bar';
+import { ListGroup, ListRow } from '@/components/ui/list-row';
+import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useProfile } from '@/hooks/use-profile';
 import { useBlock, useBlocks } from '@/hooks/use-social';
 import { useUpdateProfile } from '@/hooks/use-update-profile';
@@ -47,15 +46,8 @@ export default function PrivacyScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
-      <View style={{ paddingHorizontal: spacing.lg }}>
-        <TopBar title="Privacidad" />
-      </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl }}>
-        <View>
-          <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xxs }}>
-            PERFIL
-          </AppText>
+    <LargeTitleScroll title="Privacidad" contentContainerStyle={{ gap: spacing.lg }}>
+        <ListGroup title="Perfil" footer="Cada momento también tiene su propia visibilidad: Todos, Seguidores o Solo yo.">
           <ListRow
             icon={ShieldCheck}
             label="Perfil privado"
@@ -67,48 +59,45 @@ export default function PrivacyScreen() {
             divider={false}
             trailing={
               update.isPending ? (
-                <ActivityIndicator color={colors.gold} />
+                <ActivityIndicator color={colors.accent} />
               ) : (
                 <Switch
                   value={isPrivate}
                   onValueChange={setPrivate}
-                  trackColor={{ false: colors.graphiteLight, true: colors.gold }}
+                  trackColor={{ false: colors.surfaceMuted, true: colors.gold }}
                   thumbColor={colors.white}
-                  ios_backgroundColor={colors.graphiteLight}
+                  ios_backgroundColor={colors.surfaceMuted}
                   accessibilityLabel="Perfil privado"
                 />
               )
             }
           />
-          <AppText variant="caption" style={{ color: colors.subtle, marginTop: spacing.xs }}>
-            Cada momento también tiene su propia visibilidad: Todos, Seguidores o Solo yo.
-          </AppText>
-        </View>
+        </ListGroup>
 
         <View>
-          <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xxs }}>
-            ATLETAS BLOQUEADOS
+          <AppText variant="eyebrow" tone="subtle" style={{ marginBottom: spacing.xs, marginLeft: spacing.md }}>
+            Atletas bloqueados
           </AppText>
           {blocks.isPending ? (
-            <ActivityIndicator color={colors.gold} style={{ marginVertical: spacing.md }} />
+            <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.md }} />
           ) : blocked.length === 0 ? (
-            <AppText variant="body" tone="muted" style={{ paddingVertical: spacing.sm }}>
+            <AppText variant="caption" tone="muted" style={{ paddingHorizontal: spacing.md }}>
               No has bloqueado a nadie. Puedes bloquear desde el menú ••• del perfil de un atleta.
             </AppText>
           ) : (
-            blocked.map((athlete) => <BlockedRow key={athlete.username ?? athlete.name} athlete={athlete} />)
+            <View style={{ backgroundColor: colors.card, borderRadius: 18, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.hairline }}>
+              {blocked.map((athlete) => (
+                <BlockedRow key={athlete.username ?? athlete.name} athlete={athlete} />
+              ))}
+            </View>
           )}
         </View>
 
-        <View>
-          <AppText variant="label" tone="muted" style={{ marginBottom: spacing.xxs }}>
-            LEGAL
-          </AppText>
+        <ListGroup title="Legal">
           <ListRow label="Política de privacidad" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/privacy')} />
-          <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/terms')} divider={false} />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          <ListRow label="Términos y condiciones" trailing={<ExternalLink size={16} color={colors.subtle} />} onPress={() => WebBrowser.openBrowserAsync('https://finisherlegacy.com/terms')} />
+        </ListGroup>
+    </LargeTitleScroll>
   );
 }
 

@@ -1,6 +1,7 @@
 import { HandHeart, Heart, MessageCircle, Share2 } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 
+import { PressableScale } from '@/components/motion/pressable-scale';
 import { AppText } from '@/components/app-text';
 import { useReaction } from '@/hooks/use-social';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
@@ -49,7 +50,7 @@ export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
         active={cheered}
         count={moment.reactions.cheer}
         onPress={() => toggle('cheer')}
-        icon={<HandHeart size={22} color={cheered ? colors.gold : colors.foreground} fill={cheered ? colors.goldWash : 'transparent'} strokeWidth={1.8} />}
+        icon={<HandHeart size={22} color={cheered ? colors.accent : colors.foreground} fill={cheered ? colors.gold : 'transparent'} strokeWidth={1.8} />}
       />
       {onComment ? (
         <ReactionButton
@@ -60,13 +61,15 @@ export function ReactionBar({ moment, onComment, onShare }: ReactionBarProps) {
         />
       ) : null}
       {onShare ? (
-        <Pressable
+        <PressableScale
+          dim
+          scaleTo={0.98}
           onPress={onShare}
           accessibilityRole="button"
           accessibilityLabel="Compartir momento"
-          style={({ pressed }) => ({ marginLeft: 'auto', minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+          style={{ marginLeft: 'auto', minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}>
           <Share2 size={20} color={colors.foreground} strokeWidth={1.8} />
-        </Pressable>
+        </PressableScale>
       ) : null}
     </View>
   );
@@ -86,22 +89,23 @@ function ReactionButton({
   active?: boolean;
 }) {
   return (
-    <Pressable
+    <PressableScale
+      dim
+      scaleTo={0.98}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${label}, ${count}`}
       accessibilityState={{ selected: active }}
-      style={({ pressed }) => ({
+      style={{
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
         minHeight: 44,
         minWidth: 44,
         paddingHorizontal: 10,
-        opacity: pressed ? 0.6 : 1,
-      })}>
+      }}>
       {icon}
       {count > 0 ? <AppText style={{ fontFamily: fontFamily.medium, fontSize: 14, color: colors.foreground }}>{count}</AppText> : null}
-    </Pressable>
+    </PressableScale>
   );
 }

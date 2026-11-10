@@ -32,7 +32,7 @@ export default function GearClaimedScreen() {
   }));
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, paddingHorizontal: spacing.xl }}>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
           <Animated.View style={[{ position: 'absolute' }, glowStyle]}>
@@ -56,7 +56,7 @@ export default function GearClaimedScreen() {
 
       <Animated.View style={[{ paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, gap: spacing.sm }, contentStyle]}>
         {uuid ? (
-          <AppButton label="Compartir: nuevo gear en mi Legacy" onPress={() => router.replace(`/moments/create?type=gear&gearUuid=${uuid}`)} />
+          <AppButton label="Compartir con mi comunidad" onPress={() => router.replace(`/moments/create?type=gear&gearUuid=${uuid}`)} />
         ) : null}
         <AppButton label="Ir a mi equipo" variant={uuid ? 'secondary' : 'primary'} onPress={() => router.replace('/gear')} />
       </Animated.View>

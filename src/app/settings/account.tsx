@@ -5,8 +5,8 @@ import { router } from 'expo-router';
 import { Camera, ImagePlus, MapPin, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Switch, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
 import type { UploadFile } from '@/api/profile';
@@ -16,10 +16,10 @@ import { FormInput } from '@/components/form-input';
 import { Skeleton } from '@/components/skeleton';
 import { Avatar } from '@/components/ui/avatar';
 import { InlineError } from '@/components/ui/inline-error';
-import { ListRow } from '@/components/ui/list-row';
+import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
-import { TopBar } from '@/components/ui/top-bar';
+import { HeaderTextButton, TopBar } from '@/components/ui/top-bar';
 import { useProfile } from '@/hooks/use-profile';
 import { useUpdateProfile } from '@/hooks/use-update-profile';
 import { profileSchema, type ProfileFormValues } from '@/schemas/profile';
@@ -37,6 +37,7 @@ const BIO_MAX = 500;
 export default function EditProfileScreen() {
   const { data, isPending } = useProfile();
   const user = useAuthStore((s) => s.user);
+  const insets = useSafeAreaInsets();
   const update = useUpdateProfile();
   const profile = data?.profile ?? null;
 
@@ -138,7 +139,7 @@ export default function EditProfileScreen() {
 
   if (isPending) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.black }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
         <View style={{ paddingHorizontal: spacing.lg }}>
           <TopBar title="Editar perfil" />
         </View>
@@ -148,18 +149,18 @@ export default function EditProfileScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar
           title="Editar perfil"
-          right={<AppButton label="Guardar" size="sm" fullWidth={false} onPress={handleSubmit(onSubmit)} loading={update.isPending} disabled={!hasChanges} />}
+          right={<HeaderTextButton label="Guardar" onPress={handleSubmit(onSubmit)} loading={update.isPending} disabled={!hasChanges} />}
         />
       </View>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: spacing.xxl }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}>
           {/* Cover */}
-          <Pressable onPress={() => setImageSheet('cover')} accessibilityRole="button" accessibilityLabel="Cambiar foto de portada" style={{ height: 160, backgroundColor: colors.graphite }}>
+          <Pressable onPress={() => setImageSheet('cover')} accessibilityRole="button" accessibilityLabel="Cambiar foto de portada" style={{ height: 160, marginHorizontal: spacing.md, borderRadius: 18, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
             {coverPreview ? (
               <Image source={{ uri: coverPreview }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} />
             ) : (
@@ -170,7 +171,7 @@ export default function EditProfileScreen() {
                 </AppText>
               </View>
             )}
-            <View style={{ position: 'absolute', right: spacing.md, bottom: spacing.sm, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(10,10,12,0.65)', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ position: 'absolute', right: spacing.md, bottom: spacing.sm, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(11,11,12,0.65)', alignItems: 'center', justifyContent: 'center' }}>
               <Camera size={16} color={colors.white} />
             </View>
           </Pressable>
@@ -178,8 +179,8 @@ export default function EditProfileScreen() {
           {/* Avatar overlapping the cover */}
           <View style={{ paddingHorizontal: spacing.lg, marginTop: -48, flexDirection: 'row', alignItems: 'flex-end', gap: spacing.md }}>
             <Pressable onPress={() => setImageSheet('avatar')} accessibilityRole="button" accessibilityLabel="Cambiar foto de perfil">
-              <Avatar uri={avatarPreview} name={user?.name} size={96} style={{ borderWidth: 4, borderColor: colors.black }} />
-              <View style={{ position: 'absolute', right: 2, bottom: 2, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.black }}>
+              <Avatar uri={avatarPreview} name={user?.name} size={96} style={{ borderWidth: 4, borderColor: colors.background }} />
+              <View style={{ position: 'absolute', right: 2, bottom: 2, width: 30, height: 30, borderRadius: 15, backgroundColor: colors.gold, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.background }}>
                 <Camera size={14} color={colors.black} />
               </View>
             </Pressable>
@@ -229,37 +230,10 @@ export default function EditProfileScreen() {
               )}
             />
 
-            <View style={{ borderTopWidth: 1, borderTopColor: colors.hairline }}>
+            {/* Privacy lives only in Configuración › Privacidad (no duplicate toggle here). */}
+            <ListGroup>
               <ListRow icon={MapPin} label="Ubicación" value={locationLabel || 'Agregar'} onPress={() => setLocationOpen(true)} />
-              <Controller
-                control={control}
-                name="profile_visibility"
-                render={({ field }) => {
-                  const isPrivate = field.value === 'private';
-                  return (
-                    <ListRow
-                      label="Perfil privado"
-                      description={
-                        isPrivate
-                          ? 'Solo tú ves tu perfil, tus momentos y tus medallas.'
-                          : 'Otros atletas pueden ver tus logros públicos y seguirte.'
-                      }
-                      divider={false}
-                      trailing={
-                        <Switch
-                          value={isPrivate}
-                          onValueChange={(value) => field.onChange(value ? 'private' : 'public')}
-                          trackColor={{ false: colors.graphiteLight, true: colors.gold }}
-                          thumbColor={colors.white}
-                          ios_backgroundColor={colors.graphiteLight}
-                          accessibilityLabel="Perfil privado"
-                        />
-                      }
-                    />
-                  );
-                }}
-              />
-            </View>
+            </ListGroup>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

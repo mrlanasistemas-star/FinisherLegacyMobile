@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Award, Flag, Lock, MoreHorizontal, Trash2, Trophy, Users } from 'lucide-react-native';
 import { memo, useState } from 'react';
-import { Pressable, Share, View } from 'react-native';
+import { Pressable, Share, View, useWindowDimensions } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
@@ -17,10 +17,14 @@ import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { MOMENT_TYPE_LABEL, VISIBILITY_LABEL, momentMetricLine } from '@/features/social/moment-state';
 import { useDeleteMoment } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
-import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
+
 import type { LegacyMoment } from '@/types/social';
 import { webLinks } from '@/utils/links';
 import { relativeTime } from '@/utils/relative-time';
+
+/** Feed cards sit inset from the screen edge (iOS card list); detail stays full-bleed. */
+const CARD_INSET = spacing.md;
 
 interface MomentCardProps {
   moment: LegacyMoment;
@@ -34,6 +38,7 @@ interface MomentCardProps {
  * separated by whitespace and a hairline, media runs full-bleed.
  */
 export const MomentCard = memo(function MomentCard({ moment, detail = false }: MomentCardProps) {
+  const { width: screenWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
   const [reporting, setReporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -48,9 +53,25 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
     moment.activity?.event ?? moment.metrics?.title ?? moment.medal?.title ?? moment.gear?.product_name ?? null;
 
   return (
-    <View style={{ paddingBottom: spacing.md, borderBottomWidth: detail ? 0 : 1, borderBottomColor: colors.hairline }}>
+    <View
+      style={
+        detail
+          ? { paddingBottom: spacing.md }
+          : {
+              paddingBottom: spacing.sm,
+              marginHorizontal: CARD_INSET,
+              marginBottom: spacing.md,
+              backgroundColor: colors.card,
+              borderRadius: radius.lg,
+              borderCurve: 'continuous',
+              borderWidth: 1,
+              borderColor: colors.hairline,
+              overflow: 'hidden',
+              ...shadows.soft,
+            }
+      }>
       {/* Author row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>
         <Pressable onPress={openAuthor} accessibilityRole="button" accessibilityLabel={`Ver perfil de ${moment.author.name}`} hitSlop={6}>
           <Avatar uri={moment.author.photo_url} name={moment.author.name} size={40} />
         </Pressable>
@@ -77,10 +98,10 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
 
       {/* Activity: the sporting fact, big and clear */}
       {headline || metrics.length > 0 ? (
-        <Pressable onPress={open} disabled={detail} style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, gap: 4 }}>
+        <Pressable onPress={open} disabled={detail} style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 4 }}>
           {headline ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {moment.medal ? <Award size={16} color={colors.gold} /> : moment.activity ? <Trophy size={16} color={colors.gold} /> : null}
+              {moment.medal ? <Award size={16} color={colors.accent} /> : moment.activity ? <Trophy size={16} color={colors.accent} /> : null}
               <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 17, flexShrink: 1 }} numberOfLines={2}>
                 {headline}
                 {moment.activity?.race ? <AppText style={{ color: colors.muted, fontFamily: fontFamily.regular, fontSize: 17 }}> · {moment.activity.race}</AppText> : null}
@@ -90,7 +111,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
           {metrics.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: spacing.md, rowGap: 2 }}>
               {metrics.map((value, i) => (
-                <AppText key={`${value}-${i}`} style={{ fontFamily: fontFamily.bold, fontSize: i === 0 ? 24 : 18, color: i === 0 ? colors.goldSoft : colors.foreground }}>
+                <AppText key={`${value}-${i}`} style={{ fontFamily: fontFamily.bold, fontSize: i === 0 ? 24 : 18, color: i === 0 ? colors.accent : colors.foreground }}>
                   {value}
                 </AppText>
               ))}
@@ -104,17 +125,17 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
         </Pressable>
       ) : null}
 
-      {moment.media.length > 0 ? <MomentMediaPager media={moment.media} interactiveVideo={detail} onOpen={detail ? undefined : open} /> : null}
+      {moment.media.length > 0 ? <MomentMediaPager media={moment.media} width={detail ? screenWidth : screenWidth - CARD_INSET * 2 - 2} interactiveVideo={detail} onOpen={detail ? undefined : open} /> : null}
 
       {moment.caption ? (
-        <Pressable onPress={open} disabled={detail} style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.sm }}>
+        <Pressable onPress={open} disabled={detail} style={{ paddingHorizontal: spacing.md, paddingTop: spacing.sm }}>
           <AppText variant="body" numberOfLines={detail ? undefined : 4}>
             {moment.caption}
           </AppText>
         </Pressable>
       ) : null}
 
-      <View style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.xxs }}>
+      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xxs }}>
         <ReactionBar moment={moment} onComment={detail ? undefined : () => setCommentsOpen(true)} onShare={detail ? undefined : () => shareMoment(moment)} />
       </View>
 

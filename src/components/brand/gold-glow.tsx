@@ -23,7 +23,7 @@ export function GoldGlow({ size = 260, intensity = 1, style }: GoldGlowProps) {
           width: size,
           height: size,
           borderRadius: size / 2,
-          backgroundColor: `rgba(201,161,89,${0.16 * intensity})`,
+          backgroundColor: `rgba(201,174,139,${0.16 * intensity})`,
           shadowColor: colors.gold,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.55 * intensity,

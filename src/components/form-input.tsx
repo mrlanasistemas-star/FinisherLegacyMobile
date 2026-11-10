@@ -82,8 +82,8 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
 
   const LeadingIcon = icon ?? (kind === 'search' ? Search : undefined);
   const showClear = (clearable ?? kind === 'search') && !!value && editable && !multiline;
-  const borderColor = error ? colors.destructive : focused ? colors.gold : colors.inputBorder;
-  const iconColor = error ? colors.destructive : focused ? colors.goldSoft : colors.subtle;
+  const borderColor = error ? colors.destructive : focused ? colors.accent : colors.inputBorder;
+  const iconColor = error ? colors.destructive : focused ? colors.accent : colors.subtle;
 
   return (
     <View style={[{ gap: 6 }, containerStyle]}>
@@ -101,7 +101,7 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
           flexDirection: 'row',
           alignItems: multiline ? 'flex-start' : 'center',
           minHeight: multiline ? 96 : control.height,
-          borderWidth: 1,
+          borderWidth: focused || error ? 1.5 : 1,
           borderColor,
           borderRadius: control.radius,
           backgroundColor: colors.input,
@@ -122,8 +122,8 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
           accessibilityLabel={label ?? rest.placeholder}
           accessibilityHint={error ?? hint}
           placeholderTextColor={colors.subtle}
-          selectionColor={colors.gold}
-          cursorColor={colors.gold}
+          selectionColor={colors.accent}
+          cursorColor={colors.accent}
           secureTextEntry={isPassword ? hidden : rest.secureTextEntry}
           onFocus={(event) => {
             setFocused(true);
@@ -157,7 +157,7 @@ export const FormInput = forwardRef<TextInput, FormInputProps>(function FormInpu
             style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
             accessibilityRole="button"
             accessibilityLabel="Borrar texto">
-            <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: colors.graphiteLight, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: colors.surfaceMuted, alignItems: 'center', justifyContent: 'center' }}>
               <X size={12} color={colors.foreground} strokeWidth={2.5} />
             </View>
           </Pressable>
