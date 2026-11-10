@@ -3,15 +3,17 @@
  * (unheard first / favorites / all), the interval (seguido or one message
  * every 3 / 5 / 10 min), how audio mixes with your music, and whether the
  * screen stays on. Running: a big glanceable workout clock, the countdown to
- * the next message, the current message, pause / skip / end. Audio keeps
- * playing with the screen locked (background audio + lock-screen controls);
- * the clock is timestamp-based so it stays exact after the phone sleeps.
+ * the next message, the current message, pause / skip / end, and a
+ * "Sesión activa" badge while the workout keeps its audio session alive
+ * (silent keep-alive between messages, so interval messages also arrive
+ * with the screen locked — see `features/training/audio-session.ts`).
+ * The clock is timestamp-based so it stays exact after the phone sleeps.
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { CloudOff, Pause, Play, SkipForward, Square } from 'lucide-react-native';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { ScrollView, Switch, View } from 'react-native';
+import { Platform, ScrollView, Switch, View } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,6 +29,7 @@ import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { TopBar } from '@/components/ui/top-bar';
 import type { MixMode } from '@/features/training/audio-driver';
+import { mixModeCaption, type Os } from '@/features/training/audio-session';
 import { SenderAvatar } from '@/features/training/components/message-visuals';
 import { PLAYER_HREF } from '@/features/training/components/mini-player';
 import { offlineMessages, useOfflineStore } from '@/features/training/offline-cache';
@@ -150,7 +153,7 @@ function SessionSetup() {
               <AppText variant="caption" tone="muted">
                 {intervalMinutes === null
                   ? 'Los mensajes suenan uno tras otro.'
-                  : `Suena uno al empezar y luego uno cada ${intervalMinutes} minutos de entrenamiento.`}
+                  : `Suena uno al empezar y luego uno cada ${intervalMinutes} minutos de entrenamiento. Con la pantalla bloqueada la sesión sigue activa en segundo plano (usa un poco más de batería).`}
               </AppText>
             </Reveal>
 
@@ -159,6 +162,9 @@ function SessionSetup() {
                 Tu música
               </AppText>
               <SegmentedControl options={MIX_OPTIONS} value={mixMode} onChange={setMixMode} />
+              <AppText variant="caption" tone="muted">
+                {mixModeCaption(Platform.OS as Os, mixMode)}
+              </AppText>
               <ListGroup>
                 <ListRow
                   label="Mantener pantalla encendida"
@@ -235,6 +241,8 @@ function RunningSession() {
   const status = usePlayerStore((s) => s.status);
   const remaining = usePlayerStore((s) => remainingCount(s.queue));
   const message = useCurrentMessage();
+  const audioPhase = usePlayerStore((s) => s.audioPhase);
+  const backgroundActive = audioPhase === 'keepAlive' || audioPhase === 'message';
   const [now, setNow] = useState(() => Date.now());
   const [confirmEnd, setConfirmEnd] = useState(false);
 
@@ -284,6 +292,7 @@ function RunningSession() {
           <AppText variant="bodyStrong" tone={status.playing ? 'accent' : 'muted'} accessibilityLiveRegion="polite">
             {statusLine}
           </AppText>
+          {backgroundActive ? <ActiveSessionBadge /> : null}
         </Animated.View>
 
         {message ? (
@@ -379,6 +388,35 @@ function RunningSession() {
           showToast(`Entrenamiento de ${formatClock(elapsed)} terminado`, 'success');
         }}
       />
+    </View>
+  );
+}
+
+/** "Sesión activa": the workout keeps its audio session alive so messages arrive with the screen locked. */
+function ActiveSessionBadge() {
+  return (
+    <View
+      accessible
+      accessibilityLabel="Sesión activa. Sigue funcionando con la pantalla bloqueada y usa un poco más de batería."
+      style={{ alignItems: 'center', gap: 2, marginTop: spacing.xs }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: spacing.xs,
+          paddingHorizontal: spacing.sm,
+          paddingVertical: 4,
+          borderRadius: radius.pill,
+          backgroundColor: colors.successWash,
+        }}>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
+        <AppText variant="caption" style={{ color: colors.success, fontFamily: fontFamily.semibold }}>
+          Sesión activa · puedes bloquear la pantalla
+        </AppText>
+      </View>
+      <AppText variant="caption" tone="subtle">
+        Usa un poco más de batería mientras entrenas.
+      </AppText>
     </View>
   );
 }

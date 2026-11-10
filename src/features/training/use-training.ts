@@ -58,6 +58,17 @@ export function flattenMessages(data: MessagesData | undefined): TrainingMessage
   return out;
 }
 
+/** A message as currently cached in any inbox list (used to pick up a re-signed audio URL). */
+export function findCachedMessage(client: QueryClient, uuid: string): TrainingMessage | null {
+  for (const [, data] of client.getQueriesData<MessagesData>({ queryKey: queryKeys.trainingMessagesAll })) {
+    for (const page of data?.pages ?? []) {
+      const found = page.data.find((m) => m.uuid === uuid);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 type Snapshot = [readonly unknown[], MessagesData | undefined][];
 
 function snapshot(client: QueryClient): Snapshot {

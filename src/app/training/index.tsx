@@ -165,7 +165,7 @@ export default function TrainingHomeScreen() {
       </Reveal>
 
       <Reveal delay={110} style={{ flexDirection: 'row', gap: spacing.sm }}>
-        <Counter label="Sin escuchar" value={unheardCount} active={filter === 'unheard'} onPress={() => setFilter('unheard')} />
+        <Counter label="Nuevos" value={unheardCount} active={filter === 'unheard'} onPress={() => setFilter('unheard')} />
         <Counter label="Favoritos" value={favoritesCount} active={filter === 'favorites'} onPress={() => setFilter('favorites')} />
         <Counter label="Total" value={totalCount} active={filter === 'all'} onPress={() => setFilter('all')} />
       </Reveal>

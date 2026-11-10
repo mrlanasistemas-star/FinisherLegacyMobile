@@ -1,5 +1,5 @@
 import { Ban, CloudCheck, CloudDownload, EyeOff, Play, Star } from 'lucide-react-native';
-import { Switch, View } from 'react-native';
+import { Platform, Switch, View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { ListGroup, ListRow } from '@/components/ui/list-row';
@@ -10,6 +10,7 @@ import type { TrainingMessage } from '@/schemas/training';
 import { colors, spacing } from '@/theme/tokens';
 
 import type { MixMode } from '../audio-driver';
+import { mixModeCaption, type Os } from '../audio-session';
 import { isOfflineAvailable } from '../offline-cache';
 import { useTrainingSettings } from '../settings-store';
 import { SenderAvatar } from './message-visuals';
@@ -19,7 +20,8 @@ import { SenderAvatar } from './message-visuals';
  * - `MessageActionsSheet` — long-press menu of a message (play, favorite,
  *   offline, hide, block the sender).
  * - `AudioSettingsSheet` — "Mezclar con mi música" vs "Pausar mi música"
- *   and "Mantener pantalla encendida".
+ *   (with one line on what that means for the lock-screen controls on this
+ *   platform) and "Mantener pantalla encendida".
  */
 
 interface MessageActionsSheetProps {
@@ -87,9 +89,7 @@ export function AudioSettingsSheet({ visible, onClose }: { visible: boolean; onC
         <View style={{ gap: spacing.xs }}>
           <SegmentedControl options={MIX_OPTIONS} value={mixMode} onChange={setMixMode} />
           <AppText variant="caption" tone="muted">
-            {mixMode === 'mix'
-              ? 'Tu música sigue sonando y baja un momento mientras escuchas cada mensaje.'
-              : 'Tu música se pausa durante cada mensaje. Los controles aparecen en la pantalla bloqueada.'}
+            {mixModeCaption(Platform.OS as Os, mixMode)}
           </AppText>
         </View>
         <ListGroup>

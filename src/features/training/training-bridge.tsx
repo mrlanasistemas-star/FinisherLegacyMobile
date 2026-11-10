@@ -3,18 +3,22 @@ import * as Notifications from 'expo-notifications';
 import { useEffect, useRef } from 'react';
 import { AppState, Platform } from 'react-native';
 
+import { fetchTrainingMessages } from '@/api/training';
 import { queryKeys } from '@/hooks/query-keys';
 import { useAuthStore } from '@/stores/authStore';
 
 import { clearOfflineCache } from './offline-cache';
-import { refreshAudioMode, registerListenedHandler, releasePlayer, sessionTick } from './player-controller';
+import { refreshAudioMode, registerListenedHandler, registerUrlResolver, releasePlayer, sessionTick } from './player-controller';
 import { usePlayerStore } from './player-store';
 import { useTrainingSettings } from './settings-store';
-import { markListenedEverywhere } from './use-training';
+import { resolveFreshAudioUrl } from './url-refresh';
+import { findCachedMessage, markListenedEverywhere } from './use-training';
 
 /**
  * Invisible glue mounted once in the root layout (inside QueryProvider):
  * - wires the player's auto "listened" mark to the API + query cache;
+ * - gives the player a way to re-sign an expired audio URL (refetch the
+ *   cached inbox, then the first pages of "all");
  * - ticks the "Modo entrenamiento" interval scheduler (and catches up the
  *   moment the app returns to the foreground);
  * - holds the screen awake only during a session with "Mantener pantalla
@@ -34,6 +38,17 @@ export function TrainingBridge() {
   useEffect(() => {
     registerListenedHandler((uuid) => void markListenedEverywhere(client, uuid));
     return () => registerListenedHandler(null);
+  }, [client]);
+
+  useEffect(() => {
+    registerUrlResolver((uuid) =>
+      resolveFreshAudioUrl(uuid, {
+        refetchCached: () => client.refetchQueries({ queryKey: queryKeys.trainingMessagesAll }),
+        findCached: (id) => findCachedMessage(client, id),
+        fetchPage: (page) => fetchTrainingMessages('all', page),
+      }),
+    );
+    return () => registerUrlResolver(null);
   }, [client]);
 
   useEffect(() => {

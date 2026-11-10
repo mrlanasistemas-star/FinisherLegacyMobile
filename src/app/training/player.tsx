@@ -3,8 +3,9 @@
  * app (transparent modal) that slides up and is dismissed by dragging it
  * down. Animated artwork with gold progress ring and pulse, sender and text,
  * scrubber with elapsed / remaining time, prev / ±15 s / play / next, speed
- * chips (pitch-corrected), volume, repeat and shuffle, favorite. The
- * "listened" mark is automatic (80 % or the end) in the controller.
+ * chips (pitch-corrected), volume, repeat and shuffle, favorite, and a
+ * retry hint when a stream fails even after the controller re-signed its
+ * URL. The "listened" mark is automatic (80 % or the end) in the controller.
  */
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
@@ -239,6 +240,10 @@ export default function TrainingPlayerScreen() {
                       Actualiza la app para escuchar los audios. Mientras tanto puedes leer los mensajes.
                     </AppText>
                   </View>
+                ) : hasAudio && status.error && !status.playing && !status.buffering ? (
+                  <AppText variant="caption" tone="muted" accessibilityLiveRegion="polite" style={{ textAlign: 'center' }}>
+                    No pudimos reproducir este audio. Revisa tu conexión y toca reproducir para reintentar.
+                  </AppText>
                 ) : null}
 
                 <View style={{ gap: 2 }}>

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 
 import type { TrainingMessage } from '@/schemas/training';
 
+import type { AudioPhase } from './audio-session';
 import { currentId, EMPTY_QUEUE, type QueueState } from './queue';
 import { IDLE_CLOCK, type IntervalSchedule, type WorkoutClock } from './session-clock';
 
@@ -47,6 +48,8 @@ interface PlayerStoreState {
   /** expo-audio isn't in this binary — "Actualiza la app". */
   audioUnavailable: boolean;
   session: SessionState;
+  /** Audio-session phase of the workout (`keepAlive` = "Sesión activa" with the screen locked). */
+  audioPhase: AudioPhase;
 }
 
 export const usePlayerStore = create<PlayerStoreState>(() => ({
@@ -56,6 +59,7 @@ export const usePlayerStore = create<PlayerStoreState>(() => ({
   sheetOpen: false,
   audioUnavailable: false,
   session: IDLE_SESSION,
+  audioPhase: 'off',
 }));
 
 export function setPlayerState(patch: Partial<PlayerStoreState>) {
