@@ -1,14 +1,16 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { ChevronLeft, Info, Share2, ShoppingCart } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { ScrollView, Share, View, useWindowDimensions } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { Share, View, useWindowDimensions } from 'react-native';
+import Animated, { FadeInDown, useAnimatedReaction, useReducedMotion } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { ErrorState } from '@/components/error-state';
+import { ScrollHeader, useParallax, useScrollY } from '@/components/motion/scroll-header';
 import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { InlineError } from '@/components/ui/inline-error';
@@ -16,19 +18,28 @@ import { QuantityStepper } from '@/components/ui/quantity-stepper';
 import { StickyFooter } from '@/components/ui/sticky-footer';
 import { ProductGallery } from '@/features/commerce/components/product-gallery';
 import { GearPromise, NfcBadge, ProductSections } from '@/features/commerce/components/product-story';
+import { DesignChips, Grouped, HowItWorksStrip, TagHero } from '@/features/commerce/components/tag-detail-parts';
 import { VariantPicker } from '@/features/commerce/components/variant-picker';
 import { productWebUrl } from '@/features/commerce/links';
+import { isTagProduct, tagFaceFrom } from '@/features/commerce/tag-design';
 import { defaultVariant, isConnectedProduct, isVariantAvailable, maxQuantityFor, stockState } from '@/features/commerce/variant-options';
 import { useAddCartItem, useCartCount } from '@/hooks/use-cart';
 import { useProduct } from '@/hooks/use-store-products';
 import { showToast } from '@/stores/toastStore';
-import { colors, fontFamily, motion, spacing } from '@/theme/tokens';
+import { colors, fontFamily, motion, radius, spacing } from '@/theme/tokens';
 import type { ProductGalleryItem, ProductVariant } from '@/types/models';
 import { describeCommerceError } from '@/utils/commerce-errors';
 import { formatMoney } from '@/utils/money';
 
-const STOCK_DOT = { available: colors.success, low: colors.goldSoft, sold_out: colors.destructive } as const;
+const STOCK_DOT = { available: colors.success, low: colors.gold, sold_out: colors.destructive } as const;
+const NAV_HEIGHT = 52;
 
+/**
+ * Product detail. Finisher Legacy Tags get the drawn, flippable tag on a
+ * soft stage (design chips crossfade its art); Racepack, Trisuit, Chill
+ * Band and the rest keep their photo gallery — same grouped layout and
+ * sticky add-to-cart bar above the safe area for both.
+ */
 export default function ProductDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { data: product, isPending, isError, error: loadError, refetch } = useProduct(slug);
@@ -36,6 +47,8 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const addItem = useAddCartItem();
   const cartCount = useCartCount();
+  const reduceMotion = useReducedMotion();
+  const { scrollY, onScroll } = useScrollY();
 
   const [selectedVariantUuid, setSelectedVariantUuid] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -55,8 +68,22 @@ export default function ProductDetailScreen() {
   const maxQuantity = Math.max(1, maxQuantityFor(variant));
   const qty = Math.min(quantity, maxQuantity);
   const isLegacyPlate = product?.type === 'legacy_plate';
+  const isTag = isTagProduct(product);
   const connected = product ? isConnectedProduct(product) : false;
-  const heroHeight = Math.min(Math.round(width * 1.05), 520);
+  const topInset = insets.top + NAV_HEIGHT;
+  const heroHeight = isTag ? Math.min(Math.round(width * 1.2), 560) + insets.top : Math.min(Math.round(width * 1.05), 520);
+  const parallax = useParallax(scrollY, heroHeight);
+  // Frosted circles only while the buttons float over the hero; plain glyphs once the bar is solid.
+  const [overHero, setOverHero] = useState(true);
+  const heroThreshold = heroHeight - 100;
+  useAnimatedReaction(
+    () => scrollY.value < heroThreshold,
+    (now, before) => {
+      if (now !== before) scheduleOnRN(setOverHero, now);
+    },
+  );
+  const design = variant?.tag_design ?? product?.tag_design ?? null;
+  const face = tagFaceFrom(design, { name: product?.name });
 
   async function add(mode: 'add' | 'buy') {
     if (!variant || soldOut) return;
@@ -78,12 +105,13 @@ export default function ProductDetailScreen() {
 
   if (isPending) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black }}>
-        <Skeleton height={heroHeight} radius={0} />
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Skeleton height={Math.min(Math.round(width * 1.05), 520)} radius={0} />
         <View style={{ padding: spacing.lg, gap: spacing.sm }}>
           <Skeleton height={14} width="30%" />
           <Skeleton height={28} width="80%" />
-          <Skeleton height={22} width="35%" />
+          <Skeleton height={52} radius={radius.lg} />
+          <Skeleton height={96} radius={radius.lg} />
         </View>
       </View>
     );
@@ -91,7 +119,7 @@ export default function ProductDetailScreen() {
 
   if (isError || !product) {
     return (
-      <View style={{ flex: 1, backgroundColor: colors.black, paddingTop: insets.top }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} size={26} />
         <ErrorState error={loadError} message="No pudimos cargar este producto." onRetry={refetch} />
       </View>
@@ -100,30 +128,39 @@ export default function ProductDetailScreen() {
 
   const webUrl = productWebUrl(product.slug);
   const price = variant ? formatMoney(variant.base_price_minor, variant.currency) : null;
+  const showQuantity = !soldOut && !isLegacyPlate;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.black }}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.lg }}>
-        <View>
-          <ProductGallery items={gallery} productName={product.name} width={width} height={heroHeight} webUrl={webUrl} />
-          <View style={{ position: 'absolute', top: insets.top + 4, left: spacing.sm, right: spacing.sm, flexDirection: 'row', justifyContent: 'space-between' }}>
-            <IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled size={24} />
-            <View style={{ flexDirection: 'row', gap: spacing.xs }}>
-              <IconButton icon={Share2} label="Compartir producto" onPress={() => Share.share({ message: webUrl, url: webUrl }).catch(() => {})} filled size={20} />
-              <IconButton icon={ShoppingCart} label="Carrito" badge={cartCount} onPress={() => router.push('/cart')} filled size={20} />
-            </View>
-          </View>
-        </View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.xl }}>
+        <Animated.View style={[{ overflow: 'hidden' }, reduceMotion ? null : parallax]}>
+          {isTag ? (
+            <TagHero face={face} accent={design?.accent ?? null} topInset={topInset} height={heroHeight} />
+          ) : (
+            <ProductGallery items={gallery} productName={product.name} width={width} height={heroHeight} webUrl={webUrl} />
+          )}
+        </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(motion.base)} style={{ paddingHorizontal: spacing.lg, paddingTop: spacing.lg, gap: spacing.lg }}>
+        <Animated.View
+          entering={reduceMotion ? undefined : FadeInDown.delay(80).duration(motion.base)}
+          style={{
+            marginTop: -spacing.lg,
+            borderTopLeftRadius: radius.xl,
+            borderTopRightRadius: radius.xl,
+            borderCurve: 'continuous',
+            backgroundColor: colors.background,
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.lg,
+            gap: spacing.lg,
+          }}>
           <View style={{ gap: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
               {product.category || product.brand ? (
-                <AppText variant="label" tone="gold" style={{ flexShrink: 1 }} numberOfLines={1}>
-                  {(product.category ?? product.brand ?? '').toUpperCase()}
+                <AppText variant="eyebrow" style={{ flexShrink: 1 }} numberOfLines={1}>
+                  {product.category ?? product.brand ?? ''}
                 </AppText>
               ) : null}
-              {connected ? <NfcBadge /> : null}
+              {connected || isTag ? <NfcBadge /> : null}
             </View>
             <AppText variant="title" style={{ fontSize: 26 }} accessibilityRole="header">
               {product.name}
@@ -133,18 +170,19 @@ export default function ProductDetailScreen() {
                 {product.short_description}
               </AppText>
             ) : null}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: 2 }}>
-              {price ? <AppText style={{ fontFamily: fontFamily.bold, fontSize: 22, color: colors.goldSoft }}>{price}</AppText> : null}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }} accessible accessibilityLabel={stock.label}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: STOCK_DOT[stock.tone] }} />
-                <AppText variant="caption" tone="muted">
-                  {stock.label}
-                </AppText>
-              </View>
-            </View>
           </View>
 
-          {!isLegacyPlate ? (
+          {isTag ? (
+            <DesignChips
+              label={variant ? `Diseño: ${variant.name}` : 'Elige un diseño'}
+              options={variants.map((v) => ({ value: v.uuid, label: v.name, disabled: false }))}
+              value={variant?.uuid ?? ''}
+              onChange={(uuid) => {
+                setSelectedVariantUuid(uuid);
+                setError(null);
+              }}
+            />
+          ) : !isLegacyPlate ? (
             <VariantPicker
               variants={variants}
               selected={variant}
@@ -155,58 +193,81 @@ export default function ProductDetailScreen() {
             />
           ) : null}
 
-          {!soldOut && !isLegacyPlate ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View>
-                <AppText variant="caption" tone="muted">
-                  Cantidad
-                </AppText>
-                {maxQuantity <= 3 ? (
-                  <AppText variant="caption" tone="gold">
-                    Máximo {maxQuantity} por ahora
+          <Grouped>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
+              <AppText variant="body">Precio</AppText>
+              <View style={{ alignItems: 'flex-end', gap: 2 }}>
+                {price ? <AppText style={{ fontFamily: fontFamily.heading, fontSize: 20, color: colors.foreground }}>{price}</AppText> : null}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }} accessible accessibilityLabel={stock.label}>
+                  <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: STOCK_DOT[stock.tone] }} />
+                  <AppText variant="caption" tone="muted">
+                    {stock.label}
                   </AppText>
-                ) : null}
+                </View>
               </View>
-              <QuantityStepper value={qty} onChange={setQuantity} max={maxQuantity} />
             </View>
-          ) : null}
+            {showQuantity ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View>
+                  <AppText variant="body">Cantidad</AppText>
+                  {maxQuantity <= 3 ? (
+                    <AppText variant="caption" tone="accent">
+                      Máximo {maxQuantity} por ahora
+                    </AppText>
+                  ) : null}
+                </View>
+                <QuantityStepper value={qty} onChange={setQuantity} max={maxQuantity} />
+              </View>
+            ) : null}
+            {product.requires_shipping ? (
+              <AppText variant="caption" tone="muted">
+                Producto físico · se entrega o envía después de confirmar tu pago.
+              </AppText>
+            ) : null}
+          </Grouped>
 
           {isLegacyPlate ? (
-            <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: 14, backgroundColor: colors.graphite }}>
-              <Info size={18} color={colors.gold} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: 14, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
+              <Info size={18} color={colors.accent} />
               <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
                 Cada Legacy Plate se graba con el resultado de un evento. Pídela desde la página del evento en el que corriste.
               </AppText>
             </View>
           ) : null}
 
-          <GearPromise connected={connected} isLegacyPlate={isLegacyPlate} />
+          {isTag ? <HowItWorksStrip /> : <GearPromise connected={connected} isLegacyPlate={isLegacyPlate} />}
 
           {product.description ? (
-            <View style={{ gap: spacing.xs }}>
-              <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Descripción</AppText>
+            <Grouped title="Descripción">
               <AppText variant="body" tone="muted" style={{ lineHeight: 23 }}>
                 {product.description}
               </AppText>
-            </View>
+            </Grouped>
           ) : null}
 
           <ProductSections sections={product.content_sections ?? []} />
-
-          {product.requires_shipping ? (
-            <AppText variant="caption" style={{ color: colors.subtle }}>
-              Producto físico · se entrega o envía después de confirmar tu pago.
-            </AppText>
-          ) : null}
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      <ScrollHeader
+        scrollY={scrollY}
+        title={product.name}
+        threshold={heroHeight - 100}
+        left={<IconButton icon={ChevronLeft} label="Volver" onPress={() => router.back()} filled={overHero} size={24} />}
+        right={
+          <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+            <IconButton icon={Share2} label="Compartir producto" onPress={() => Share.share({ message: webUrl, url: webUrl }).catch(() => {})} filled={overHero} size={20} />
+            <IconButton icon={ShoppingCart} label="Carrito" badge={cartCount} onPress={() => router.push('/cart')} filled={overHero} size={20} />
+          </View>
+        }
+      />
 
       <StickyFooter>
         <InlineError message={error} />
         {isLegacyPlate ? (
           <AppButton label="Ver eventos" variant="secondary" onPress={() => router.push('/events')} />
         ) : soldOut ? (
-          <AppButton label="Agotado" disabled onPress={() => {}} />
+          <AppButton label="Agotado" variant="secondary" disabled onPress={() => {}} />
         ) : (
           <View style={{ flexDirection: 'row', gap: spacing.sm }}>
             <AppButton

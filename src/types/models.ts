@@ -5,6 +5,7 @@
  */
 
 import type { LegacyMoment } from './social';
+import type { TagDesign } from '@/schemas/store';
 
 export type Visibility = 'public' | 'private';
 
@@ -574,6 +575,10 @@ export interface ProductSummary {
   secondary_image_url?: string | null;
   /** Additive: coarse stock signal across active variants. */
   stock_status?: StockStatus;
+  /** Additive (Finisher Legacy Tag products): drawn tag artwork. Parsed in api/storeProducts — invalid → null. */
+  tag_design?: TagDesign | null;
+  /** Additive: the collection this tag belongs to, when the server sends it. */
+  collection_slug?: string | null;
 }
 
 /** Coarse stock signal — never an exact count. */
@@ -611,6 +616,8 @@ export interface ProductVariant {
   size?: string | null;
   color?: string | null;
   color_hex?: string | null;
+  /** Additive: a design-specific tag artwork; falls back to the product's `tag_design`. */
+  tag_design?: TagDesign | null;
 }
 
 export interface ProductContentSection {
@@ -639,6 +646,8 @@ export interface ProductDetail {
   /** Omitted by the API when the `media` relation wasn't eager-loaded — default to []. */
   gallery?: ProductGalleryItem[];
   variants: ProductVariant[];
+  /** Additive (Finisher Legacy Tag products): drawn tag artwork. Parsed in api/storeProducts — invalid → null. */
+  tag_design?: TagDesign | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -664,6 +673,10 @@ export interface CartItem {
   size?: string | null;
   color?: string | null;
   nfc_enabled?: boolean;
+  /** Additive: lets the cart draw a tag thumbnail without another request. */
+  product_type?: string | null;
+  /** Additive, unvalidated here — read through `tagFaceFrom` (parses). */
+  tag_design?: unknown;
 }
 
 export interface CartCoupon {

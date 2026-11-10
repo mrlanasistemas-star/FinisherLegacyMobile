@@ -1,36 +1,71 @@
-import { router } from 'expo-router';
-import { Nfc, Receipt, ShoppingBag, ShoppingCart } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import { Receipt, ShoppingBag, ShoppingCart } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, View, useWindowDimensions } from 'react-native';
+import Animated, { Extrapolation, interpolate, useAnimatedStyle, useReducedMotion, type SharedValue } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { FormInput } from '@/components/form-input';
-import { Reveal } from '@/components/motion/reveal';
+import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
+import { Reveal, StaggerItem } from '@/components/motion/reveal';
+import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { Skeleton } from '@/components/skeleton';
 import { Chip } from '@/components/ui/chip';
 import { IconButton } from '@/components/ui/icon-button';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useCartCount } from '@/hooks/use-cart';
 import { useDebouncedValue } from '@/hooks/use-social';
-import { useProducts } from '@/hooks/use-store-products';
-import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
+import { useCollections, useProducts } from '@/hooks/use-store-products';
+import type { StoreCollection } from '@/schemas/store';
+import { colors, spacing } from '@/theme/tokens';
 import type { ProductCategoryOption, ProductSummary } from '@/types/models';
+import { formatMoney } from '@/utils/money';
 
+import { CollectionCarousel, type CarouselItem } from './components/collection-carousel';
 import { StoreProductTile } from './components/store-product-tile';
-import { isConnectedProduct } from './variant-options';
+import { isTagProduct, tagFaceFrom } from './tag-design';
 
 const GRID_GAP = spacing.md;
-const RAIL_WIDTH = 156;
+const NAV_HEIGHT = 52;
 
 const openProduct = (product: ProductSummary) => router.push(`/store/${product.slug}`);
+const openCollection = (collection: StoreCollection) => router.push(`/store/collection/${collection.slug}` as Href);
+
+function collectionItem(collection: StoreCollection): CarouselItem {
+  const eyebrow = [collection.discipline, collection.destination].filter(Boolean).join(' · ') || null;
+  return {
+    key: `c-${collection.slug}`,
+    title: collection.name,
+    eyebrow,
+    subtitle: collection.tagline,
+    cta: collection.products_count ? `Ver ${collection.products_count} ${collection.products_count === 1 ? 'pieza' : 'piezas'}` : 'Ver colección',
+    face: tagFaceFrom(collection.tag_design, { name: collection.destination ?? collection.name, discipline: collection.discipline }),
+    accent: collection.tag_design?.accent ?? null,
+    onPress: () => openCollection(collection),
+  };
+}
+
+function tagProductItem(product: ProductSummary): CarouselItem {
+  return {
+    key: `p-${product.uuid}`,
+    title: product.name,
+    eyebrow: product.category,
+    subtitle: null,
+    cta: product.from_price_minor !== null ? `Desde ${formatMoney(product.from_price_minor, product.currency)}` : 'Ver pieza',
+    face: tagFaceFrom(product.tag_design, { name: product.name }),
+    accent: product.tag_design?.accent ?? null,
+    onPress: () => openProduct(product),
+  };
+}
 
 /**
- * Tienda — editorial when browsing (hero, Lo más nuevo, Productos
- * conectados, Colección Legacy, catálogo), focused when searching or
- * filtering (just the results grid). Rails hide themselves when empty.
+ * Colecciones (store tab): large title that collapses into the frosted bar,
+ * a Wallet-style carousel of Finisher Legacy Tag collections drawn from
+ * their `tag_design`, then the catalog grid. Everything comes from the API:
+ * an empty response is an empty state, never a placeholder product.
  */
 export function StoreHomeScreen() {
   const [category, setCategory] = useState<string | null>(null);
@@ -38,31 +73,44 @@ export function StoreHomeScreen() {
   const q = useDebouncedValue(search.trim(), 400);
   const filtering = !!category || q.length >= 2;
   const cartCount = useCartCount();
+  const insets = useSafeAreaInsets();
+  const { scrollY, onScroll } = useScrollY();
 
   const products = useProducts({ ...(category ? { category } : {}), ...(q.length >= 2 ? { q } : {}), sort: 'newest' });
-  const legacy = useProducts({ type: 'legacy_plate', sort: 'newest' });
+  const tags = useProducts({ type: 'legacy_tag', sort: 'newest' });
+  const collections = useCollections();
   const rows = useMemo<ProductSummary[]>(() => products.data?.pages.flatMap((page) => page.rows) ?? [], [products.data]);
   const categories: ProductCategoryOption[] = products.data?.pages[0]?.categories ?? [];
 
-  const editorial = useMemo(() => {
-    if (filtering) return null;
-    const first = products.data?.pages[0]?.rows ?? [];
-    const hero = first.find((p) => p.is_featured && p.in_stock) ?? first.find((p) => p.in_stock) ?? first[0];
-    const fresh = first.filter((p) => p.uuid !== hero?.uuid && p.type !== 'legacy_plate').slice(0, 8);
-    const connected = first.filter((p) => p.uuid !== hero?.uuid && isConnectedProduct(p) && p.type !== 'legacy_plate').slice(0, 8);
-    const plates = (legacy.data?.pages[0]?.rows ?? []).slice(0, 8);
-    return { hero, fresh, connected, plates };
-  }, [filtering, products.data, legacy.data]);
+  // Collections first; on a backend without them, the tag products themselves.
+  const carousel = useMemo<CarouselItem[]>(() => {
+    if (filtering) return [];
+    const published = collections.data ?? [];
+    if (published.length > 0) return published.map(collectionItem);
+    return (tags.data?.pages[0]?.rows ?? []).filter(isTagProduct).slice(0, 10).map(tagProductItem);
+  }, [filtering, collections.data, tags.data]);
+
+  const refreshing = (products.isRefetching && !products.isFetchingNextPage) || collections.isRefetching;
 
   const header = (
     <View style={{ gap: spacing.lg, paddingBottom: spacing.md }}>
+      <LargeTitle scrollY={scrollY} />
       <FormInput kind="search" placeholder="Buscar en la tienda" value={search} onChangeText={setSearch} accessibilityLabel="Buscar productos" />
+
+      {carousel.length > 0 ? (
+        <Reveal delay={60} style={{ gap: spacing.sm }}>
+          <SectionHeader title={collections.data?.length ? 'Colecciones Finisher Legacy Tag' : 'Finisher Legacy Tag'} style={{ marginBottom: 0 }} />
+          <CollectionCarousel items={carousel} />
+        </Reveal>
+      ) : collections.isPending && !filtering ? (
+        <CarouselSkeleton />
+      ) : null}
 
       {categories.length > 0 ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={{ marginHorizontal: -spacing.lg, marginTop: -spacing.sm }}
+          style={{ marginHorizontal: -spacing.lg }}
           contentContainerStyle={{ gap: spacing.xs, paddingHorizontal: spacing.lg }}
           accessibilityRole="tablist">
           <Chip label="Todo" selected={category === null} onPress={() => setCategory(null)} />
@@ -72,40 +120,6 @@ export function StoreHomeScreen() {
         </ScrollView>
       ) : null}
 
-      {editorial?.hero ? (
-        <Reveal>
-          <View style={{ gap: spacing.sm }}>
-            <AppText variant="label" tone="gold">
-              EQUIPO QUE SE VUELVE HISTORIA
-            </AppText>
-            <StoreProductTile product={editorial.hero} layout="hero" onPress={() => openProduct(editorial.hero as ProductSummary)} />
-          </View>
-        </Reveal>
-      ) : null}
-
-      {editorial && editorial.fresh.length > 0 ? <Rail title="Lo más nuevo" products={editorial.fresh} delay={80} /> : null}
-
-      {editorial && editorial.connected.length > 0 ? (
-        <Reveal delay={140}>
-          <View style={{ gap: spacing.sm }}>
-            <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center', padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.hairline }}>
-              <View style={{ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
-                <Nfc size={20} color={colors.gold} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16 }}>Productos conectados</AppText>
-                <AppText variant="caption" tone="muted">
-                  Acerca tu teléfono y quedan en Mi Equipo, unidos a tus carreras.
-                </AppText>
-              </View>
-            </View>
-            <RailList products={editorial.connected} />
-          </View>
-        </Reveal>
-      ) : null}
-
-      {editorial && editorial.plates.length > 0 ? <Rail title="Colección Legacy" products={editorial.plates} delay={200} /> : null}
-
       {rows.length > 0 ? (
         <SectionHeader title={filtering ? `${products.data?.pages[0]?.total ?? rows.length} resultados` : 'Todo el catálogo'} style={{ marginBottom: 0 }} />
       ) : null}
@@ -113,53 +127,44 @@ export function StoreHomeScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.xs, paddingBottom: spacing.sm }}>
-        <AppText variant="hero" style={{ fontSize: 38, lineHeight: 40, flex: 1 }} accessibilityRole="header">
-          TIENDA
-        </AppText>
-        <IconButton icon={Receipt} label="Mis pedidos" onPress={() => router.push('/orders')} />
-        <IconButton icon={ShoppingCart} label={cartCount > 0 ? `Carrito, ${cartCount} productos` : 'Carrito'} badge={cartCount} onPress={() => router.push('/cart')} style={{ marginRight: -10 }} />
-      </View>
-
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {products.isPending && !products.data ? (
-        <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg }}>
-          <Skeleton height={48} />
-          <Skeleton height={260} radius={20} />
-          <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
-            <Skeleton height={200} radius={16} style={{ flex: 1 }} />
-            <Skeleton height={200} radius={16} style={{ flex: 1 }} />
-          </View>
-        </View>
+        <StoreSkeleton top={insets.top + NAV_HEIGHT} />
       ) : products.isError && !products.data ? (
-        <ErrorState error={products.error} message="No pudimos cargar la tienda." onRetry={products.refetch} />
+        <View style={{ flex: 1, paddingTop: insets.top + NAV_HEIGHT }}>
+          <ErrorState error={products.error} message="No pudimos cargar la tienda." onRetry={products.refetch} />
+        </View>
       ) : (
-        <FlatList
+        <Animated.FlatList
           data={rows}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
           numColumns={2}
           keyExtractor={(item) => item.uuid}
           columnWrapperStyle={{ gap: GRID_GAP }}
-          contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg, paddingBottom: spacing.xxl, flexGrow: 1 }}
+          contentContainerStyle={{ gap: spacing.lg, paddingHorizontal: spacing.lg, paddingTop: insets.top + NAV_HEIGHT, paddingBottom: spacing.xxl, flexGrow: 1 }}
           ListHeaderComponent={header}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           refreshControl={
-            <RefreshControl
-              refreshing={products.isRefetching && !products.isFetchingNextPage}
+            <BrandRefreshControl
+              refreshing={refreshing}
+              progressViewOffset={insets.top + NAV_HEIGHT}
               onRefresh={() => {
                 products.refetch();
-                legacy.refetch();
+                tags.refetch();
+                collections.refetch();
               }}
-              tintColor={colors.gold}
             />
           }
           onEndReachedThreshold={0.4}
           onEndReached={() => products.hasNextPage && !products.isFetchingNextPage && products.fetchNextPage()}
           ListFooterComponent={products.isFetchingNextPage ? <Skeleton height={200} radius={16} /> : null}
-          renderItem={({ item }) => (
-            <View style={{ flex: 1, maxWidth: '50%' }}>
+          renderItem={({ item, index }) => (
+            <StaggerItem index={index} style={{ flex: 1, maxWidth: '50%' }}>
               <StoreProductTile product={item} onPress={() => openProduct(item)} />
-            </View>
+            </StaggerItem>
           )}
           ListEmptyComponent={
             filtering ? (
@@ -175,38 +180,83 @@ export function StoreHomeScreen() {
                 }}
               />
             ) : (
-              <EmptyState icon={ShoppingBag} title="La tienda está por abrir" message="Muy pronto encontrarás aquí el equipo Finisher Legacy." />
+              <EmptyState icon={ShoppingBag} title="Aún no hay productos" message="Cuando la tienda publique piezas aparecerán aquí." />
             )
           }
         />
       )}
-    </SafeAreaView>
+
+      <ScrollHeader
+        scrollY={scrollY}
+        title="Colecciones"
+        threshold={56}
+        right={
+          <>
+            <IconButton icon={Receipt} label="Mis pedidos" onPress={() => router.push('/orders')} />
+            <IconButton icon={ShoppingCart} label={cartCount > 0 ? `Carrito, ${cartCount} productos` : 'Carrito'} badge={cartCount} onPress={() => router.push('/cart')} />
+          </>
+        }
+      />
+    </View>
   );
 }
 
-function Rail({ title, products, delay }: { title: string; products: ProductSummary[]; delay: number }) {
+/**
+ * iOS large title: fades and lifts as the list scrolls under the frosted
+ * bar (which takes over with the compact title), and stretches a little
+ * from its leading edge on pull-down.
+ */
+function LargeTitle({ scrollY }: { scrollY: SharedValue<number> }) {
+  const reduceMotion = useReducedMotion();
+  const style = useAnimatedStyle(() => {
+    const opacity = interpolate(scrollY.value, [0, 48], [1, 0], Extrapolation.CLAMP);
+    if (reduceMotion) return { opacity };
+    return {
+      opacity,
+      transform: [
+        { translateY: interpolate(scrollY.value, [0, 48], [0, -6], Extrapolation.CLAMP) },
+        { scale: interpolate(scrollY.value, [-140, 0], [1.1, 1], Extrapolation.CLAMP) },
+      ],
+    };
+  });
   return (
-    <Reveal delay={delay}>
-      <View style={{ gap: spacing.sm }}>
-        <SectionHeader title={title} style={{ marginBottom: 0 }} />
-        <RailList products={products} />
+    <Animated.View style={[{ gap: 2, transformOrigin: 'left' }, style]}>
+      <AppText variant="display" accessibilityRole="header">
+        Colecciones
+      </AppText>
+      <AppText variant="body" tone="muted">
+        Finisher Legacy Tag y equipo que guarda tu historia.
+      </AppText>
+    </Animated.View>
+  );
+}
+
+function CarouselSkeleton() {
+  const { width } = useWindowDimensions();
+  const cardW = Math.min(Math.round(width * 0.7), 320);
+  const cardH = Math.round(cardW * 0.92) + 96;
+  return (
+    <View style={{ gap: spacing.sm }}>
+      <Skeleton width="55%" height={20} />
+      <View style={{ flexDirection: 'row', gap: 14, marginHorizontal: -spacing.lg, paddingLeft: (width - cardW) / 2, overflow: 'hidden' }}>
+        <Skeleton width={cardW} height={cardH} radius={26} />
+        <Skeleton width={cardW} height={cardH} radius={26} style={{ opacity: 0.6, transform: [{ scale: 0.88 }] }} />
       </View>
-    </Reveal>
+    </View>
   );
 }
 
-function RailList({ products }: { products: ProductSummary[] }) {
+function StoreSkeleton({ top }: { top: number }) {
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      decelerationRate="fast"
-      snapToInterval={RAIL_WIDTH + spacing.md}
-      style={{ marginHorizontal: -spacing.lg }}
-      contentContainerStyle={{ gap: spacing.md, paddingHorizontal: spacing.lg }}>
-      {products.map((product) => (
-        <StoreProductTile key={product.uuid} product={product} layout="rail" width={RAIL_WIDTH} onPress={() => openProduct(product)} />
-      ))}
-    </ScrollView>
+    <View style={{ gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: top }}>
+      <Skeleton width="60%" height={34} />
+      <Skeleton width="80%" height={16} />
+      <Skeleton height={48} radius={14} />
+      <CarouselSkeleton />
+      <View style={{ flexDirection: 'row', gap: GRID_GAP }}>
+        <Skeleton height={200} radius={16} style={{ flex: 1 }} />
+        <Skeleton height={200} radius={16} style={{ flex: 1 }} />
+      </View>
+    </View>
   );
 }

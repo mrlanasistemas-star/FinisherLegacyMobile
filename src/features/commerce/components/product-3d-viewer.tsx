@@ -29,7 +29,7 @@ export function isSafeMediaUrl(url: string | null | undefined): url is string {
 export function buildModelViewerHtml(modelUrl: string, posterUrl: string | null, alt: string): string {
   const config = JSON.stringify({ src: modelUrl, poster: isSafeMediaUrl(posterUrl) ? posterUrl : null, alt }).replace(/</g, '\\u003c');
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<style>html,body{margin:0;height:100%;background:${colors.black};overflow:hidden}model-viewer{width:100%;height:100%;--poster-color:transparent;background:radial-gradient(circle at 50% 40%,#232327 0%,${colors.black} 70%)}</style>
+<style>html,body{margin:0;height:100%;background:${colors.background};overflow:hidden}model-viewer{width:100%;height:100%;--poster-color:transparent;background:radial-gradient(circle at 50% 40%,#FFFFFF 0%,${colors.background} 70%)}</style>
 <script type="module" src="${MODEL_VIEWER_SRC}"></script></head><body>
 <model-viewer id="mv" camera-controls touch-action="pan-y" auto-rotate auto-rotate-delay="1200" rotation-per-second="18deg" interaction-prompt="auto" shadow-intensity="0.8" exposure="1.05" environment-image="neutral"></model-viewer>
 <script>
@@ -70,7 +70,7 @@ export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, product
 
   return (
     <Modal visible={visible} animationType="fade" onRequestClose={onClose} statusBarTranslucent supportedOrientations={['portrait']}>
-      <View style={{ flex: 1, backgroundColor: colors.black }}>
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
         {visible && isSafeMediaUrl(modelUrl) ? (
           <WebView
             ref={webRef}
@@ -83,15 +83,15 @@ export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, product
             allowFileAccess={false}
             allowsInlineMediaPlayback
             setSupportMultipleWindows={false}
-            style={{ flex: 1, backgroundColor: colors.black }}
-            containerStyle={{ backgroundColor: colors.black }}
+            style={{ flex: 1, backgroundColor: colors.background }}
+            containerStyle={{ backgroundColor: colors.background }}
             accessibilityLabel={`Modelo 3D de ${productName}. Arrastra para girarlo y pellizca para acercar.`}
           />
         ) : null}
 
         {state === 'loading' ? (
           <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
-            <ActivityIndicator color={colors.gold} />
+            <ActivityIndicator color={colors.accent} />
             <AppText variant="caption" tone="muted">
               Preparando la vista 3D…
             </AppText>
@@ -99,8 +99,8 @@ export function Product3DViewer({ visible, onClose, modelUrl, posterUrl, product
         ) : null}
 
         {state === 'error' || !isSafeMediaUrl(modelUrl) ? (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.black }}>
-            <Box size={40} color={colors.goldDim} />
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl, backgroundColor: colors.background }}>
+            <Box size={40} color={colors.accent} strokeWidth={1.4} />
             <AppText variant="subtitle" align="center">
               No pudimos mostrar el modelo aquí
             </AppText>

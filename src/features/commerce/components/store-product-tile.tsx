@@ -5,10 +5,12 @@ import { View } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { PressScale } from '@/components/motion/press-scale';
+import { TagRender, TagStage } from '@/components/tag';
 import { colors, fontFamily, spacing } from '@/theme/tokens';
 import type { ProductSummary } from '@/types/models';
 import { formatMoney } from '@/utils/money';
 
+import { isTagProduct, tagFaceFrom } from '../tag-design';
 import { isConnectedProduct } from '../variant-options';
 import { NfcBadge } from './product-story';
 
@@ -27,16 +29,23 @@ export const StoreProductTile = memo(function StoreProductTile({ product, onPres
   const connected = isConnectedProduct(product);
   const price = product.from_price_minor !== null ? formatMoney(product.from_price_minor, product.currency) : null;
   const hero = layout === 'hero';
+  const tag = isTagProduct(product);
+  const face = tag ? tagFaceFrom(product.tag_design, { name: product.name }) : null;
 
   const label = [product.name, price ? `desde ${price}` : null, connected ? 'producto conectado' : null, soldOut ? 'agotado' : low ? 'últimas piezas' : null]
     .filter(Boolean)
     .join(', ');
 
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={{ width, flex: layout === 'grid' ? 1 : undefined }}>
+    <PressScale onPress={onPress} haptic accessibilityRole="button" accessibilityLabel={label} style={{ width, flex: layout === 'grid' ? 1 : undefined }}>
       <View style={{ gap: spacing.xs }}>
-        <View style={{ aspectRatio: hero ? 4 / 3 : 4 / 5, borderRadius: hero ? 20 : 16, overflow: 'hidden', backgroundColor: colors.graphite }}>
-          {product.image_url ? (
+        <View style={{ aspectRatio: hero ? 4 / 3 : 4 / 5, borderRadius: hero ? 20 : 16, overflow: 'hidden', borderCurve: 'continuous', backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.hairline }}>
+          {face ? (
+            // Finisher Legacy Tags are drawn from their `tag_design` — the same art as the web.
+            <TagStage accent={product.tag_design?.accent} bordered={false} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', opacity: soldOut ? 0.6 : 1 }}>
+              <TagRender face={face} size="sm" width={hero ? 96 : 66} style={{ transform: [{ rotate: '-4deg' }] }} />
+            </TagStage>
+          ) : product.image_url ? (
             <Image
               source={{ uri: product.image_url }}
               style={{ width: '100%', height: '100%', opacity: soldOut ? 0.55 : 1 }}
@@ -47,25 +56,26 @@ export const StoreProductTile = memo(function StoreProductTile({ product, onPres
             />
           ) : (
             <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <ShoppingBag size={32} color={colors.goldDim} />
+              <ShoppingBag size={32} color={colors.accent} strokeWidth={1.5} />
             </View>
           )}
-          <View style={{ position: 'absolute', top: 8, left: 8, right: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          {/* Badges sit at the bottom corner: at the top they covered the Tag's loop. */}
+          <View style={{ position: 'absolute', bottom: 8, left: 8, right: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             {connected ? <NfcBadge floating /> : null}
             {soldOut ? <Pill label="Agotado" /> : low ? <Pill label="Últimas piezas" gold /> : product.is_new ? <Pill label="Nuevo" gold /> : null}
           </View>
         </View>
         <View style={{ gap: 1 }}>
           {product.category || product.brand ? (
-            <AppText variant="label" tone="gold" numberOfLines={1} style={{ fontSize: 11 }}>
+            <AppText variant="eyebrow" numberOfLines={1} style={{ fontSize: 10, letterSpacing: 1.6 }}>
               {(product.category ?? product.brand ?? '').toUpperCase()}
             </AppText>
           ) : null}
-          <AppText style={{ fontFamily: fontFamily.medium, fontSize: hero ? 18 : 14 }} numberOfLines={2}>
+          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: hero ? 18 : 14, lineHeight: hero ? 18 * 1.3 : 19 }} numberOfLines={2}>
             {product.name}
           </AppText>
           {price ? (
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: hero ? 16 : 14, color: colors.goldSoft }}>
+            <AppText style={{ fontFamily: fontFamily.bold, fontSize: hero ? 16 : 14, color: colors.foreground }}>
               {product.from_price_minor !== null ? price : ''}
             </AppText>
           ) : null}
@@ -77,8 +87,8 @@ export const StoreProductTile = memo(function StoreProductTile({ product, onPres
 
 function Pill({ label, gold = false }: { label: string; gold?: boolean }) {
   return (
-    <View style={{ backgroundColor: 'rgba(10,10,12,0.78)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, borderWidth: gold ? 1 : 0, borderColor: colors.goldDim }}>
-      <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: gold ? colors.gold : colors.foreground }}>{label}</AppText>
+    <View style={{ backgroundColor: 'rgba(11,11,12,0.78)', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4, borderWidth: gold ? 1 : 0, borderColor: colors.goldDim }}>
+      <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, color: gold ? colors.goldSoft : colors.onDark }}>{label}</AppText>
     </View>
   );
 }

@@ -29,6 +29,8 @@ export const queryKeys = {
 
   products: (filters: object) => ['store', 'products', filters] as const,
   product: (slug: string) => ['store', 'product', slug] as const,
+  collections: ['store', 'collections'] as const,
+  collection: (slug: string) => ['store', 'collections', slug] as const,
   cart: ['cart'] as const,
   orders: ['orders'] as const,
   order: (uuid: string) => ['orders', uuid] as const,

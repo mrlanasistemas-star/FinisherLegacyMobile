@@ -134,12 +134,12 @@ function OptionChip({ label, active, unavailable, onPress }: { label: string; ac
         borderRadius: 12,
         borderWidth: 1,
         borderColor: active ? colors.gold : colors.inputBorder,
-        backgroundColor: active ? colors.goldWash : 'transparent',
+        backgroundColor: active ? colors.goldWash : colors.card,
         alignItems: 'center',
         justifyContent: 'center',
         opacity: unavailable ? 0.4 : pressed ? 0.7 : 1,
       })}>
-      <AppText style={{ fontFamily: fontFamily.medium, fontSize: 15, color: active ? colors.gold : colors.foreground, textDecorationLine: unavailable ? 'line-through' : 'none' }}>{label}</AppText>
+      <AppText style={{ fontFamily: fontFamily.medium, fontSize: 15, color: active ? colors.foreground : colors.foreground, fontWeight: active ? '700' : '500', textDecorationLine: unavailable ? 'line-through' : 'none' }}>{label}</AppText>
     </Pressable>
   );
 }

@@ -3,7 +3,7 @@ import { CircleAlert, Clock, CreditCard, Lock, PartyPopper, ShieldCheck, Truck, 
 import type { LucideIcon } from 'lucide-react-native';
 import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
-import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, { FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { InlineError } from '@/components/ui/inline-error';
 import { StickyFooter } from '@/components/ui/sticky-footer';
+import { CartItemThumb } from '@/features/commerce/components/cart-item-thumb';
 import { useCart } from '@/hooks/use-cart';
 import { useOrder } from '@/hooks/use-orders';
 import { usePaymentFlow } from '@/hooks/use-payment-flow';
@@ -57,15 +58,15 @@ export default function CheckoutScreen() {
   if (phase === 'review') {
     if (!cartPending && (!cart || cart.items.length === 0)) {
       return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.black }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
           <Header onClose={() => router.back()} />
-          <EmptyState icon={Lock} title="No hay nada que pagar" message="Tu carrito está vacío." actionLabel="Ir a la tienda" onAction={() => router.replace('/store')} />
+          <EmptyState icon={Lock} title="No hay nada que pagar" message="Tu carrito está vacío." actionLabel="Ver colecciones" onAction={() => router.replace('/store')} />
         </SafeAreaView>
       );
     }
 
     return (
-      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+      <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
         <Header onClose={() => router.back()} title="Confirmar y pagar" />
         {cartPending || !cart ? (
           <View style={{ padding: spacing.lg, gap: spacing.md }}>
@@ -96,12 +97,11 @@ export default function CheckoutScreen() {
                 </AppText>
               </Section>
 
-              <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
-                <AppText variant="label" tone="muted">
-                  RESUMEN
-                </AppText>
+              <View style={{ gap: spacing.sm, marginTop: spacing.xs, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
+                <AppText variant="eyebrow" tone="subtle">Resumen</AppText>
                 {cart.items.map((item) => (
-                  <View key={item.id} style={{ flexDirection: 'row', gap: spacing.sm }}>
+                  <View key={item.id} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <CartItemThumb item={item} width={40} height={48} radius={10} />
                     <AppText variant="body" tone="muted" style={{ width: 28 }}>
                       {item.quantity}×
                     </AppText>
@@ -120,7 +120,7 @@ export default function CheckoutScreen() {
                 ))}
               </View>
 
-              <View style={{ gap: spacing.xs, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+              <View style={{ gap: spacing.xs, paddingTop: spacing.sm, paddingHorizontal: spacing.md }}>
                 <Row label="Subtotal" value={formatMoney(cart.subtotal_minor, cart.currency)} />
                 {cart.discount_minor > 0 ? <Row label={`Descuento${cart.coupon ? ` (${cart.coupon.code})` : ''}`} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} /> : null}
                 <Row label="Total" value={formatMoney(cart.total_minor, cart.currency)} strong />
@@ -136,7 +136,7 @@ export default function CheckoutScreen() {
 
             <StickyFooter>
               <InlineError message={message} />
-              <AppButton label={`Pagar ${formatMoney(cart.total_minor, cart.currency)}`} icon={Lock} onPress={flow.checkoutAndPay} disabled={cart.items.length === 0} />
+              <AppButton label={`Pagar ${formatMoney(cart.total_minor, cart.currency)}`} variant="legacy" onPress={flow.checkoutAndPay} disabled={cart.items.length === 0} />
             </StickyFooter>
           </>
         )}
@@ -148,8 +148,8 @@ export default function CheckoutScreen() {
   if (busy) {
     const copy = PAYMENT_PHASE_COPY[phase];
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.black, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl }}>
-        <ActivityIndicator size="large" color={colors.gold} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center', gap: spacing.md, padding: spacing.xl }}>
+        <ActivityIndicator size="large" color={colors.accent} />
         <AppText variant="subtitle" align="center" accessibilityLiveRegion="polite">
           {copy.title}
         </AppText>
@@ -167,7 +167,7 @@ export default function CheckoutScreen() {
   const total = shownOrder ? formatMoney(shownOrder.total_minor, shownOrder.currency) : null;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Header onClose={close} />
       <Animated.View entering={FadeIn.duration(240)} style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xl, gap: spacing.md }}>
         <OutcomeBadge key={phase} phase={phase} />
@@ -185,7 +185,7 @@ export default function CheckoutScreen() {
         </AppText>
         {phase === 'processing' && settlement.isFetching ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-            <ActivityIndicator size="small" color={colors.goldDim} />
+            <ActivityIndicator size="small" color={colors.accent} />
             <AppText variant="caption" tone="muted">
               Esperando la confirmación…
             </AppText>
@@ -197,7 +197,7 @@ export default function CheckoutScreen() {
         {phase === 'paid' || phase === 'processing' || phase === 'unavailable' ? (
           <>
             {order ? <AppButton label="Ver mi pedido" onPress={() => router.replace(`/orders/${order.uuid}`)} /> : null}
-            <AppButton label="Seguir explorando la tienda" variant="ghost" onPress={() => router.replace('/store')} />
+            <AppButton label="Seguir viendo colecciones" variant="ghost" onPress={() => router.replace('/store')} />
           </>
         ) : phase === 'failed' || phase === 'cancelled' ? (
           <>
@@ -216,16 +216,16 @@ function Header({ onClose, title }: { onClose: () => void; title?: string }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 52, paddingHorizontal: spacing.sm }}>
       <IconButton icon={X} label="Cerrar" onPress={onClose} />
-      <AppText style={{ flex: 1, textAlign: 'center', fontFamily: fontFamily.semibold, fontSize: 16, marginRight: 44 }}>{title ?? ''}</AppText>
+      <AppText accessibilityRole="header" style={{ flex: 1, textAlign: 'center', fontFamily: fontFamily.headingSemibold, fontSize: 16, marginRight: 44 }}>{title ?? ''}</AppText>
     </View>
   );
 }
 
 function Section({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
   return (
-    <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.hairline }}>
+    <View style={{ flexDirection: 'row', gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
       <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
-        <Icon size={16} color={colors.gold} />
+        <Icon size={16} color={colors.accent} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <AppText accessibilityRole="header" style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>
@@ -241,28 +241,29 @@ function Row({ label, value, strong = false }: { label: string; value: string; s
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
       <AppText style={{ fontFamily: strong ? fontFamily.semibold : fontFamily.regular, fontSize: strong ? 18 : 15, color: strong ? colors.foreground : colors.muted }}>{label}</AppText>
-      <AppText style={{ fontFamily: strong ? fontFamily.bold : fontFamily.medium, fontSize: strong ? 20 : 15, color: strong ? colors.goldSoft : colors.foreground }}>{value}</AppText>
+      <AppText style={{ fontFamily: strong ? fontFamily.heading : fontFamily.medium, fontSize: strong ? 20 : 15, color: colors.foreground }}>{value}</AppText>
     </View>
   );
 }
 
 function OutcomeBadge({ phase }: { phase: PaymentPhase }) {
-  const scale = useSharedValue(0.5);
+  const reduceMotion = useReducedMotion();
+  const scale = useSharedValue(reduceMotion ? 1 : 0.5);
   useEffect(() => {
-    scale.value = withSpring(1, { damping: 11, stiffness: 140 });
-  }, [scale]);
+    scale.value = reduceMotion ? 1 : withSpring(1, { damping: 13, stiffness: 160 });
+  }, [scale, reduceMotion]);
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const success = phase === 'paid';
   const Icon = success ? PartyPopper : phase === 'processing' || phase === 'unavailable' ? Clock : CircleAlert;
-  const tint = success ? colors.gold : phase === 'processing' || phase === 'unavailable' ? colors.goldSoft : colors.destructive;
+  const tint = success ? colors.gold : phase === 'processing' || phase === 'unavailable' ? colors.accent : colors.destructive;
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm }}>
       {success ? <GoldGlow size={200} style={{ position: 'absolute' }} /> : null}
       <Animated.View
         style={[
-          { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: success ? colors.gold : colors.graphite },
+          { width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', backgroundColor: success ? colors.gold : colors.card, borderWidth: success ? 0 : 1, borderColor: colors.border },
           style,
         ]}>
         <Icon size={38} color={success ? colors.black : tint} strokeWidth={2} />

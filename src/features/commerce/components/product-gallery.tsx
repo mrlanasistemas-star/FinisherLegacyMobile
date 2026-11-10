@@ -35,14 +35,14 @@ export function ProductGallery({ items, productName, width, height, webUrl }: Pr
 
   if (items.length === 0) {
     return (
-      <View style={{ width, height, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.graphite }}>
-        <ShoppingBag size={48} color={colors.goldDim} />
+      <View style={{ width, height, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceMuted }}>
+        <ShoppingBag size={48} color={colors.accent} strokeWidth={1.4} />
       </View>
     );
   }
 
   return (
-    <View style={{ width, height, backgroundColor: colors.graphite }}>
+    <View style={{ width, height, backgroundColor: colors.surfaceMuted }}>
       <FlatList
         data={items}
         horizontal
@@ -85,9 +85,9 @@ export function ProductGallery({ items, productName, width, height, webUrl }: Pr
           onPress={() => setModel(items.find((item) => item.type === 'model_3d') ?? null)}
           accessibilityRole="button"
           accessibilityLabel="Ver producto en 3D"
-          style={{ position: 'absolute', right: spacing.md, bottom: 36, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, borderRadius: 22, backgroundColor: 'rgba(10,10,12,0.72)', borderWidth: 1, borderColor: colors.goldDim }}>
-          <Box size={16} color={colors.gold} />
-          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 13, color: colors.foreground }}>3D</AppText>
+          style={{ position: 'absolute', right: spacing.md, bottom: 36, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, borderRadius: 22, backgroundColor: 'rgba(11,11,12,0.72)', borderWidth: 1, borderColor: 'rgba(201,174,139,0.5)' }}>
+          <Box size={16} color={colors.goldSoft} />
+          <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 13, color: colors.onDark }}>3D</AppText>
         </Pressable>
       ) : null}
 
@@ -105,8 +105,8 @@ function ModelTile({ item, onOpen }: { item: ProductGalleryItem; onOpen: () => v
     <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel="Ver producto en 3D" style={{ flex: 1 }}>
       {item.poster_url ? <Image source={{ uri: item.poster_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : null}
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
-        <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,10,12,0.66)', borderWidth: 1, borderColor: colors.goldDim }}>
-          <Box size={30} color={colors.gold} />
+        <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(11,11,12,0.66)', borderWidth: 1, borderColor: colors.goldDim }}>
+          <Box size={30} color={colors.goldSoft} />
         </View>
         <AppText style={{ fontFamily: fontFamily.semibold, color: colors.foreground }}>Ver en 3D</AppText>
       </View>
@@ -126,7 +126,7 @@ function GalleryVideo({ item }: { item: ProductGalleryItem }) {
       <Pressable onPress={() => setPlaying(true)} style={{ width: '100%', height: '100%' }} accessibilityRole="button" accessibilityLabel="Reproducir video del producto">
         {item.poster_url ? <Image source={{ uri: item.poster_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : null}
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, alignItems: 'center', justifyContent: 'center' }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(10,10,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(11,11,12,0.6)', alignItems: 'center', justifyContent: 'center' }}>
             <Play color={colors.white} size={26} fill={colors.white} />
           </View>
         </View>
@@ -146,7 +146,7 @@ function ImageViewer({ images, startIndex, onClose, productName }: { images: Pro
   return (
     <Modal visible animationType="fade" onRequestClose={onClose} statusBarTranslucent>
       {/* Modals render outside the app root on Android — gestures need their own root. */}
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black }} onLayout={(event) => setSize(event.nativeEvent.layout)}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }} onLayout={(event) => setSize(event.nativeEvent.layout)}>
         {size.width > 0 ? (
           <FlatList
             data={images}

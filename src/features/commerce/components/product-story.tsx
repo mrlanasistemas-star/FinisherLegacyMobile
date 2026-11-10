@@ -1,10 +1,10 @@
 import { ChevronDown, Nfc, ShieldCheck, Smartphone, Sparkles } from 'lucide-react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, View } from 'react-native';
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { AppText } from '@/components/app-text';
-import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
+import { colors, fontFamily, radius, spacing, springs } from '@/theme/tokens';
 import type { ProductContentSection } from '@/types/models';
 import { haptics } from '@/utils/haptics';
 
@@ -22,12 +22,12 @@ export function NfcBadge({ floating = false }: { floating?: boolean }) {
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: radius.pill,
-        backgroundColor: floating ? 'rgba(10,10,12,0.72)' : colors.goldWash,
+        backgroundColor: floating ? 'rgba(11,11,12,0.72)' : colors.goldWash,
         borderWidth: 1,
-        borderColor: colors.goldDim,
+        borderColor: floating ? 'rgba(201,174,139,0.5)' : colors.gold,
       }}>
-      <Nfc size={13} color={colors.gold} />
-      <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, letterSpacing: 0.6, color: colors.gold }}>NFC</AppText>
+      <Nfc size={13} color={floating ? colors.goldSoft : colors.accent} />
+      <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 11, letterSpacing: 0.6, color: floating ? colors.goldSoft : colors.accent }}>NFC</AppText>
     </View>
   );
 }
@@ -55,14 +55,12 @@ export function GearPromise({ connected, isLegacyPlate }: { connected: boolean; 
   ];
 
   return (
-    <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.graphite, borderWidth: 1, borderColor: colors.hairline }}>
-      <AppText variant="label" tone="gold">
-        QUÉ SE GUARDA EN MI EQUIPO
-      </AppText>
+    <View style={{ gap: spacing.sm, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
+      <AppText variant="eyebrow">Qué se guarda en tu legado</AppText>
       {rows.map(({ icon: Icon, title, body }) => (
         <View key={title} style={{ flexDirection: 'row', gap: spacing.sm }}>
           <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
-            <Icon size={16} color={colors.gold} />
+            <Icon size={16} color={colors.accent} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{title}</AppText>
@@ -96,7 +94,7 @@ export function ProductSections({ sections }: { sections: ProductContentSection[
               accessibilityState={{ expanded }}
               style={{ minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm }}>
               <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 16, flex: 1 }}>{section.title}</AppText>
-              <ChevronDown size={18} color={colors.muted} style={{ transform: [{ rotate: expanded ? '180deg' : '0deg' }] }} />
+              <Chevron expanded={expanded} />
             </Pressable>
             {expanded ? (
               <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(120)} style={{ paddingBottom: spacing.md }}>
@@ -109,5 +107,20 @@ export function ProductSections({ sections }: { sections: ProductContentSection[
         );
       })}
     </View>
+  );
+}
+
+/** Disclosure chevron that rotates on a spring (UI thread). */
+function Chevron({ expanded }: { expanded: boolean }) {
+  const reduceMotion = useReducedMotion();
+  const rotation = useSharedValue(expanded ? 180 : 0);
+  useEffect(() => {
+    rotation.value = reduceMotion ? (expanded ? 180 : 0) : withSpring(expanded ? 180 : 0, springs.snappy);
+  }, [expanded, reduceMotion, rotation]);
+  const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }));
+  return (
+    <Animated.View style={style}>
+      <ChevronDown size={18} color={colors.muted} />
+    </Animated.View>
   );
 }

@@ -1,6 +1,5 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Lock, Nfc, ShoppingBag, ShoppingCart, Tag, Trash2, X } from 'lucide-react-native';
+import { Lock, Nfc, ShoppingCart, Tag, Trash2, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -12,15 +11,17 @@ import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { FormInput } from '@/components/form-input';
-import { Skeleton } from '@/components/skeleton';
+import { StaggerItem } from '@/components/motion/reveal';
+import { SkeletonRow } from '@/components/skeleton';
 import { InlineError } from '@/components/ui/inline-error';
 import { QuantityStepper } from '@/components/ui/quantity-stepper';
 import { StickyFooter } from '@/components/ui/sticky-footer';
 import { TopBar } from '@/components/ui/top-bar';
+import { CartItemThumb } from '@/features/commerce/components/cart-item-thumb';
 import { DEFAULT_MAX_QUANTITY, maxQuantityFor } from '@/features/commerce/variant-options';
 import { cartItemCount, useApplyCartCoupon, useCart, useRemoveCartCoupon, useRemoveCartItem, useUpdateCartItem } from '@/hooks/use-cart';
 import { showToast } from '@/stores/toastStore';
-import { colors, fontFamily, spacing } from '@/theme/tokens';
+import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import type { CartItem } from '@/types/models';
 import { describeCommerceError } from '@/utils/commerce-errors';
 import { formatMoney } from '@/utils/money';
@@ -54,15 +55,16 @@ export default function CartScreen() {
   const count = cartItemCount(cart);
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.black }}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={{ paddingHorizontal: spacing.lg }}>
         <TopBar title={count > 0 ? `Carrito (${count})` : 'Carrito'} />
       </View>
 
       {isPending ? (
         <View style={{ gap: spacing.md, padding: spacing.lg }}>
-          <Skeleton height={80} />
-          <Skeleton height={80} />
+          <SkeletonRow />
+          <SkeletonRow />
+          <SkeletonRow />
         </View>
       ) : isError || !cart ? (
         <ErrorState error={error} message="No pudimos cargar tu carrito." onRetry={refetch} />
@@ -71,24 +73,38 @@ export default function CartScreen() {
           icon={ShoppingCart}
           title="Tu carrito está vacío"
           message="Equipo, gear y productos que se suman a tu historia."
-          actionLabel="Ir a la tienda"
+          actionLabel="Ver colecciones"
           onAction={() => router.replace('/store')}
         />
       ) : (
         <>
           <ScrollView contentContainerStyle={{ paddingBottom: spacing.xl }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <View style={{ paddingHorizontal: spacing.lg }}>
-              {cart.items.map((item) => (
-                <CartRow key={item.id} item={item} />
+            <View
+              style={{
+                marginHorizontal: spacing.lg,
+                marginTop: spacing.xs,
+                backgroundColor: colors.card,
+                borderRadius: radius.lg,
+                borderCurve: 'continuous',
+                borderWidth: 1,
+                borderColor: colors.hairline,
+                overflow: 'hidden',
+                ...shadows.soft,
+              }}>
+              {cart.items.map((item, index) => (
+                <StaggerItem key={item.id} index={index}>
+                  <CartRow item={item} last={index === cart.items.length - 1} />
+                </StaggerItem>
               ))}
             </View>
 
             <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.lg, gap: spacing.xs }}>
+              <AppText variant="eyebrow" tone="subtle">Cupón</AppText>
               {cart.coupon ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm }}>
-                  <Tag size={18} color={colors.gold} />
+                  <Tag size={18} color={colors.accent} />
                   <View style={{ flex: 1 }}>
-                    <AppText style={{ fontFamily: fontFamily.semibold, color: colors.gold }}>{cart.coupon.code}</AppText>
+                    <AppText style={{ fontFamily: fontFamily.semibold, color: colors.accent }}>{cart.coupon.code}</AppText>
                     <AppText variant="caption" tone="muted">
                       {cart.coupon.name}
                     </AppText>
@@ -147,7 +163,7 @@ export default function CartScreen() {
   );
 }
 
-function CartRow({ item }: { item: CartItem }) {
+function CartRow({ item, last }: { item: CartItem; last: boolean }) {
   const updateItem = useUpdateCartItem();
   const removeItem = useRemoveCartItem();
   const busy = updateItem.isPending || removeItem.isPending;
@@ -182,16 +198,14 @@ function CartRow({ item }: { item: CartItem }) {
           </AppText>
         </Pressable>
       )}>
-      <View style={{ flexDirection: 'row', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.hairline, backgroundColor: colors.black, opacity: busy ? 0.6 : 1 }}>
+      <View style={{ flexDirection: 'row', gap: spacing.md, padding: spacing.md, borderBottomWidth: last ? 0 : 1, borderBottomColor: colors.hairline, backgroundColor: colors.card, opacity: busy ? 0.6 : 1 }}>
         <Pressable onPress={() => router.push(`/store/${item.product_slug}`)} accessibilityRole="imagebutton" accessibilityLabel={`Ver ${item.product_name}`}>
-          <View style={{ width: 76, height: 92, borderRadius: 12, backgroundColor: colors.graphite, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-            {item.image_url ? <Image source={{ uri: item.image_url }} style={{ width: '100%', height: '100%' }} contentFit="cover" /> : <ShoppingBag size={24} color={colors.goldDim} />}
-          </View>
+          <CartItemThumb item={item} width={76} height={92} />
         </Pressable>
 
         <View style={{ flex: 1, justifyContent: 'space-between' }}>
           <View style={{ gap: 2 }}>
-            <AppText style={{ fontFamily: fontFamily.medium, fontSize: 15 }} numberOfLines={2}>
+            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }} numberOfLines={2}>
               {item.product_name}
             </AppText>
             {details.length > 0 ? (
@@ -201,7 +215,7 @@ function CartRow({ item }: { item: CartItem }) {
             ) : null}
             {item.nfc_enabled ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Nfc size={12} color={colors.gold} />
+                <Nfc size={12} color={colors.accent} />
                 <AppText variant="caption" tone="gold">
                   Producto conectado
                 </AppText>
@@ -232,7 +246,7 @@ function CartRow({ item }: { item: CartItem }) {
               onChange={(quantity) => updateItem.mutate({ itemId: item.id, quantity }, { onError })}
               onRemove={remove}
             />
-            <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 15 }}>{formatMoney(item.line_total_minor, item.currency)}</AppText>
+            <AppText style={{ fontFamily: fontFamily.bold, fontSize: 15 }}>{formatMoney(item.line_total_minor, item.currency)}</AppText>
           </View>
         </View>
       </View>
@@ -244,7 +258,7 @@ function TotalRow({ label, value, strong = false, gold = false }: { label: strin
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
       <AppText style={{ fontFamily: strong ? fontFamily.semibold : fontFamily.regular, fontSize: strong ? 18 : 15, color: strong ? colors.foreground : colors.muted }}>{label}</AppText>
-      <AppText style={{ fontFamily: strong ? fontFamily.bold : fontFamily.medium, fontSize: strong ? 20 : 15, color: gold ? colors.gold : colors.foreground }}>{value}</AppText>
+      <AppText style={{ fontFamily: strong ? fontFamily.heading : fontFamily.medium, fontSize: strong ? 20 : 15, color: gold ? colors.accent : colors.foreground }}>{value}</AppText>
     </View>
   );
 }
