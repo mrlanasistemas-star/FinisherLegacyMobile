@@ -6,20 +6,19 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "finisherlegacy",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#0A0A0C",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F8F7F3",
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.finisherlegacy.app",
       "buildNumber": "1",
-      "supportsTablet": false,
-      "usesAppleSignIn": true
+      "supportsTablet": false
     },
     "android": {
       "package": "com.finisherlegacy.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0A0A0C",
+        "backgroundColor": "#0B0B0C",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -38,8 +37,8 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A0A0C",
-          "image": "./assets/images/brand/logo-mark-gold.png",
+          "backgroundColor": "#F8F7F3",
+          "image": "./assets/images/brand/fl-monograma.png",
           "imageWidth": 140
         }
       ],
@@ -61,7 +60,6 @@
           "enableGooglePay": false
         }
       ],
-      "expo-apple-authentication",
       [
         "expo-location",
         {
@@ -84,6 +82,9 @@
         "projectId": "f6dce084-4b31-4f64-980a-917784b1f5c3"
       }
     },
-    "owner": "zuriel2026s-team"
+    "owner": "zuriel2026s-team",
+    "androidNavigationBar": {
+      "enforceContrast": false
+    }
   }
 }
