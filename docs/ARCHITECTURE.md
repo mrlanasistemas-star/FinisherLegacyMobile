@@ -82,6 +82,16 @@ Token sólo en SecureStore. `useSessionBootstrap` valida con `GET /me` antes de 
 
 `src/utils/media-file.ts`: toda foto se comprime a JPEG (≤2000 px, 80 %) y su nombre **siempre** termina en `.jpg`; los videos conservan un nombre coherente con su MIME (`video/quicktime` → `.mov`). Los límites vienen del backend (`GET /me/events/{participant}/media-entitlement`).
 
+## Recuerdos (editor del recuerdo)
+
+El atleta arma su recuerdo desde el teléfono. Rutas: `stories/index` (tarjetas), `stories/[publicId]/index` (hero, datos de carrera, historia, galería con visor a pantalla completa, mensaje de voz, compartir, visibilidad), `…/edit` (formulario agrupado, react-hook-form + zod, "Guardar" en el encabezado y aviso de cambios sin guardar), `…/media` (medidores por tipo, cuadrícula que se reordena manteniendo presionado, "Agregar") y `…/purchased` (fotos compradas, selección múltiple).
+
+- **Contrato:** `GET|PATCH /me/stories/{id}`, `GET|POST /me/stories/{id}/media` (+ `reorder`, `import`, `DELETE …/{uuid}`), `GET /me/purchased-photos`. Todo se valida con zod (`src/schemas/story.ts`, `src/api/stories.ts`). Clave de caché `['stories', …]`: **no** se persiste.
+- **Lógica pura y testeada** en `src/features/stories/`: `upload-queue.ts` (máquina de estados de la cola), `quota.ts` (lugares libres, 422 `MEDIA_LIMIT_REACHED`, planes con vigencia), `story-form.ts` (validación, fecha DD/MM/AAAA, sólo se envía lo que cambió y nunca un campo oficial).
+- **Cola de subida** (`upload-store.ts`, zustand, sin persistir): un archivo a la vez, sigue fuera de la pantalla; `useStoryUploadBridge()` en el layout raíz refresca la galería al terminar cada uno. Las fotos se comprimen (≤2000 px JPEG) antes de subir; un video más largo que `quota.videos.max_seconds` se rechaza antes de subir.
+- **Límites:** nunca se codifican; vienen de `meta.quota`. Al llegar a un límite el contenido sigue visible y se abre la hoja de compra de ese tipo (`usePhotoExpansion(story, kind)`, precio siempre del SDK de la tienda, con su vigencia: pago único / 6 / 12 meses). Sin IAP configurado sólo se muestra el mensaje del límite.
+- **Sólo web por ahora:** agregar el mensaje de voz (la app no graba — `RECORD_AUDIO` está bloqueado — y no hay selector de archivos de audio en las dependencias). La app sí lo reproduce y lo elimina.
+
 ## Enlaces
 
 `src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts`: `finisherlegacy://athlete/u`, `finisherlegacy://moments/uuid`, `https://finisherlegacy.com/@u`, `/moments/uuid`, `/events/slug`, `/reset-password/{token}`, `/t/{code}` (Tag), `finisherlegacy://checkout/return?order=` (vuelta del checkout OpenPay → `/orders/{uuid}`); `/stripe-redirect` de builds antiguos se ignora sin navegar. Un enlace abierto sin sesión se guarda y se reproduce al iniciar sesión (`use-deep-links.ts`). Cualquier host `https` se acepta (el sistema sólo entrega a la app los dominios verificados; staging incluido).

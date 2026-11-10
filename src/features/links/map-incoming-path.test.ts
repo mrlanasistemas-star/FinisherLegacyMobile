@@ -45,6 +45,8 @@ describe('mapIncomingPath', () => {
     expect(mapIncomingPath('finisherlegacy://events/cdmx-2026')).toBe('/events/cdmx-2026');
     expect(mapIncomingPath('finisherlegacy://training')).toBe('/training');
     expect(mapIncomingPath('finisherlegacy://my-legacy')).toBe('/legacy');
+    expect(mapIncomingPath('finisherlegacy://stories/abc123def456')).toBe('/stories/abc123def456');
+    expect(mapIncomingPath('finisherlegacy://stories/abc123def456/media')).toBe('/stories/abc123def456/media');
   });
 
   it('maps the same campaign screens from their web paths (inbox action_url, https links)', () => {

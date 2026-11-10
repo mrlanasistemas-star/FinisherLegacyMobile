@@ -16,6 +16,7 @@ import { StaggerItem } from '@/components/motion/reveal';
 import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { MyGearRail } from '@/components/legacy/my-gear-rail';
 import { MyStoriesEntry } from '@/features/iap/my-stories-entry';
+import { useMyStories } from '@/features/iap/use-photo-expansion';
 import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -62,19 +63,21 @@ export default function RecuerdosScreen() {
   const medals = useMedals();
   const myEvents = useMyEvents();
   const gear = useMyGear();
+  const stories = useMyStories();
 
   const rows = useMemo(() => myEvents.data?.pages.flatMap((p) => p.rows) ?? [], [myEvents.data]);
   const timeline = useMemo(() => toTimeline(rows), [rows]);
   const medalList = useMemo(() => medals.data?.pages[0]?.data.slice(0, 10) ?? [], [medals.data]);
   const stats = profile.data?.stats;
 
-  const isEmpty = !myEvents.isPending && !medals.isPending && rows.length === 0 && medalList.length === 0 && (gear.data?.length ?? 0) === 0;
+  const isEmpty = !myEvents.isPending && !medals.isPending && rows.length === 0 && medalList.length === 0 && (gear.data?.length ?? 0) === 0 && (stories.data?.length ?? 0) === 0;
 
   const refresh = () => {
     profile.refetch();
     medals.refetch();
     myEvents.refetch();
     gear.refetch();
+    stories.refetch();
   };
 
   const renderItem = useCallback(({ item, index }: { item: TimelineItem; index: number }) => {

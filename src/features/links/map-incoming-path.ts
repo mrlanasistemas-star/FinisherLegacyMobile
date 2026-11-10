@@ -5,6 +5,7 @@
  *   finisherlegacy://moments/<uuid>        → /moments/<uuid>
  *   finisherlegacy://nfc/<token>           → /nfc/<token>
  *   finisherlegacy://training              → /training      (Entrenamientos; push "nuevo mensaje de ánimo")
+ *   finisherlegacy://stories/<publicId>    → /stories/<publicId> (a story; also …/edit and …/media)
  *   https://finisherlegacy.com/@ana        → /athlete/ana
  *   https://finisherlegacy.com/moments/<u> → /moments/<u>
  *   https://finisherlegacy.com/events/<s>  → /events/<s>
@@ -68,7 +69,7 @@ export function mapIncomingPath(raw: string): string | null {
   const campaign = campaignPath(path);
   if (campaign) return campaign;
 
-  if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search|training)(\/|$|\?)/.test(path)) return path;
+  if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search|training|stories)(\/|$|\?)/.test(path)) return path;
 
   return raw;
 }

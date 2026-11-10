@@ -12,7 +12,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useReducer, useRef } from 'react';
 
-import { getIapOffer, getMyStories, getStory, getStoryQuota } from '@/api/iap';
+import { getIapOffer, getMyStories, getStory, getStoryQuota, type IapKind } from '@/api/iap';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 
@@ -25,7 +25,7 @@ export const iapKeys = {
   stories: ['iap', 'stories'] as const,
   story: (publicId: string) => ['iap', 'story', publicId] as const,
   quota: (publicId: string) => ['iap', 'quota', publicId] as const,
-  offer: (publicId: string, platform: string) => ['iap', 'offer', publicId, platform] as const,
+  offer: (publicId: string, platform: string, kind: IapKind = 'photos') => ['iap', 'offer', publicId, platform, kind] as const,
 };
 
 export function useMyStories() {
@@ -44,7 +44,24 @@ function grantedCount(outcomes: PurchaseOutcome[]): number {
   return outcomes.filter((o) => o.status === 'granted').length;
 }
 
-export function usePhotoExpansion(storyPublicId: string) {
+/** The story editor's media query (features/stories/use-stories.ts › storyKeys.media). */
+const storyMediaKey = (publicId: string) => ['stories', 'media', publicId] as const;
+
+export interface ExpansionPack {
+  name: string;
+  description: string | null;
+  /** Units the pack adds to its kind (photos, videos or voice messages); null when unknown. */
+  amount: number | null;
+  /** Same as `amount` — kept for the photo-only call sites. */
+  photos: number | null;
+  billingPeriod: 'one_time' | 'semiannual' | 'annual' | null;
+}
+
+/**
+ * @param kind    What to expand (the backend offers one pack per kind).
+ * @param enabled False skips the offer request (e.g. the kind cannot be expanded).
+ */
+export function usePhotoExpansion(storyPublicId: string, kind: IapKind = 'photos', enabled = true) {
   const service = getIapService();
   const platform = service.platform;
   const available = service.isAvailable();
@@ -52,9 +69,9 @@ export function usePhotoExpansion(storyPublicId: string) {
   const [state, dispatch] = useReducer(purchaseReducer, initialPurchaseState);
 
   const offer = useQuery({
-    queryKey: iapKeys.offer(storyPublicId, platform ?? 'none'),
-    queryFn: () => getIapOffer(storyPublicId, platform as 'ios' | 'android'),
-    enabled: available && platform !== null && storyPublicId !== '',
+    queryKey: iapKeys.offer(storyPublicId, platform ?? 'none', kind),
+    queryFn: () => getIapOffer(storyPublicId, platform as 'ios' | 'android', kind),
+    enabled: enabled && available && platform !== null && storyPublicId !== '',
     staleTime: 5 * 60_000,
   });
 
@@ -62,6 +79,7 @@ export function usePhotoExpansion(storyPublicId: string) {
     void queryClient.invalidateQueries({ queryKey: iapKeys.quota(storyPublicId) });
     void queryClient.invalidateQueries({ queryKey: ['iap', 'offer', storyPublicId] });
     void queryClient.invalidateQueries({ queryKey: iapKeys.stories });
+    void queryClient.invalidateQueries({ queryKey: storyMediaKey(storyPublicId) });
   }
 
   const productId = offer.data?.product_id ?? null;
@@ -72,6 +90,10 @@ export function usePhotoExpansion(storyPublicId: string) {
   useEffect(() => {
     if (!available) {
       dispatch({ type: 'UNAVAILABLE', reason: 'no_module' });
+      return;
+    }
+    if (!enabled) {
+      dispatch({ type: 'UNAVAILABLE', reason: 'no_product' });
       return;
     }
     if (offer.isPending) return;
@@ -96,7 +118,7 @@ export function usePhotoExpansion(storyPublicId: string) {
     return () => {
       alive = false;
     };
-  }, [available, service, offer.isPending, offer.isError, offerAvailable, offerReason, productId]);
+  }, [available, enabled, service, offer.isPending, offer.isError, offerAvailable, offerReason, productId]);
 
   async function buy() {
     if (!state.product || !offer.data) return;
@@ -132,11 +154,24 @@ export function usePhotoExpansion(storyPublicId: string) {
     dispatch({ type: 'DISMISS' });
   }
 
+  const rawPack = offer.data?.pack ?? null;
+  const rawAmount = rawPack ? (rawPack.units ?? rawPack[kind] ?? rawPack.quantity ?? null) : null;
+  const amount = rawAmount && rawAmount > 0 ? rawAmount : null;
+  const pack: ExpansionPack | null = rawPack
+    ? {
+        name: rawPack.name,
+        description: rawPack.description,
+        amount,
+        photos: amount,
+        billingPeriod: rawPack.billing_period ?? offer.data?.billing_period ?? null,
+      }
+    : null;
+
   return {
     state,
     /** False → hide every purchase control (no native module, not configured, nothing on sale). */
     canOffer: state.phase !== 'unavailable' && state.phase !== 'idle',
-    pack: offer.data?.pack ?? null,
+    pack,
     buy,
     restore,
     dismiss,

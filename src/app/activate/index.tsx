@@ -71,6 +71,7 @@ export default function ActivateScreen() {
       ['tagCode', result.tag_code],
       ['storyUrl', result.story.url],
       ['editUrl', result.story.edit_url ?? ''],
+      ['storyId', result.story.public_id],
     ]
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');

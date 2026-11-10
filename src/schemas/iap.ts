@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { billingPeriodSchema } from '@/schemas/story';
+
 /**
  * Payloads of the in-app purchase flow and the Legacy story photo quota
  * (backend docs/renovacion/compras-dentro-de-app.md). Parsed, not cast:
@@ -17,22 +19,37 @@ export const quotaSchema = z.object({
 
 export type StoryQuota = z.infer<typeof quotaSchema>;
 
+/** Extra units a pack adds; which key is filled depends on the kind it expands. */
+const packAmount = z.number().int().nonnegative().nullish();
+
 export const iapOfferSchema = z.object({
   story: z.string(),
   platform: z.enum(['ios', 'android']),
+  /** What the pack expands. Missing on an older backend = photos. */
+  kind: z.enum(['photos', 'videos', 'audio']).optional().catch(undefined),
   available: z.boolean(),
-  reason: z.enum(['not_configured', 'no_product']).nullable(),
+  reason: z.enum(['not_configured', 'no_product']).nullable().catch(null),
   product_id: z.string().nullable(),
   pack: z
     .object({
       id: z.number(),
       name: z.string(),
       description: z.string().nullable(),
-      photos: z.number().int().positive(),
+      /** Units of the pack's own kind (current backend). */
+      units: packAmount,
+      photos: packAmount,
+      videos: packAmount,
+      audio: packAmount,
+      quantity: packAmount,
+      /** One-time, or prepaid for 6 / 12 months (renewed by paying again). */
+      billing_period: billingPeriodSchema,
     })
     .nullable(),
+  /** Some backends put the period next to the pack instead of inside it. */
+  billing_period: billingPeriodSchema,
   account_token: z.string().nullable(),
-  quota: quotaSchema,
+  /** Informative only (the screens read the quota from its own endpoint). */
+  quota: quotaSchema.nullish().catch(null),
 });
 
 export type IapOffer = z.infer<typeof iapOfferSchema>;
@@ -78,6 +95,9 @@ export const storySummarySchema = z.object({
     .default([]),
   year: z.union([z.number(), z.string()]).nullable().optional(),
   web_url: z.string().nullable().optional(),
+  dedication: z.string().nullable().optional(),
+  body: z.string().nullable().optional(),
+  audio_url: z.string().nullable().optional(),
 });
 
 export type StorySummary = z.infer<typeof storySummarySchema>;

@@ -40,10 +40,12 @@ function parsed<T>(schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
-/** `GET /iap/offer?story=&platform=` — which store product to load, plus the account token. */
-export async function getIapOffer(storyPublicId: string, platform: 'ios' | 'android'): Promise<IapOffer> {
+export type IapKind = 'photos' | 'videos' | 'audio';
+
+/** `GET /iap/offer?story=&platform=&kind=` — which store product to load, plus the account token. */
+export async function getIapOffer(storyPublicId: string, platform: 'ios' | 'android', kind: IapKind = 'photos'): Promise<IapOffer> {
   try {
-    const { data } = await apiClient.get<{ data: unknown }>('iap/offer', { params: { story: storyPublicId, platform } });
+    const { data } = await apiClient.get<{ data: unknown }>('iap/offer', { params: { story: storyPublicId, platform, kind } });
     return parsed(iapOfferSchema, data.data);
   } catch (error) {
     throw toAppError(error);

@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { Check } from 'lucide-react-native';
 import { useEffect } from 'react';
@@ -28,8 +28,20 @@ function formatCode(code: string): string {
 /** Step 5 — activated, verified and confirmed by the backend. */
 export default function ActivationSuccessScreen() {
   const insets = useSafeAreaInsets();
-  const { tagCode = '', storyUrl, editUrl } = useLocalSearchParams<{ tagCode?: string; storyUrl?: string; editUrl?: string }>();
+  const { tagCode = '', storyUrl, editUrl, storyId } = useLocalSearchParams<{ tagCode?: string; storyUrl?: string; editUrl?: string; storyId?: string }>();
   const completeUrl = ownUrl(editUrl) ?? ownUrl(storyUrl);
+  // The memory is built in the app (race data, story, photos); the web page stays as the fallback.
+  const nativeStory = storyId && /^[a-z0-9]{8,16}$/.test(storyId) ? storyId : null;
+
+  function completeStory() {
+    if (nativeStory) {
+      // Leave the story underneath, so "back" from the editor lands on the memory, not on this screen.
+      router.replace(`/stories/${nativeStory}` as Href);
+      router.push(`/stories/${nativeStory}/edit` as Href);
+    } else if (completeUrl) {
+      void WebBrowser.openBrowserAsync(completeUrl);
+    }
+  }
 
   useEffect(() => {
     haptics.success();
@@ -64,8 +76,8 @@ export default function ActivationSuccessScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        {completeUrl ? <StepButton label="Completar mi recuerdo" onPress={() => WebBrowser.openBrowserAsync(completeUrl)} /> : null}
-        <StepButton label="Ir a mi Legacy" variant={completeUrl ? 'plain' : 'primary'} onPress={() => router.replace('/legacy')} />
+        {nativeStory || completeUrl ? <StepButton label="Completar mi recuerdo" onPress={completeStory} /> : null}
+        <StepButton label="Ir a mi Legacy" variant={nativeStory || completeUrl ? 'plain' : 'primary'} onPress={() => router.replace('/legacy')} />
       </View>
     </View>
   );

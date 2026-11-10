@@ -26,6 +26,7 @@ import { useLiveTrackingBootstrap } from '@/features/tracking/tracking-controlle
 import { usePendingActivationRecovery } from '@/features/nfc/use-activation';
 import { TrainingBridge } from '@/features/training/training-bridge';
 import { useIapRecovery } from '@/features/iap/use-photo-expansion';
+import { useStoryUploadBridge } from '@/features/stories/use-stories';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -39,6 +40,8 @@ function RootNavigator() {
   usePendingActivationRecovery();
   // Credit store purchases (photo space) left unfinished by a crash / no signal / Ask to Buy.
   useIapRecovery();
+  // Story uploads keep going in the background: refresh the gallery whenever one lands.
+  useStoryUploadBridge();
 
   return (
     <Stack
@@ -89,7 +92,10 @@ function RootNavigator() {
         <Stack.Screen name="training/session" />
         <Stack.Screen name="training/share" />
         <Stack.Screen name="stories/index" />
-        <Stack.Screen name="stories/[publicId]" />
+        <Stack.Screen name="stories/[publicId]/index" />
+        <Stack.Screen name="stories/[publicId]/edit" />
+        <Stack.Screen name="stories/[publicId]/media" />
+        <Stack.Screen name="stories/[publicId]/purchased" options={{ presentation: 'modal' }} />
         {/* Full-screen sheet: slides up and drags down itself (see training/player.tsx). */}
         <Stack.Screen name="training/player" options={{ presentation: 'transparentModal', animation: 'none', gestureEnabled: false }} />
       </Stack.Protected>
