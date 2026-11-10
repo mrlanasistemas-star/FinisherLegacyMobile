@@ -43,6 +43,7 @@
         }
       ],
       "expo-secure-store",
+      "expo-localization",
       "expo-font",
       [
         "expo-image-picker",

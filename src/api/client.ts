@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { tokenStorage } from '@/api/secureStore';
+import { getActiveLocale } from '@/i18n/active-locale';
 import { useAuthStore } from '@/stores/authStore';
 import { env } from '@/utils/env';
 import { logger } from '@/utils/logger';
@@ -27,6 +28,12 @@ apiClient.interceptors.request.use((config) => {
   // Server reuses this id if present (AssignRequestId middleware) so a
   // failed request can be traced end-to-end in our own logs too.
   config.headers['X-Request-ID'] = uuidv4();
+
+  // Language of the app: the server answers (messages, catalog content)
+  // in it. `X-Locale` is the explicit choice, `Accept-Language` the standard.
+  const locale = getActiveLocale();
+  config.headers['Accept-Language'] = locale;
+  config.headers['X-Locale'] = locale;
 
   logger.debug(`-> ${config.method?.toUpperCase()} ${config.url}`);
   return config;
