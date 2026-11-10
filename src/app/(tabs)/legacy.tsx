@@ -15,6 +15,7 @@ import { LegacyTimelineCard } from '@/components/legacy/legacy-timeline-card';
 import { StaggerItem } from '@/components/motion/reveal';
 import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
 import { MyGearRail } from '@/components/legacy/my-gear-rail';
+import { MyStoriesEntry } from '@/features/iap/my-stories-entry';
 import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -122,6 +123,8 @@ export default function RecuerdosScreen() {
       </View>
 
       <MyGearRail />
+
+      <MyStoriesEntry />
 
       {medalList.length > 0 ? (
         <View>
