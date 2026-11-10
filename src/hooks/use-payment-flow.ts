@@ -4,11 +4,10 @@ import { useCallback, useRef, useState } from 'react';
 import { checkout } from '@/api/checkout';
 import { AppError } from '@/api/errors';
 import { fetchOrder } from '@/api/orders';
-import { createOnlinePayment, syncOnlinePayment } from '@/api/payments';
+import { createCheckoutSession } from '@/api/payments';
 import { queryKeys } from '@/hooks/query-keys';
-import { CONFIRM_POLL_DELAYS_MS, phaseFromOrder, phaseFromSheet, type PaymentPhase } from '@/payments/payment-flow';
-import { presentStripePaymentSheet } from '@/payments/stripe';
-import { useAuthStore } from '@/stores/authStore';
+import { openOpenPayCheckout } from '@/payments/openpay-checkout';
+import { CONFIRM_POLL_DELAYS_MS, phaseAfterPolling, phaseFromOrder, phaseFromSessionError, type BrowserOutcome, type PaymentPhase } from '@/payments/payment-flow';
 import type { Order } from '@/types/models';
 import { describeCommerceError } from '@/utils/commerce-errors';
 import { haptics } from '@/utils/haptics';
@@ -18,20 +17,21 @@ import { uuidv4 } from '@/utils/uuid';
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * Cart → Checkout → Payment → Confirmation, end to end.
+ * Cart → Checkout → OpenPay (in-app browser) → Confirmation, end to end.
  *
  * Idempotency: the checkout key is created once per cart attempt and reused
- * until an order exists (a timeout/double tap never creates two orders);
- * each payment attempt gets its own key, and the backend resumes the same
- * Stripe PaymentIntent, so a retry never charges twice.
+ * until an order exists (a timeout/double tap never creates two orders).
+ * Each "Pagar" mints a fresh one-time checkout URL for the SAME order; the
+ * backend resumes a pending OpenPay charge (3-D Secure) instead of charging
+ * twice.
  *
- * "Paid" is only ever set from the server (`/payments/sync` or a later
- * order refetch fed by the webhook) — never from the payment sheet.
+ * "Paid" is only ever set from the server (`GET /orders/{uuid}`, which
+ * re-reads the charge from OpenPay) — never from the browser or its return
+ * deep link.
  */
 export function usePaymentFlow(initialOrder: Order | null = null) {
   const queryClient = useQueryClient();
-  const user = useAuthStore((s) => s.user);
-  const [phase, setPhase] = useState<PaymentPhase>(initialOrder ? phaseFromOrder(initialOrder, false) : 'review');
+  const [phase, setPhase] = useState<PaymentPhase>(initialOrder ? phaseFromOrder(initialOrder, null) : 'review');
   const [order, setOrder] = useState<Order | null>(initialOrder);
   const [message, setMessage] = useState<string | null>(null);
   const checkoutKey = useRef<string | null>(null);
@@ -46,29 +46,28 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
   );
 
   const confirm = useCallback(
-    async (target: Order): Promise<void> => {
+    async (target: Order, outcome: BrowserOutcome): Promise<void> => {
       setPhase('confirming');
+      let last: PaymentPhase = 'confirming';
       for (const delay of CONFIRM_POLL_DELAYS_MS) {
         try {
-          // `/payments/sync` asks Stripe server-to-server; if it fails, the
-          // plain order read (settled by the webhook) is the same truth.
-          const synced = await syncOnlinePayment(target.uuid).catch(() => fetchOrder(target.uuid));
-          setOrder(synced);
-          refreshOrderCaches(synced);
-          const next = phaseFromOrder(synced, true);
-          if (next !== 'confirming') {
-            setPhase(next);
-            if (next === 'paid') haptics.success();
+          const fresh = await fetchOrder(target.uuid);
+          setOrder(fresh);
+          refreshOrderCaches(fresh);
+          last = phaseFromOrder(fresh, outcome);
+          if (last !== 'confirming') {
+            setPhase(last);
+            if (last === 'paid') haptics.success();
+            if (last === 'failed') haptics.error();
             return;
           }
         } catch {
-          // Transient — keep polling; the webhook settles it regardless.
+          // Transient — keep polling; the webhook / next read settles it.
         }
         await wait(delay);
       }
-      // Stripe accepted it but the final status hasn't reached us yet: be
-      // honest ("en proceso"), the order screen will update by itself.
-      setPhase('processing');
+      // Came back but no result yet: say so honestly ("aún no vemos tu pago").
+      setPhase(phaseAfterPolling(last));
     },
     [refreshOrderCaches],
   );
@@ -78,18 +77,17 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
       setMessage(null);
       setPhase('preparing');
 
-      let payment;
+      let session;
       try {
         await ensureOnline();
-        payment = await createOnlinePayment(target.uuid, uuidv4());
+        session = await createCheckoutSession(target.uuid);
       } catch (error) {
         const appError = error instanceof AppError ? error : null;
-        if (appError?.status === 501) {
-          setPhase('unavailable');
-        } else if (appError?.code === 'ORDER_EXPIRED' || appError?.code === 'ORDER_NOT_PAYABLE') {
-          setPhase('expired');
-        } else if (appError?.code === 'PAYMENT_ALREADY_RECORDED') {
-          await confirm(target);
+        const next = phaseFromSessionError(appError);
+        if (next === 'confirming') {
+          await confirm(target, { type: 'returned' });
+        } else if (next) {
+          setPhase(next);
         } else {
           setMessage(appError ? describeCommerceError(appError) : 'No pudimos iniciar el pago. Intenta otra vez.');
           setPhase('failed');
@@ -97,29 +95,21 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
         return;
       }
 
-      setPhase('in_sheet');
-      let outcome;
+      setPhase('in_browser');
+      let outcome: BrowserOutcome;
       try {
-        outcome = await presentStripePaymentSheet(payment, { name: user?.name, email: user?.email });
-      } catch (error) {
-        const appError = error instanceof AppError ? error : null;
-        setPhase(appError?.status === 501 ? 'unavailable' : 'failed');
-        if (appError?.status !== 501) setMessage('No pudimos abrir el pago. Intenta otra vez.');
-        return;
+        outcome = await openOpenPayCheckout(session);
+      } catch {
+        // The browser couldn't open — nothing was charged. Still ask the
+        // server, in case a previous attempt settled meanwhile.
+        outcome = { type: 'closed' };
+        setMessage('No pudimos abrir la ventana de pago. Intenta otra vez.');
       }
 
-      const next = phaseFromSheet(outcome);
-      if (next === 'confirming') {
-        await confirm(target);
-        return;
-      }
-      if (outcome.status === 'failed') {
-        haptics.error();
-        setMessage(outcome.message ?? null);
-      }
-      setPhase(next);
+      // Whatever the browser says, the server decides.
+      await confirm(target, outcome);
     },
-    [confirm, user?.email, user?.name],
+    [confirm],
   );
 
   /** From the review step: create the order (once), then pay it. */
@@ -162,5 +152,16 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
     }
   }, [order, pay]);
 
-  return { phase, order, message, checkoutAndPay, payExisting, setOrder };
+  /** "Revisar de nuevo" from the pending state: one more server read. */
+  const checkAgain = useCallback(async () => {
+    if (busy.current || !order) return;
+    busy.current = true;
+    try {
+      await confirm(order, { type: 'returned' });
+    } finally {
+      busy.current = false;
+    }
+  }, [confirm, order]);
+
+  return { phase, order, message, checkoutAndPay, payExisting, checkAgain, setOrder };
 }

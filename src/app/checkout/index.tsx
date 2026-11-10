@@ -24,7 +24,7 @@ import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 import { formatMoney } from '@/utils/money';
 
-const BUSY_PHASES: PaymentPhase[] = ['creating_order', 'preparing', 'in_sheet', 'confirming'];
+const BUSY_PHASES: PaymentPhase[] = ['creating_order', 'preparing', 'in_browser', 'confirming'];
 
 /**
  * One calm checkout: datos → entrega → pago → resumen, then very clear
@@ -41,7 +41,7 @@ export default function CheckoutScreen() {
   // Webhook-driven settlement: keep reading the order while it's processing.
   const watching = flow.phase === 'processing' && !!order;
   const settlement = useOrder(order?.uuid ?? '', { enabled: watching, watchSettlement: true });
-  const settled = watching && settlement.data ? phaseFromOrder(settlement.data, true) : null;
+  const settled = watching && settlement.data ? phaseFromOrder(settlement.data, { type: 'returned' }) : null;
   const phase: PaymentPhase = settled ? (settled === 'confirming' ? 'processing' : settled) : flow.phase;
   const busy = BUSY_PHASES.includes(phase);
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function CheckoutScreen() {
 
               <Section icon={CreditCard} title="Pago">
                 <AppText variant="caption" tone="muted">
-                  Tarjeta de crédito o débito con Stripe. Si tu banco pide verificarte (3-D Secure), lo harás en la misma pantalla.
+                  Tarjeta de crédito o débito con OpenPay. Se abre una ventana segura; si tu banco pide verificarte (3-D Secure), lo haces ahí mismo.
                 </AppText>
               </Section>
 
@@ -129,7 +129,7 @@ export default function CheckoutScreen() {
               <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
                 <ShieldCheck size={18} color={colors.success} />
                 <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                  Pago seguro con Stripe. Los datos de tu tarjeta van directo al procesador; nunca pasan por nuestros servidores.
+                  Pago seguro con OpenPay. Los datos de tu tarjeta los captura OpenPay; nunca pasan por la app ni por nuestros servidores.
                 </AppText>
               </View>
             </ScrollView>
@@ -194,10 +194,15 @@ export default function CheckoutScreen() {
       </Animated.View>
 
       <StickyFooter>
-        {phase === 'paid' || phase === 'processing' || phase === 'unavailable' ? (
+        {phase === 'paid' || phase === 'processing' || phase === 'unavailable' || phase === 'not_app_payable' ? (
           <>
             {order ? <AppButton label="Ver mi pedido" onPress={() => router.replace(`/orders/${order.uuid}`)} /> : null}
             <AppButton label="Seguir viendo colecciones" variant="ghost" onPress={() => router.replace('/store')} />
+          </>
+        ) : phase === 'pending' ? (
+          <>
+            <AppButton label="Revisar de nuevo" onPress={flow.checkAgain} />
+            <AppButton label="Intentar de nuevo" icon={Lock} variant="ghost" onPress={flow.payExisting} />
           </>
         ) : phase === 'failed' || phase === 'cancelled' ? (
           <>
@@ -255,8 +260,9 @@ function OutcomeBadge({ phase }: { phase: PaymentPhase }) {
   const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const success = phase === 'paid';
-  const Icon = success ? PartyPopper : phase === 'processing' || phase === 'unavailable' ? Clock : CircleAlert;
-  const tint = success ? colors.gold : phase === 'processing' || phase === 'unavailable' ? colors.accent : colors.destructive;
+  const waiting = phase === 'processing' || phase === 'unavailable' || phase === 'pending' || phase === 'cancelled';
+  const Icon = success ? PartyPopper : waiting ? Clock : CircleAlert;
+  const tint = success ? colors.gold : waiting ? colors.accent : colors.destructive;
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm }}>

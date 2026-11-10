@@ -1,20 +1,20 @@
-import { handleURLCallback } from '@stripe/stripe-react-native';
-
 import { mapIncomingPath } from '@/features/links/map-incoming-path';
+import { isAwaitingCheckoutReturn } from '@/payments/checkout-return';
 
 /**
  * Rewrites incoming links before Expo Router sees them (see
- * `mapIncomingPath`). Stripe's 3-D Secure return (`…/stripe-redirect`) is
- * handed to the Stripe SDK and never navigates.
+ * `mapIncomingPath`). The OpenPay in-app checkout return
+ * (`finisherlegacy://checkout/return?order=…`) does not navigate while the
+ * checkout screen is waiting for it (Android also delivers it as a deep
+ * link; the in-app browser session consumes it) — otherwise it opens the
+ * order, which re-reads the real status from the API.
  */
 export function redirectSystemPath({ path }: { path: string; initial: boolean }): string | null {
   try {
-    const mapped = mapIncomingPath(path);
-    if (mapped === null) {
-      handleURLCallback(path).catch(() => {});
+    if (isAwaitingCheckoutReturn() && /^finisherlegacy:\/\/\/?checkout\/return/i.test(path)) {
       return null;
     }
-    return mapped;
+    return mapIncomingPath(path);
   } catch {
     return path;
   }

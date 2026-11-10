@@ -50,7 +50,7 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
   const current = flow.order ?? order;
   const steps = orderTimeline(current);
   const state = PAYMENT_STATE_LABEL[current.payment_state];
-  const busy = ['preparing', 'in_sheet', 'confirming'].includes(flow.phase);
+  const busy = ['preparing', 'in_browser', 'confirming'].includes(flow.phase);
 
   // Keep the flow's copy of the order in sync with refetches (webhook updates).
   useEffect(() => {
@@ -132,10 +132,16 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
         </View>
       </ScrollView>
 
-      {current.payable && current.payment_state !== 'processing' ? (
+      {/* Digital goods are never paid in the app (store policies): no button. */}
+      {current.payable && current.app_payable !== false && current.payment_state !== 'processing' ? (
         <StickyFooter>
           {flow.phase === 'failed' ? <InlineError message={flow.message ?? PAYMENT_PHASE_COPY.failed.message} /> : null}
           {flow.phase === 'unavailable' ? <InlineError message={PAYMENT_PHASE_COPY.unavailable.message} /> : null}
+          {flow.phase === 'pending' || flow.phase === 'cancelled' ? (
+            <AppText variant="caption" tone="muted" align="center" accessibilityLiveRegion="polite">
+              {PAYMENT_PHASE_COPY[flow.phase].message}
+            </AppText>
+          ) : null}
           <AppButton
             label={busy ? PAYMENT_PHASE_COPY[flow.phase].title : `Pagar ${formatMoney(current.total_minor, current.currency)}`}
             icon={Lock}

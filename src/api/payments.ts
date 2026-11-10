@@ -1,34 +1,18 @@
 import { apiClient } from '@/api/client';
 import { toAppError } from '@/api/errors';
-import type { OnlinePaymentResult, Order } from '@/types/models';
+import type { CheckoutSession } from '@/types/models';
 
 /**
- * `POST /orders/{uuid}/payments/online` with the Stripe gateway. Idempotent
- * twice over: the Idempotency-Key replays the same response for a retried
- * request, and the backend resumes an in-progress PaymentIntent instead of
- * creating a second one. Never returns a secret key.
+ * `POST /orders/{uuid}/checkout-session` → a one-time, short-lived URL to the
+ * OpenPay web checkout of this order (card tokenized by Openpay.js in the
+ * browser, 3-D Secure included). Card data never touches the app or our
+ * servers. Errors the flow branches on: 501 (OpenPay not configured),
+ * ORDER_EXPIRED / ORDER_NOT_PAYABLE, PAYMENT_ALREADY_RECORDED and
+ * ORDER_NOT_APP_PAYABLE (digital goods are never sold in the app).
  */
-export async function createOnlinePayment(orderUuid: string, idempotencyKey: string): Promise<OnlinePaymentResult> {
+export async function createCheckoutSession(orderUuid: string): Promise<CheckoutSession> {
   try {
-    const { data } = await apiClient.post<{ data: OnlinePaymentResult }>(
-      `orders/${orderUuid}/payments/online`,
-      { provider: 'stripe' },
-      { headers: { 'Idempotency-Key': idempotencyKey } },
-    );
-    return data.data;
-  } catch (error) {
-    throw toAppError(error);
-  }
-}
-
-/**
- * `POST /orders/{uuid}/payments/sync` — the backend asks Stripe (server to
- * server) for the real status and applies it. The only way the app ever
- * learns "paid"; the payment sheet's own result is never trusted for that.
- */
-export async function syncOnlinePayment(orderUuid: string): Promise<Order> {
-  try {
-    const { data } = await apiClient.post<{ data: Order }>(`orders/${orderUuid}/payments/sync`);
+    const { data } = await apiClient.post<{ data: CheckoutSession }>(`orders/${orderUuid}/checkout-session`);
     return data.data;
   } catch (error) {
     throw toAppError(error);

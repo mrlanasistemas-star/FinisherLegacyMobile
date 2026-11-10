@@ -1,6 +1,21 @@
 # Arquitectura de comercio (móvil)
 
-> Estado: **implementado de punta a punta**. El único requisito externo pendiente son las llaves reales de Stripe (ver "Configuración").
+> **Actualización 2026-11-10 — pago con OpenPay, Stripe retirado de la app.** Lo que sigue sobre Stripe/PaymentSheet es histórico. Detalle y pasos de habilitación: `docs/renovacion/pagos.md` del repo web.
+>
+> ```
+> Checkout (crea Order) → POST /orders/{uuid}/checkout-session → {url, expires_at}
+>   → WebBrowser.openAuthSessionAsync(url, 'finisherlegacy://checkout/return', {preferEphemeralSession: true})
+>   → formulario Openpay.js + 3-D Secure en la web (sesión limitada a ese pedido)
+>   → regreso → GET /orders/{uuid} (con backoff) → pagado / en proceso / pendiente / falló / sin terminar
+> ```
+>
+> - Código: `src/api/payments.ts`, `src/payments/openpay-checkout.ts`, `src/payments/payment-flow.ts` (máquina de estados pura, con tests), `src/payments/checkout-return.ts`, `src/hooks/use-payment-flow.ts`.
+> - El deep link de regreso no trae resultado y nunca se confía en él; `+native-intent` no navega mientras el checkout espera, y fuera de eso lleva a `/orders/{uuid}`.
+> - Solo productos físicos: el catálogo no trae `digital_photo`; un pedido con `app_payable: false` no muestra "Pagar" (sin enlazar a la web).
+> - `@stripe/stripe-react-native` desinstalado; el plugin se filtra en `app.config.ts` (quitar también de `app.json`). **Requiere nueva build nativa.**
+> - Sin llaves en la app: todo lo configura el backend (admin → Configuración → Pagos).
+
+> Estado anterior (histórico): implementado con Stripe PaymentSheet; nunca tuvo llaves reales.
 
 ## Flujo
 
