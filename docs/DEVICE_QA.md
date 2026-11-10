@@ -39,7 +39,7 @@ Checklist manual en dispositivo físico (APK de `eas build --profile preview`; T
 - [ ] Notificaciones: agrupadas Hoy / Esta semana / Antes; seguidor/reacción/mensaje abren el perfil o momento correcto.
 
 ## Legacy
-- [ ] Pestaña Legacy: medallas, carreras, recuerdos, equipo y Legacy Plates; "+" abre las acciones.
+- [ ] Pestaña Legacy: medallas, carreras, recuerdos, equipo y Legacy Plates históricas (si las hay); "+" abre las acciones.
 - [ ] Escanear Legacy Code (permiso de cámara), reclamar, pantalla de éxito.
 - [ ] Detalle de carrera: subir foto (cámara/galería) y video (iOS `.mov` se sube sin error), contador contra el límite del backend, "Mover antes/después" reordena y persiste, límite alcanzado → Memory Upgrades.
 

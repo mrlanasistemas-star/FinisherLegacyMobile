@@ -78,6 +78,8 @@ Apple Pay / Google Pay: desactivados (`merchantIdentifier: []`, `enableGooglePay
 
 ## Legacy Plates
 
+> **OBSOLETO (2026-11-10).** Finisher Legacy ya no produce placas metálicas grabadas; el producto físico es el Finisher Legacy Tag NFC (terminado por el proveedor, activado digitalmente). El catálogo `GET /legacy-plate-models` y su cliente en la app se eliminaron. La ficha conserva el manejo de productos `legacy_plate` sólo por si el backend devuelve alguno histórico.
+
 Una Legacy Plate se graba con el resultado de un evento, así que no se agrega desde la ficha genérica del producto: la ficha lo explica y lleva a Eventos (el backend exige evento + modelo).
 
 ## Consolidación final (rama feature/final-consolidation-store)

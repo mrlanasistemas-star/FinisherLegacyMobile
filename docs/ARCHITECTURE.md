@@ -2,9 +2,9 @@
 
 ## Stack
 
-Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · Expo Router (file-based, `src/app`, typed routes) · TanStack Query v5 (+ persistencia en AsyncStorage) · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Image / Image Picker / Image Manipulator · Expo Video · Expo Notifications · Reanimated · Gesture Handler · `@stripe/stripe-react-native` (PaymentSheet) · `expo-apple-authentication` · `expo-auth-session` (Google).
+Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · Expo Router (file-based, `src/app`, typed routes) · TanStack Query v5 (+ persistencia en AsyncStorage) · Axios · Zustand · React Hook Form + Zod · Expo SecureStore · Expo Image / Image Picker / Image Manipulator · Expo Video · Expo Notifications · Reanimated · Gesture Handler · `react-native-nfc-manager` (activación de Finisher Legacy Tags) · `expo-location` + `expo-task-manager` (seguimiento en vivo) · `expo-web-browser` (checkout OpenPay). Stripe (`@stripe/stripe-react-native`) y el inicio de sesión con Google/Apple se retiraron de la app.
 
-**Estilos:** StyleSheet + design system en `src/theme/tokens.ts` (paleta del Manual de Identidad 2026: producto CLARO — Blanco Hueso/blanco, texto Negro Carbono, oro solo como acento; texto dorado sobre claro = `colors.accent` / Oro Profundo). Tipografía: Manrope (UI), Montserrat (títulos), Syncopate Bold (momentos de marca, solo mayúsculas). Logo único: `assets/images/brand/fl-monograma.png`. Movimiento en `src/components/motion/` (PressableScale, StaggerItem/listEntering, ScrollHeader, TiltCard, AnimatedCounter, BrandRefreshControl), todo en hilo UI y respetando Reduce Motion. `tailwind.config.js` refleja los tokens; NativeWind no se usa en pantallas.
+**Estilos:** StyleSheet + design system en `src/theme/tokens.ts` (paleta del Manual de Identidad 2026: producto CLARO — Blanco Hueso/blanco, texto Negro Carbono, oro solo como acento; texto dorado sobre claro = `colors.accent` / Oro Profundo). Tipografía: Manrope (UI), Montserrat (títulos), Syncopate Bold (momentos de marca, solo mayúsculas). Logo único: `assets/images/brand/fl-monograma.png`. Movimiento en `src/components/motion/` (sin barril `index.ts`: se importa cada archivo directo — PressableScale, StaggerItem/listEntering, ScrollHeader, TiltCard, AnimatedCounter, BrandRefreshControl), todo en hilo UI y respetando Reduce Motion. `tailwind.config.js` refleja los tokens; NativeWind no se usa en pantallas.
 
 ## Navegación
 
@@ -12,7 +12,7 @@ Expo SDK 57 · React Native 0.86 · React 19 (React Compiler) · TypeScript · E
 Inicio · Recuerdos · [ACTIVAR] · Comunidad · Colecciones
 ```
 
-Consolidación final (spec §89–97, §135). **No hay escáner QR**: los productos físicos (Legacy Plate, prendas, accesorios) abren la app por NFC (`/nfc/[token]`, ver Enlaces). Los códigos impresos de piezas anteriores se siguen aceptando escribiéndolos: `/legacy/scan` conserva su nombre histórico pero ya no usa cámara (Legacy Code → `/legacy/{code}`, código `AST…` → `/gear/claim?code=`). `expo-camera` se retiró; la cámara sólo la usa Image Picker para tomar fotos.
+Consolidación final (spec §89–97, §135). **No hay escáner QR**: los productos físicos abren la app por NFC — el Finisher Legacy Tag (terminado por el proveedor y activado digitalmente desde `/activate`, URL `/t/{code}` → `/nfc/t/[code]`) y las piezas anteriores (`/n/{token}` → `/nfc/[token]`), ver Enlaces. Finisher Legacy **ya no produce placas metálicas grabadas**; los registros históricos de Legacy Plate se siguen mostrando (Mi evento, `legacy/[code]`, `PlateCard`) pero no hay catálogo de modelos ni flujo de grabado. Los códigos impresos de piezas anteriores se siguen aceptando escribiéndolos: `/legacy/scan` conserva su nombre histórico pero ya no usa cámara (Legacy Code → `/legacy/{code}`, código `AST…` → `/gear/claim?code=`). `expo-camera` se retiró; la cámara sólo la usa Image Picker para tomar fotos.
 
 - **Inicio** — título grande que colapsa en barra translúcida; saludo, tarjeta **Activar mi Finisher Legacy** (→ `/activate`), apoyo en vivo, pedido en curso, Primeros pasos, próxima carrera, último recuerdo, comunidad y Colecciones. Búsqueda, campana y avatar (→ Perfil).
 - **Recuerdos** (ruta `legacy`) — tu historia: carreras, medallas, equipo conectado por NFC → `my-events/[participantId]`.
@@ -21,7 +21,7 @@ Consolidación final (spec §89–97, §135). **No hay escáner QR**: los produc
 - **Colecciones** (ruta `store`) — catálogo de la tienda, carrito (badge), checkout, pedidos.
 - **Perfil** (ruta `profile`, fuera de la barra) — desde el avatar del encabezado.
 
-Pantallas apiladas: `search`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `legacy/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*`; `nfc/[token]` (fuera de los guards: funciona con o sin sesión); y en `(auth)`: welcome (intro de 3 pasos + CTAs; reemplaza al onboarding), login, register, forgot-password, reset-password. Solo correo + contraseña (sin Google/Apple).
+Pantallas apiladas: `search`, `moments/[uuid]`, `moments/create` (modal), `athlete/[username]` (+ `connections`), `events/*`, `medals/*`, `my-events/*`, `gear/*`, `legacy/*`, `store/[slug]`, `cart`, `checkout`, `orders/*`, `notifications`, `support/*`, `settings/*`, `activate/*` (asistente de escritura NFC), `tracking/[participantId]` (seguimiento en vivo), `training/*` (Entrenamientos y mensajes de ánimo); `nfc/[token]` y `nfc/t/[code]` (fuera de los guards: funciona con o sin sesión); y en `(auth)`: welcome (intro de 3 pasos + CTAs; reemplaza al onboarding), login, register, forgot-password, reset-password. Solo correo + contraseña (sin Google/Apple).
 
 **Toda ruta autenticada debe registrarse en `Stack.Protected` de `src/app/_layout.tsx`.**
 
@@ -31,11 +31,13 @@ Pantallas apiladas: `search`, `moments/[uuid]`, `moments/create` (modal), `athle
 src/
 ├── api/          # axios client + un módulo por recurso (social.ts, account.ts, payments.ts, …)
 ├── app/          # rutas Expo Router (+native-intent.tsx reescribe enlaces entrantes)
-├── components/   # design system (ui/), social/, profile/, guide/, events/, media/, brand/
-├── features/     # lógica pura y testeada: social/moment-state, commerce/order-timeline,
-│                 # links/map-incoming-path, auth/social-sign-in
+├── components/   # design system (ui/), social/, profile/, guide/, events/, media/, brand/,
+│                 # motion/, nfc/, tag/ (render 3D del Tag), home/, legacy/, auth/
+├── features/     # lógica por dominio (la parte pura, testeada): commerce/, links/map-incoming-path,
+│                 # nfc/ (activación + NDEF), notifications/, push/, social/, tracking/, training/
 ├── hooks/        # TanStack Query (query-keys.ts centraliza TODAS las claves)
-├── payments/     # payment-flow.ts (máquina de estados, testeada) + stripe.ts (PaymentSheet)
+├── payments/     # payment-flow.ts (máquina de estados, testeada), openpay-checkout.ts y
+│                 # checkout-return.ts (checkout web OpenPay de un solo uso)
 ├── providers/    # QueryProvider (persistencia + limpieza al cerrar sesión)
 ├── schemas/      # Zod (auth, profile, moment)
 ├── stores/       # Zustand: sesión, UI local, toasts
@@ -74,7 +76,7 @@ Recurso único: `{data, message, meta:{request_id}}`. Listas:
 
 ## Sesión y seguridad
 
-Token sólo en SecureStore. `useSessionBootstrap` valida con `GET /me` antes de ocultar el splash. El logger es silencioso en producción y nunca registra tokens, contraseñas, secretos de pago ni cuerpos de requests. Los datos de tarjeta nunca pasan por la app→Laravel: van del SDK de Stripe a Stripe.
+Token sólo en SecureStore. `useSessionBootstrap` valida con `GET /me` antes de ocultar el splash. El logger es silencioso en producción y nunca registra tokens, contraseñas, secretos de pago ni cuerpos de requests. Los datos de tarjeta nunca pasan por la app ni por Laravel: se escriben en el formulario Openpay.js del checkout web (navegador in-app) y OpenPay los tokeniza ahí.
 
 ## Archivos (fotos y videos)
 
@@ -82,7 +84,7 @@ Token sólo en SecureStore. `useSessionBootstrap` valida con `GET /me` antes de 
 
 ## Enlaces
 
-`src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts`: `finisherlegacy://athlete/u`, `finisherlegacy://moments/uuid`, `https://finisherlegacy.com/@u`, `/moments/uuid`, `/events/slug`, `/reset-password/{token}`; el retorno de 3-D Secure de Stripe (`/stripe-redirect`) se entrega al SDK sin navegar. Un enlace abierto sin sesión se guarda y se reproduce al iniciar sesión (`use-deep-links.ts`). Cualquier host `https` se acepta (el sistema sólo entrega a la app los dominios verificados; staging incluido).
+`src/app/+native-intent.tsx` + `features/links/map-incoming-path.ts`: `finisherlegacy://athlete/u`, `finisherlegacy://moments/uuid`, `https://finisherlegacy.com/@u`, `/moments/uuid`, `/events/slug`, `/reset-password/{token}`, `/t/{code}` (Tag), `finisherlegacy://checkout/return?order=` (vuelta del checkout OpenPay → `/orders/{uuid}`); `/stripe-redirect` de builds antiguos se ignora sin navegar. Un enlace abierto sin sesión se guarda y se reproduce al iniciar sesión (`use-deep-links.ts`). Cualquier host `https` se acepta (el sistema sólo entrega a la app los dominios verificados; staging incluido).
 
 ### NFC (spec §32–33, §88)
 
@@ -110,6 +112,13 @@ Dominio: `app.config.ts` lo toma de `EXPO_PUBLIC_WEB_URL` (default producción) 
 ## Eliminación de cuenta
 
 `DELETE /me/account` (contraseña, o escribir `ELIMINAR` en cuentas sólo Google/Apple): revoca tokens, borra perfil, fotos, momentos, comentarios, reacciones, follows, bloqueos y dispositivos push; anonimiza nombre/correo/teléfono; las medallas personales quedan privadas; pedidos y resultados oficiales se conservan de forma anónima; el usuario se soft-deletea.
+
+## Módulos retirados
+
+- **2026-11-10 — catálogo de modelos de Legacy Plate.** El negocio ya no produce placas metálicas grabadas (el producto es el Finisher Legacy Tag NFC, terminado por el proveedor y activado en la app). Se eliminaron `src/api/legacyPlateModels.ts`, `src/hooks/use-legacy-plate-models.ts` y el tipo `LegacyPlateModel` de `src/types/models.ts` (ningún import los usaba); el backend retira `GET /api/v1/legacy-plate-models` en la misma pasada. Se conservan `LegacyPlateModelDetail`/`legacyPlate` de `/me/events/{participant}` y el tipo de producto `legacy_plate` en la tienda, porque siguen llegando datos históricos.
+- En la misma limpieza, sin referencias: `src/components/ui/separator.tsx`, el barril `src/components/motion/index.ts` y `assets/images/brand/fl-logo-principal.png` (logo único en la app: `fl-monograma.png`).
+- Antes: Stripe PaymentSheet (`payments/stripe.ts`), Google/Apple Sign-In, `expo-camera`/escáner QR.
+- La app nunca consumió las APIs de estación (Device API), Event Ops ni incidentes de admin que el backend también retira.
 
 ## Calidad
 

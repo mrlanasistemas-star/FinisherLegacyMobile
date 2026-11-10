@@ -31,6 +31,7 @@ Used only by "Seguimiento en vivo": the athlete starts it from one of their race
 
 Background audio (UIBackgroundModes: audio)
 Cheer messages and training audio keep playing with the screen locked while the athlete runs. Playback only; the app never records audio and does not request the microphone.
+Guideline 2.5.4: in "Modo entrenamiento" with "one message every N minutes", the athlete starts a workout whose whole purpose is to hear their cheer messages through the headphones at set times while the phone is locked. Between two messages the app keeps its audio session alive with a near-silent track, mixed with (never interrupting) the athlete's music, so the next message plays on time. It runs only while a workout is active: it stops when the athlete pauses or ends the workout, or when every message has played. The screen shows "Sesión activa" and a battery note meanwhile.
 
 Purchases
 The store sells only physical goods (Finisher Legacy Tags, shipped to the user), paid through an external payment processor on our website (guideline 3.1.3(e)). No digital goods, subscriptions or content are sold in the app, and nothing in the app is unlocked by payment.
@@ -69,6 +70,7 @@ Solo para "Seguimiento en vivo": el atleta lo inicia desde una de sus carreras, 
 
 Audio en segundo plano
 Los mensajes de ánimo y el audio del entrenamiento siguen sonando con la pantalla bloqueada. Solo reproducción; la app no graba ni pide el micrófono.
+Directriz 2.5.4: en "Modo entrenamiento" con "un mensaje cada N minutos", el atleta inicia un entrenamiento cuyo propósito es escuchar sus mensajes de ánimo en los audífonos a intervalos con el teléfono bloqueado. Entre dos mensajes la app mantiene activa su sesión de audio con una pista casi silenciosa, mezclada con la música del atleta (nunca la interrumpe), para que el siguiente mensaje suene a tiempo. Solo funciona durante un entrenamiento activo: se detiene al pausarlo o terminarlo, o cuando ya sonaron todos los mensajes. Mientras tanto la pantalla muestra "Sesión activa" y un aviso de batería.
 
 Compras
 La tienda vende solo bienes físicos (Finisher Legacy Tag con envío), pagados con un procesador externo en nuestro sitio (3.1.3(e)). No se venden bienes digitales, suscripciones ni contenido, y nada de la app se desbloquea con un pago.
@@ -101,7 +103,7 @@ Grabación de pantalla del teléfono (Android: `adb shell screenrecord /sdcard/d
 1. Abrir la app, iniciar sesión con la cuenta de revisión.
 2. **NFC:** Recuerdos › «Activar una pieza con NFC» → acercar un tag nuevo → confirmación → abrir la historia.
 3. **Seguimiento en vivo:** abrir una carrera propia → «Seguimiento en vivo» → pantalla de consentimiento → permitir ubicación → iniciar → bloquear el teléfono → mostrar la notificación permanente (Android) / indicador azul (iOS) → abrir el enlace en otro dispositivo y ver la posición moverse → detener.
-4. **Audio en segundo plano:** reproducir un mensaje de ánimo / audio de entrenamiento → bloquear pantalla → se sigue escuchando → pausar desde la pantalla bloqueada.
+4. **Audio en segundo plano:** reproducir un mensaje de ánimo / audio de entrenamiento → bloquear pantalla → se sigue escuchando → pausar desde la pantalla bloqueada. Después: Modo entrenamiento › «3 min» › Empezar → mostrar «Sesión activa» → bloquear con música sonando → el siguiente mensaje llega a los 3 minutos sobre la música.
 5. **Comunidad:** abrir un momento → menú «…» → Reportar; abrir un perfil → Bloquear.
 6. **Eliminar cuenta:** Configuración › Contraseña y cuenta › Eliminar mi cuenta (mostrar el diálogo, sin confirmar).
 
