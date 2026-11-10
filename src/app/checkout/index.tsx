@@ -93,7 +93,7 @@ export default function CheckoutScreen() {
 
               <Section icon={CreditCard} title="Pago">
                 <AppText variant="caption" tone="muted">
-                  Tarjeta de crédito o débito con OpenPay. Se abre una ventana segura; si tu banco pide verificarte (3-D Secure), lo haces ahí mismo.
+                  Tarjeta de crédito o débito. Se abre una ventana segura; si tu banco pide verificarte, lo haces ahí mismo.
                 </AppText>
               </Section>
 
@@ -129,7 +129,7 @@ export default function CheckoutScreen() {
               <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
                 <ShieldCheck size={18} color={colors.success} />
                 <AppText variant="caption" tone="muted" style={{ flex: 1 }}>
-                  Pago seguro con OpenPay. Los datos de tu tarjeta los captura OpenPay; nunca pasan por la app ni por nuestros servidores.
+                  Pago seguro. Los datos de tu tarjeta se capturan en una ventana protegida y nunca se guardan en la app.
                 </AppText>
               </View>
             </ScrollView>

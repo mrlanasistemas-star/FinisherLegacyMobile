@@ -98,7 +98,7 @@ export const PAYMENT_PHASE_COPY: Record<PaymentPhase, { title: string; message: 
   review: { title: 'Confirma tu pedido', message: '' },
   creating_order: { title: 'Creando tu pedido…', message: 'Estamos apartando tus productos.' },
   preparing: { title: 'Preparando el pago…', message: 'Un momento.' },
-  in_browser: { title: 'Completa tu pago', message: 'Termina el pago en la ventana segura de OpenPay.' },
+  in_browser: { title: 'Completa tu pago', message: 'Termina el pago en la ventana segura.' },
   confirming: { title: 'Confirmando tu pago…', message: 'Esto toma solo unos segundos.' },
   paid: { title: 'Pago confirmado', message: 'Listo. Tu pedido ya es parte de tu Legacy.' },
   processing: { title: 'Pago en proceso', message: 'Tu banco lo está procesando. Te avisaremos cuando se confirme.' },
