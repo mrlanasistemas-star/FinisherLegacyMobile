@@ -21,6 +21,10 @@ import { AppError } from '@/api/errors';
 
 import { initializeI18n, refreshCatalog, resetI18nForTests, setLocale, useI18n, useLocale, useT } from './index';
 
+// The bundled English catalog is generated (`php artisan i18n:sync`) and grows
+// with every translation pass: these tests seed their own catalog instead.
+jest.mock('./locales/en.json', () => ({}));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const ENGLISH = {

@@ -23,6 +23,10 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   jest.requireActual('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// The bundled English catalog is generated (`php artisan i18n:sync`) and grows
+// with every translation pass: these tests seed their own catalog instead.
+jest.mock('./locales/en.json', () => ({}));
+
 let mockDeviceLocales: { languageTag: string; languageCode: string | null }[] = [];
 
 jest.mock('expo-localization', () => ({
