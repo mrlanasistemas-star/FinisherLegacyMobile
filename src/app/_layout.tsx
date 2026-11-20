@@ -100,6 +100,12 @@ function RootNavigator() {
         <Stack.Screen name="training/index" />
         <Stack.Screen name="training/session" />
         <Stack.Screen name="training/share" />
+        <Stack.Screen name="training/messages" />
+        <Stack.Screen name="training/workout" />
+        <Stack.Screen name="training/summary" options={{ gestureEnabled: false }} />
+        <Stack.Screen name="training/log" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="training/history" />
+        <Stack.Screen name="training/workouts/[uuid]" />
         <Stack.Screen name="stories/index" />
         <Stack.Screen name="stories/[publicId]/index" />
         <Stack.Screen name="stories/[publicId]/edit" />

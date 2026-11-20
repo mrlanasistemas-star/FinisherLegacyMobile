@@ -1,6 +1,7 @@
 /**
- * Entrenamientos — the athlete's inbox of "Envíame ánimo" voice and text
- * messages. Large collapsing title, the "Modo entrenamiento" hero, counters,
+ * Mensajes de ánimo — the athlete's inbox of "Envíame ánimo" voice and text
+ * messages (reached from the Entrenamientos hub, `training/index.tsx`, and
+ * from the `training_cheer` notification). Large collapsing title, the "Modo entrenamiento" hero, counters,
  * a Todos / Sin escuchar / Favoritos filter, swipeable message cards with a
  * long-press menu, offline downloads, and the mini-player at the bottom.
  * Without signal it falls back to the messages downloaded on this phone.
@@ -47,10 +48,11 @@ import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
 import { haptics } from '@/utils/haptics';
 
 const NAV_HEIGHT = 52;
-const SESSION_HREF = '/training/session' as Href;
+// The cheer session now rides along a real live workout (Modo entrenamiento).
+const SESSION_HREF = '/training/workout' as Href;
 const SHARE_HREF = '/training/share' as Href;
 
-export default function TrainingHomeScreen() {
+export default function TrainingMessagesScreen() {
   const { t } = useI18n();
   const filters: { value: TrainingFilter; label: string }[] = [
     { value: 'all', label: t('Todos||filtro: todos los mensajes') },
@@ -154,7 +156,7 @@ export default function TrainingHomeScreen() {
       <Reveal style={{ gap: 4 }}>
         <AppText variant="eyebrow">{t('Envíame ánimo')}</AppText>
         <AppText variant="display" accessibilityRole="header">
-          {t('Entrenamientos')}
+          {t('Mensajes de ánimo')}
         </AppText>
         <AppText variant="body" tone="muted">
           {t('Escucha a quienes creen en ti mientras entrenas.')}
@@ -278,7 +280,7 @@ export default function TrainingHomeScreen() {
 
       <ScrollHeader
         scrollY={scrollY}
-        title={t('Entrenamientos')}
+        title={t('Mensajes de ánimo')}
         threshold={90}
         left={<IconButton icon={ChevronLeft} label={t('Volver')} onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} size={26} />}
         right={

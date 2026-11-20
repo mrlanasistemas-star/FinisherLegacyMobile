@@ -1,5 +1,7 @@
 import * as TaskManager from 'expo-task-manager';
 
+import { feedWorkoutPoints } from '@/features/training/workout/workout-storage';
+
 import { toTrackingPoint, type RawLocation, type TrackingPoint } from './points';
 import { bufferPoints } from './tracking-storage';
 import { flushTrackingPoints } from './tracking-uploader';
@@ -10,9 +12,14 @@ export const LIVE_TRACKING_TASK = 'fl-live-tracking';
 const FLUSH_EVERY_POINTS = 10;
 const FLUSH_EVERY_MS = 15_000;
 
-/** Shared by the OS task and the foreground fallback watcher. */
+/**
+ * Shared by the OS task and the foreground fallback watchers. One location
+ * stack, two consumers: a running live workout (Modo entrenamiento, no-op
+ * without one) and live race tracking (no-op without a tracking record).
+ */
 export async function handleLocations(locations: RawLocation[]): Promise<void> {
   const points = locations.map((location) => toTrackingPoint(location)).filter((p): p is TrackingPoint => p !== null);
+  await feedWorkoutPoints(points).catch(() => {});
   const record = await bufferPoints(points);
   if (!record || record.pending.length === 0) return;
 

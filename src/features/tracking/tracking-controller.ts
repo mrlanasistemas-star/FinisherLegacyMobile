@@ -10,6 +10,7 @@ import { MAX_BATCH } from './points';
 import { handleLocations, LIVE_TRACKING_TASK } from './tracking-task';
 import { loadTrackingRecord, saveTrackingRecord, updateTrackingRecord, type TrackingRecord } from './tracking-storage';
 import { flushTrackingPoints, setDrainedAfterStopHandler, setSessionClosedHandler, stopWatchingConnectivity, watchConnectivity } from './tracking-uploader';
+import { isWorkoutGpsActive } from '@/features/training/workout/workout-storage';
 import { t } from '@/i18n';
 
 export type TrackingStartError = 'no_consent' | 'permission_denied' | 'services_off' | 'other_active' | 'unavailable' | 'offline';
@@ -80,6 +81,9 @@ async function startUpdates(): Promise<'background' | 'foreground'> {
 async function stopUpdates() {
   foregroundWatcher?.remove();
   foregroundWatcher = null;
+  // A live workout (Modo entrenamiento) shares this OS task: leave it running
+  // for the workout; features/training/workout/workout-gps stops it later.
+  if (await isWorkoutGpsActive().catch(() => false)) return;
   if (await Location.hasStartedLocationUpdatesAsync(LIVE_TRACKING_TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(LIVE_TRACKING_TASK).catch(() => {});
   }

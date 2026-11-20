@@ -18,7 +18,7 @@ export function OwnProfileShortcuts(_props: { isPrivate: boolean }) {
     <ListGroup style={{ marginTop: spacing.sm }}>
       <ListRow icon={Package} label={t('Mis pedidos')} description={t('Estado y entregas')} onPress={() => router.push('/orders')} />
       <ListRow icon={Shirt} label={t('Mi equipo')} description={t('Piezas conectadas por NFC')} onPress={() => router.push('/gear')} />
-      <ListRow icon={Headphones} label={t('Entrenamientos')} description={t('Mensajes de ánimo de tu equipo')} onPress={() => router.push('/training' as Href)} />
+      <ListRow icon={Headphones} label={t('Entrenamientos')} description={t('Entrena, registra y mira tu progreso')} onPress={() => router.push('/training' as Href)} />
     </ListGroup>
   );
 }
