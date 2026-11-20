@@ -62,6 +62,9 @@ Documentación general del producto (vigente) en el repositorio del backend
 `docs/DESPLIEGUE.md`, `docs/PUBLICACION_TIENDAS.md`,
 `docs/PENDIENTES_EXTERNOS.md` y `docs/CIERRE_FINAL.md`.
 
+Guía de uso de la app, paso a paso y con capturas (para el dueño, soporte y
+revisores de las tiendas): backend `docs/GUIA_DE_LA_APP.md`.
+
 En este repositorio:
 
 - `docs/store/` — **fuente única para publicar en las tiendas** (fichas, Data safety, App Privacy, notas de revisión, capturas, pendientes externos).
