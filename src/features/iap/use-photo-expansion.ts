@@ -186,7 +186,11 @@ export function useIapRecovery() {
   const ran = useRef(false);
 
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    if (status !== 'authenticated') {
+      // Signed out: the next account to sign in gets its own recovery pass.
+      ran.current = false;
+      return;
+    }
     const service = getIapService();
     if (!service.isAvailable()) return;
 
@@ -200,7 +204,7 @@ export function useIapRecovery() {
       service
         .recover()
         .then((outcomes) => {
-          if (grantedCount(outcomes) > 0) showToast(t('Aplicamos una compra pendiente: tu recuerdo tiene más espacio para fotos.'), 'success');
+          if (grantedCount(outcomes) > 0) showToast(t('Aplicamos una compra pendiente: tu recuerdo tiene más espacio.'), 'success');
         })
         .catch(() => {});
     }

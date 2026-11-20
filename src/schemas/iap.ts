@@ -62,6 +62,8 @@ export const iapPurchaseResultSchema = z.object({
     status: z.enum(['granted', 'revoked']),
     story: z.string().nullable(),
     photos: z.number().int().nullable(),
+    /** Units of the pack's own kind; absent on an older backend. */
+    units: z.number().int().nullish(),
     order_number: z.string().nullable(),
   }),
   replayed: z.boolean(),
@@ -98,6 +100,8 @@ export const storySummarySchema = z.object({
   dedication: z.string().nullable().optional(),
   body: z.string().nullable().optional(),
   audio_url: z.string().nullable().optional(),
+  /** `album` = the story a Portarretrato inteligente opens; `tag` otherwise (additive, older backends omit it). */
+  kind: z.enum(['album', 'tag']).nullish().catch(null),
 });
 
 export type StorySummary = z.infer<typeof storySummarySchema>;

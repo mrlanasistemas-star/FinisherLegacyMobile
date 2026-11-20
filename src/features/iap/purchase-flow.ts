@@ -136,7 +136,8 @@ function applyOutcome(state: PurchaseState, outcome: PurchaseOutcome): PurchaseS
  */
 export const MESSAGES = {
   get granted() {
-    return t('Listo. Ya tienes más espacio para fotos en este recuerdo.');
+    // Kind-neutral: the same grant path serves photo, video and voice packs.
+    return t('Listo. Ya tienes más espacio en este recuerdo.');
   },
   get replayed() {
     return t('Esta compra ya estaba aplicada a tu recuerdo.');
@@ -259,7 +260,8 @@ export async function processPurchase(purchase: IapPurchase, storyPublicId: stri
     status: 'granted',
     finished,
     replayed: result.replayed,
-    photos: result.purchase.photos,
+    // Units of the pack's own kind (photos, videos or voice messages); `photos` on an older backend.
+    photos: result.purchase.units ?? result.purchase.photos,
     quota: result.quota,
     storyPublicId: result.purchase.story ?? story,
     message: result.replayed ? MESSAGES.replayed : MESSAGES.granted,
