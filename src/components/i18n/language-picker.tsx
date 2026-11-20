@@ -9,7 +9,7 @@
  *
  *     <LanguagePicker />
  */
-import { Check, Languages } from 'lucide-react-native';
+import { Check } from 'lucide-react-native';
 import { useState } from 'react';
 
 import { saveLocalePreference } from '@/api/i18n';
@@ -48,10 +48,10 @@ export function LanguagePicker() {
 
   return (
     <ListGroup title={t('Idioma')}>
-      {locales.map((option, index) => (
+      {/* No leading icon: an icon on only the first row left the languages misaligned. */}
+      {locales.map((option) => (
         <ListRow
           key={option.code}
-          icon={index === 0 ? Languages : undefined}
           label={option.name}
           loading={saving === option.code}
           onPress={() => void choose(option.code)}

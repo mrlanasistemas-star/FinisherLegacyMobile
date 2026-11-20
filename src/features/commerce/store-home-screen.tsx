@@ -12,6 +12,7 @@ import { FormInput } from '@/components/form-input';
 import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { Reveal, StaggerItem } from '@/components/motion/reveal';
 import { ScrollHeader, useScrollY } from '@/components/motion/scroll-header';
+import { ProfileAvatarButton } from '@/components/ui/profile-avatar-button';
 import { Skeleton } from '@/components/skeleton';
 import { Chip } from '@/components/ui/chip';
 import { IconButton } from '@/components/ui/icon-button';
@@ -196,6 +197,7 @@ export function StoreHomeScreen() {
           <>
             <IconButton icon={Receipt} label={t('Mis pedidos')} onPress={() => router.push('/orders')} />
             <IconButton icon={ShoppingCart} label={cartCount > 0 ? tc('Carrito, {count} producto|Carrito, {count} productos', cartCount) : t('Carrito')} badge={cartCount} onPress={() => router.push('/cart')} />
+            <ProfileAvatarButton />
           </>
         }
       />

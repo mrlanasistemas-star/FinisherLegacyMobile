@@ -19,6 +19,7 @@ import { MyStoriesEntry } from '@/features/iap/my-stories-entry';
 import { useMyStories } from '@/features/iap/use-photo-expansion';
 import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
+import { ProfileAvatarButton } from '@/components/ui/profile-avatar-button';
 import { SectionHeader } from '@/components/ui/section-header';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
@@ -198,7 +199,12 @@ export default function RecuerdosScreen() {
         scrollY={scrollY}
         title={t('Mis recuerdos')}
         threshold={70}
-        right={<IconButton icon={Plus} label={t('Agregar a mis recuerdos')} onPress={() => setAddOpen(true)} color={colors.accent} />}
+        right={
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <IconButton icon={Plus} label={t('Agregar a mis recuerdos')} onPress={() => setAddOpen(true)} color={colors.accent} />
+            <ProfileAvatarButton />
+          </View>
+        }
       />
 
       {addOpen ? (
