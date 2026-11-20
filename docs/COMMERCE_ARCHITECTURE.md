@@ -15,6 +15,14 @@
 > - `@stripe/stripe-react-native` desinstalado; el plugin se filtra en `app.config.ts` (quitar también de `app.json`). **Requiere nueva build nativa.**
 > - Sin llaves en la app: todo lo configura el backend (admin → Configuración → Pagos).
 
+> **Actualización 2026-11-20 — entrega, envío y cancelación.**
+>
+> - `GET /cart` trae (aditivo) `requires_shipping`, `delivery_options` (`pickup` / `shipping` con `fee_minor` calculado por el servidor, `ShippingRates`) y `last_shipping_address` para prellenar.
+> - El checkout envía `POST /checkout {delivery_method, phone, address_*, notes}` (`src/features/commerce/delivery.ts`, con tests; `components/delivery-form.tsx`). El servidor congela `shipping_minor` en el pedido y lo suma a `total_minor`, que es lo que cobra OpenPay. La app nunca envía montos.
+> - Idempotencia: una llave por cuerpo; el servidor solo recuerda respuestas exitosas, así que un 422 se corrige y se reintenta. La app crea llave nueva tras un 4xx o si cambia la dirección.
+> - `OrderResource` suma `shipping_minor`, `delivery {method, address}`, `shipment {carrier, tracking_number, shipped_at, delivered_at}` y `cancellable`.
+> - `POST /orders/{uuid}/cancel`: el comprador cancela un pedido sin pagar y sin cobro en curso (3-D Secure); libera stock y cupón. Si no se puede: 409 `ORDER_NOT_CANCELLABLE`.
+
 > Estado anterior (histórico): implementado con Stripe PaymentSheet; nunca tuvo llaves reales.
 
 ## Flujo
