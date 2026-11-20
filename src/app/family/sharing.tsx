@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { Link2, LocateFixed, MapPinOff, Share2, Users } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Pressable, Share, View } from 'react-native';
@@ -66,7 +66,7 @@ export default function SharingScreen() {
       )}
 
       <ListGroup>
-        <ListRow icon={Users} label={t('Administrar mi familia')} description={t('Invitar, cambiar etiquetas o quitar personas')} onPress={() => router.push('/family')} />
+        <ListRow icon={Users} label={t('Administrar mi familia')} description={t('Invitar, cambiar etiquetas o quitar personas')} onPress={() => router.push('/family' as Href)} />
       </ListGroup>
     </LargeTitleScroll>
   );

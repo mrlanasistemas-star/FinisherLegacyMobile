@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Link2, LocateFixed, Mail, ShieldCheck, UserMinus, UserPlus } from 'lucide-react-native';
 import { useState } from 'react';
 import { Share, View } from 'react-native';
@@ -96,7 +96,7 @@ export default function FamilyScreen() {
                     fallbackName={item.athlete.name}
                     caption={[item.event_name, t('Actualizado {ago}', { ago: formatAgo(item.last_update_at, now) })].filter(Boolean).join(' · ')}
                     trailing={<StatusBadge status={item.status} />}
-                    onPress={() => router.push(`/family/following/${item.uuid}`)}
+                    onPress={() => router.push(`/family/following/${item.uuid}` as Href)}
                     divider={index < following.data!.length - 1}
                   />
                 ))}

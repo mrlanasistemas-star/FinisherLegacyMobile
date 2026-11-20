@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { Bell, Info, KeyRound, LifeBuoy, LogOut, Mail, Shield, UserPen, Users } from 'lucide-react-native';
 import { useState } from 'react';
 import { Linking, View } from 'react-native';
@@ -40,7 +40,7 @@ export default function SettingsIndexScreen() {
         <ListGroup title={t('Preferencias')}>
           <ListRow icon={Bell} label={t('Notificaciones')} onPress={() => router.push('/settings/notifications')} />
           <ListRow icon={LifeBuoy} label={t('Mi equipo de apoyo')} description={t('Mensajes de ánimo para tus carreras')} onPress={() => router.push('/support')} />
-          <ListRow icon={Users} label={t('Familia')} description={t('Quién puede seguirte en vivo y a quién sigues')} onPress={() => router.push('/family')} />
+          <ListRow icon={Users} label={t('Familia')} description={t('Quién puede seguirte en vivo y a quién sigues')} onPress={() => router.push('/family' as Href)} />
         </ListGroup>
 
         {/* Idioma: one row per language the server offers; hidden while there is only one. */}

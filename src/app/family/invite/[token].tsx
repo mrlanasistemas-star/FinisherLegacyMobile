@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, type Href } from 'expo-router';
 import { HeartHandshake, MapPin, ShieldCheck, UserX } from 'lucide-react-native';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,7 +42,7 @@ export default function FamilyInviteScreen() {
       } else {
         await decline.mutateAsync(token);
       }
-      router.replace('/family');
+      router.replace('/family' as Href);
     } catch {
       // Shown inline below (InlineError).
     }
