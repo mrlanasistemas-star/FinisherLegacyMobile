@@ -18,6 +18,8 @@ export interface AddCartItemPayload {
   /** Required by the server when the variant's product type is `legacy_plate`. */
   event_edition_id?: number;
   legacy_plate_model_uuid?: string;
+  /** A saved Portarretrato design: the line carries it so the order is printed with it. */
+  portrait_design_uuid?: string;
 }
 
 export async function addCartItem(payload: AddCartItemPayload): Promise<Cart> {

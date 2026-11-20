@@ -705,6 +705,8 @@ export interface CartItem {
   product_type?: string | null;
   /** Additive, unvalidated here — read through `tagFaceFrom` (parses). */
   tag_design?: unknown;
+  /** Additive: the Portarretrato design this line will be printed with. */
+  portrait_design?: { uuid: string; title: string | null; template_label: string | null; thumb_url: string | null } | null;
 }
 
 export interface CartCoupon {
