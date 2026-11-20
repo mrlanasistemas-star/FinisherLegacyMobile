@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Award, Flag, Lock, MoreHorizontal, Trash2, Trophy, Users } from 'lucide-react-native';
+import { Activity, Award, Flag, Lock, MoreHorizontal, Trash2, Trophy, Users } from 'lucide-react-native';
 import { memo, useState } from 'react';
 import { Pressable, Share, View, useWindowDimensions } from 'react-native';
 
@@ -14,7 +14,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
-import { momentMetricLine, momentTypeLabel, visibilityLabel } from '@/features/social/moment-state';
+import { momentMetricLine, momentTypeLabel, trainingHeadline, visibilityLabel } from '@/features/social/moment-state';
 import { useDeleteMoment } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
@@ -52,7 +52,14 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
   const openAuthor = () => moment.author.username && router.push(`/athlete/${moment.author.username}`);
   const isPr = moment.type === 'personal_record' || moment.metrics?.is_personal_record;
   const headline =
-    moment.activity?.event ?? moment.metrics?.title ?? moment.medal?.title ?? moment.gear?.product_name ?? null;
+    moment.activity?.event ??
+    moment.metrics?.title ??
+    moment.medal?.title ??
+    moment.gear?.product_name ??
+    // Shared training workout (Modo entrenamiento) — optional reference.
+    trainingHeadline(moment) ??
+    null;
+  const isTraining = !moment.activity && !moment.medal && (moment.type === 'training' || !!moment.training);
 
   return (
     <View
@@ -103,7 +110,13 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
         <Pressable onPress={open} disabled={detail} style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 4 }}>
           {headline ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {moment.medal ? <Award size={16} color={colors.accent} /> : moment.activity ? <Trophy size={16} color={colors.accent} /> : null}
+              {moment.medal ? (
+                <Award size={16} color={colors.accent} />
+              ) : moment.activity ? (
+                <Trophy size={16} color={colors.accent} />
+              ) : isTraining ? (
+                <Activity size={16} color={colors.accent} />
+              ) : null}
               <AppText style={{ fontFamily: fontFamily.semibold, fontSize: 17, flexShrink: 1 }} numberOfLines={2}>
                 {headline}
                 {moment.activity?.race ? <AppText style={{ color: colors.muted, fontFamily: fontFamily.regular, fontSize: 17 }}> · {moment.activity.race}</AppText> : null}

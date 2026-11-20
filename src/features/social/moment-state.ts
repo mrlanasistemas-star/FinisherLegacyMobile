@@ -53,7 +53,28 @@ export function momentMetricLine(moment: LegacyMoment): string[] {
     const distance = moment.metrics.distance_km ? `${Number(moment.metrics.distance_km.toFixed(2))} km` : null;
     return [distance, formatDuration(moment.metrics.duration_seconds), moment.metrics.pace].filter((v): v is string => !!v);
   }
+  // A shared training workout without `metrics`: read its own numbers,
+  // tolerating any missing/invalid field (never invents a value).
+  const training = moment.training;
+  if (training) {
+    const meters = typeof training.distance_m === 'number' && training.distance_m > 0 ? training.distance_m : null;
+    const distance = meters ? `${Number((meters / 1000).toFixed(2))} km` : null;
+    const duration = typeof training.duration_s === 'number' ? formatDuration(Math.round(training.duration_s)) : null;
+    return [distance, duration, training.pace ?? null].filter((v): v is string => !!v);
+  }
   return [];
+}
+
+/**
+ * Headline for a training Moment: the workout title, else its sport, else
+ * the generic label — so a training post never renders an empty card.
+ */
+export function trainingHeadline(moment: LegacyMoment): string | null {
+  const training = moment.training;
+  if (!training && moment.type !== 'training') return null;
+  const manual = training?.source === 'manual';
+  const base = training?.title?.trim() || training?.sport?.trim() || t('Entrenamiento');
+  return manual ? `${base} · ${t('Registrado a mano')}` : base;
 }
 
 /** Parses "h:mm:ss" / "mm:ss" typed by the athlete into seconds — null when invalid. */
@@ -81,6 +102,10 @@ export function momentTypeLabel(type: LegacyMoment['type']): string {
       return t('Récord personal');
     case 'gear':
       return t('Nuevo gear');
+    case 'photo':
+      return t('Foto');
+    case 'legacy_plate':
+      return t('Legacy Plate');
     default:
       return t('Momento');
   }

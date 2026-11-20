@@ -6,6 +6,7 @@ import {
   parseDuration,
   toggleFollowState,
   toggleReaction,
+  trainingHeadline,
 } from './moment-state';
 
 import type { LegacyMoment } from '@/types/social';
@@ -84,6 +85,21 @@ describe('metrics formatting', () => {
         },
       }),
     ).toEqual(['21.1 km', '1:45:10', '4:59']);
+  });
+
+  it('renders a shared training workout from its optional reference, tolerating missing fields', () => {
+    const shared = { ...baseMoment, metrics: null, training: { title: 'Rodaje suave', distance_m: 8420, duration_s: 2700, pace: '5:21 /km' } };
+    expect(momentMetricLine(shared)).toEqual(['8.42 km', '45:00', '5:21 /km']);
+    expect(trainingHeadline(shared)).toBe('Rodaje suave');
+
+    // Older server / partial payload: no numbers, no title — still a headline, no invented values.
+    const bare = { ...baseMoment, metrics: null, training: { distance_m: null, duration_s: undefined } };
+    expect(momentMetricLine(bare)).toEqual([]);
+    expect(trainingHeadline(bare)).toBe('Entrenamiento');
+    expect(trainingHeadline({ ...bare, training: { title: 'Pesas', source: 'manual' } })).toBe('Pesas · Registrado a mano');
+
+    // Non-training posts never get a training headline.
+    expect(trainingHeadline({ ...baseMoment, type: 'gear', training: undefined })).toBeNull();
   });
 
   it('keeps comment counts non-negative', () => {

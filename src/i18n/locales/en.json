@@ -1,4 +1,6 @@
 {
+    "Registrado a mano": "Logged manually",
+    "Legacy Plate": "Legacy Plate",
     "+{count} foto|+{count} fotos": "+{count} photo|+{count} photos",
     "+{count} mensaje de voz|+{count} mensajes de voz": "+{count} voice message|+{count} voice messages",
     "+{count} video|+{count} videos": "+{count} video|+{count} videos",

@@ -11,7 +11,11 @@ export type MomentType =
   | 'training'
   | 'personal_record'
   | 'gear'
-  | 'manual';
+  | 'manual'
+  // Comunidad v1 types the backend also returns (photo/plate/text posts).
+  | 'photo'
+  | 'legacy_plate'
+  | 'text';
 
 export type MomentVisibility = 'public' | 'followers' | 'private';
 
@@ -49,6 +53,23 @@ export interface MomentMetrics {
   is_personal_record: boolean;
 }
 
+/**
+ * A recorded training workout shared as a Moment (Modo entrenamiento).
+ * Optional and loosely typed on purpose: older servers never send it and the
+ * card must render without it — every field may be missing or null.
+ */
+export interface MomentTrainingRef {
+  uuid?: string | null;
+  title?: string | null;
+  sport?: string | null;
+  distance_m?: number | null;
+  duration_s?: number | null;
+  /** Server-formatted pace ("5:00 /km") when there was enough GPS data. */
+  pace?: string | null;
+  /** `manual` = registered afterwards by hand (always labeled as such). */
+  source?: string | null;
+}
+
 export interface MomentMedia {
   type: 'image' | 'video';
   url: string;
@@ -73,6 +94,8 @@ export interface LegacyMoment {
   medal: { uuid: string; title: string | null; image_url: string | null } | null;
   gear: { uuid: string; product_name: string | null } | null;
   metrics: MomentMetrics | null;
+  /** Present only when the Moment shares a recorded training workout. */
+  training?: MomentTrainingRef | null;
   media: MomentMedia[];
   reactions: MomentReactionCounts;
   my_reactions: ReactionType[];
