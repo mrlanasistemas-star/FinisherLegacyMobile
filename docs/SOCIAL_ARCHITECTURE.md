@@ -1,6 +1,6 @@
 # Arquitectura social — Legacy Moments
 
-> Estado: **implementado** (backend `FinisherLegacy` + esta app). Reemplaza la sección "COMUNIDAD / LEGACY MOMENTS" de `MOBILE_BACKEND_REQUIREMENTS.md` (ya obsoleto).
+> Estado: **implementado** (backend `FinisherLegacy` + esta app). Reemplaza la sección "COMUNIDAD / LEGACY MOMENTS" de `historico/MOBILE_BACKEND_REQUIREMENTS.md` (ya obsoleto).
 
 Finisher Legacy no es un chat ni otra red de fotos: toda interacción cuelga de **actividad deportiva** — una carrera terminada, una medalla, un entrenamiento, un recuerdo, un gear. No hay DMs.
 

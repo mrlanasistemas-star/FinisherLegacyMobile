@@ -21,6 +21,8 @@ npx expo start
 | Variable | Descripción |
 |---|---|
 | `EXPO_PUBLIC_API_URL` | Base de la API v1. Sólo información pública — nunca poner secretos en variables `EXPO_PUBLIC_*`. |
+| `EXPO_PUBLIC_WEB_URL` | Origen web: enlaces para compartir y dominio de los enlaces universales / App Links (`app.config.ts`). Opcional, por defecto producción. |
+| `EXPO_PUBLIC_EAS_PROJECT_ID` | Solo respaldo del projectId para registrar push si la build no lo trae. |
 
 ## Desarrollo
 
@@ -45,18 +47,27 @@ npx expo-doctor
 ## Builds (EAS)
 
 ```bash
-eas build --platform android --profile preview
-eas build --platform ios --profile preview
-eas build --platform all --profile production
+eas build --platform android --profile preview      # APK interno
+eas build --platform android --profile production   # AAB para Google Play
+eas build --platform ios --profile production       # IPA para TestFlight / App Store
 ```
 
-Requiere `eas login` con una cuenta real y `eas init` para generar el `projectId` — ver `docs/STORE_RELEASE_CHECKLIST.md` para todo lo que depende de cuentas externas (Apple Developer, Google Play Console).
+El proyecto EAS ya está configurado (`extra.eas.projectId` en `app.json`). Perfiles, secretos de compilación (FCM, APNs, cuenta de servicio de Play) y envío: backend `docs/DESPLIEGUE.md` §B. Cualquier cambio en `app.json` / `app.config.ts` exige una compilación nativa nueva.
 
 ## Documentación
 
-- `docs/MOBILE_IMPLEMENTATION_PLAN.md` — plan y estado por fase
-- `docs/MOBILE_BACKEND_GAPS.md` — lo que el backend real todavía no expone
-- `docs/ARCHITECTURE.md` — estructura del proyecto
-- `docs/API_INTEGRATION.md` — contrato de API confirmado
-- `docs/RESPONSIVE_QA.md` — estado de QA responsive
-- `docs/STORE_RELEASE_CHECKLIST.md` — qué falta para publicar en las tiendas
+Documentación general del producto (vigente) en el repositorio del backend
+[FinisherLegacy](https://github.com/mrlanasistemas-star/FinisherLegacy):
+`README.md`, `docs/FUNCIONALIDADES.md`, `docs/ARQUITECTURA.md`,
+`docs/DESPLIEGUE.md`, `docs/PUBLICACION_TIENDAS.md`,
+`docs/PENDIENTES_EXTERNOS.md` y `docs/CIERRE_FINAL.md`.
+
+En este repositorio:
+
+- `docs/store/` — **fuente única para publicar en las tiendas** (fichas, Data safety, App Privacy, notas de revisión, capturas, pendientes externos).
+- `docs/ARCHITECTURE.md` — estructura de la app.
+- `docs/COMMERCE_ARCHITECTURE.md` — tienda, pago OpenPay en navegador, compras dentro de la app, envío y cancelación.
+- `docs/NFC_ACTIVATION.md` — activación del Finisher Legacy Tag por NFC y matriz de pruebas.
+- `docs/LIVE_TRACKING.md`, `docs/TRAINING_AUDIO.md`, `docs/SOCIAL_ARCHITECTURE.md` — seguimiento en vivo, audio de entrenamiento, comunidad.
+- `docs/DEVICE_QA.md`, `docs/RELEASE_CHECKLIST.md` — verificación en dispositivo y checklist técnico.
+- `docs/historico/` — planes y auditorías antiguas; **no son decisiones vigentes**.

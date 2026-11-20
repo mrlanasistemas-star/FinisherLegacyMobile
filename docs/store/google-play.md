@@ -69,7 +69,7 @@ Categoría: **Todas las demás tipos de apps** (no es juego). Respuestas:
 | Violencia, miedo, sexualidad, lenguaje soez, drogas, apuestas | No |
 | ¿Los usuarios pueden interactuar o intercambiar contenido? | **Sí** (momentos, comentarios, mensajes de ánimo) |
 | ¿Comparte la ubicación del usuario con otros usuarios? | **Sí** (seguimiento en vivo, solo con quien tiene el enlace y solo si el usuario lo inicia) |
-| ¿Permite comprar bienes digitales? | No (solo productos físicos) |
+| ¿Permite comprar bienes digitales? | **Sí**: ampliaciones de espacio de un recuerdo, solo con Google Play Billing (§5). Los productos físicos se pagan con OpenPay. |
 | ¿Contenido generado por usuarios moderado? | Sí: filtro automático, reportes, bloqueo y revisión manual |
 | ¿Es una app de navegador web o motor de búsqueda? | No |
 

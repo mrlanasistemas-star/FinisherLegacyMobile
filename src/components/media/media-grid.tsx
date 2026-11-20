@@ -23,7 +23,7 @@ export function MediaGrid({ items, onPress }: { items: AthleteEventMedia[]; onPr
               <View style={{ flex: 1, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
                 {/* No poster/thumbnail field exists for video (confirmed —
                     backend has no thumbnail generation yet, see
-                    docs/MOBILE_BACKEND_REQUIREMENTS.md), so video tiles show
+                    docs/historico/MOBILE_BACKEND_REQUIREMENTS.md), so video tiles show
                     a plain placeholder + play icon rather than trying to
                     decode a video URL as a static image. */}
                 {item.locked ? (

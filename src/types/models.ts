@@ -381,7 +381,7 @@ export interface EventParticipantDetail {
 // Event Media — GET/POST /me/events/{participant}/media, PATCH/DELETE /me/media/{uuid}
 // ---------------------------------------------------------------------------
 
-/** No `id` field on purpose — the index resource only exposes `uuid` (confirmed against AthleteEventMediaResource). Reorder persistence needs an internal id the API doesn't expose yet; see docs/MOBILE_BACKEND_REQUIREMENTS.md. */
+/** No `id` field on purpose — the index resource only exposes `uuid` (confirmed against AthleteEventMediaResource). Reorder persistence needs an internal id the API doesn't expose yet; see docs/historico/MOBILE_BACKEND_REQUIREMENTS.md. */
 export interface AthleteEventMedia {
   uuid: string;
   type: 'image' | 'video';

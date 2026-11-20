@@ -30,7 +30,7 @@ Bundle ID: `com.finisherlegacy.app` · Solo iPhone (`supportsTablet: false`) · 
 | URL de política de privacidad | https://finisherlegacy.com/privacy |
 | Licencia (EULA) | Personalizada → pegar/enlazar https://finisherlegacy.com/terms (incluye reglas de la comunidad con tolerancia cero) |
 | Copyright | `2026 Finisher Legacy` |
-| Precio | Gratis · sin compras dentro de la app |
+| Precio | Gratis · con compras dentro de la app (ampliaciones de espacio, §7) |
 
 **Texto promocional** (≤ 170): `Activa tu Finisher Legacy Tag, guarda cada carrera y deja que tu gente te siga en vivo el día de la carrera.`
 

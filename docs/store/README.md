@@ -37,13 +37,14 @@ Los JSON no admiten comentarios; aquí se documentan.
 | `expo-image-picker` | textos en español, `microphonePermission: false` | La cámara solo toma fotos: sin micrófono ni `RECORD_AUDIO`. |
 | `expo-location` | textos en español; segundo plano solo en iOS; servicio en primer plano en Android | Seguimiento en vivo iniciado por el usuario. Android **no** pide `ACCESS_BACKGROUND_LOCATION`. |
 | `expo-video` | sin opciones | Pasarle `supportsBackgroundPlayback: false` **quitaría** el modo `audio` que necesita `expo-audio`. |
-| `@stripe/stripe-react-native` | (lo administra el agente de pagos) | Se retirará al pasar a checkout web de OpenPay. |
+| `@stripe/stripe-react-native` | (retirado) | La app paga los bienes físicos con el checkout web de OpenPay; el paquete y su plugin ya no existen. |
 
 `androidNavigationBar.enforceContrast` se eliminó de `app.json`: en SDK 57 ya no tiene efecto y rompía la validación de esquema de `expo-doctor`. Ahora lo aplica `app.config.ts`.
 
 ### `app.config.ts` (capa dinámica, comentada en el propio archivo)
 
-- Universal links / App Links para `https://finisherlegacy.com/n/*` y `/t/*`.
+- Universal links / App Links para `https://finisherlegacy.com` en `/n/*`, `/t/*`, `/reset-password/*`, `/live/*` y `/familia/invitacion/*` (igual que `config/nfc.php` › `app.paths` del backend).
+- `expo-iap`: compras dentro de la app (StoreKit 2 / Play Billing, permiso `BILLING`) para las ampliaciones digitales.
 - NFC: entitlement solo `TAG` (evita el error de subida ITMS-90778 «NDEF is disallowed»; la app solo usa `NFCTagReaderSession`).
 - `expo-audio`: solo reproducción, segundo plano activado, sin micrófono.
 - `expo-notifications`: `aps-environment` = `production` en builds de producción.
@@ -86,7 +87,7 @@ Todo lo de `app.json` / `app.config.ts` (permisos, entitlements, Privacy Manifes
 | Eliminación desde la web + solicitud sin la app (Google) | ✅ `/eliminar-cuenta` (nueva) y Ajustes › Perfil en la web (ahora usa la misma acción `DeleteAccount` que la app). |
 | Política de privacidad y términos | ✅ Textos completos (se quitó el aviso de «placeholder»). ⚠️ Falta revisión legal y razón social/domicilio del responsable. |
 | UGC: filtro, reporte, bloqueo, moderación, aceptación de términos (Apple 1.2) | ✅ Reportar perfil/momento/mensaje, bloquear, cola de moderación en el admin, **nuevo** filtro de lenguaje ofensivo y **nueva** casilla obligatoria de Términos en el registro. |
-| Bienes digitales (Apple 3.1.1) | ✅ Sin IAP y sin botones de compra de fotos/ampliaciones; la API ya excluye productos `digital_photo` del catálogo. |
+| Bienes digitales (Apple 3.1.1, Google Play Payments) | ✅ Las ampliaciones de fotos, videos y voz se venden **solo** con compras dentro de la app (`expo-iap`, verificadas en el servidor); nunca con OpenPay ni con enlaces a la web. La API excluye productos `digital_photo` del catálogo de la app. |
 | Bienes físicos con checkout externo (Apple 3.1.3(e)) | ✅ Permitido. Depende de que OpenPay esté activo en producción. |
 | Sign in with Apple (4.8) | ✅ No aplica: solo correo y contraseña. Código de Google sign-in eliminado de la app. |
 | Cuenta demo (2.1) | ✅ `php artisan app:review-account {email}`. |

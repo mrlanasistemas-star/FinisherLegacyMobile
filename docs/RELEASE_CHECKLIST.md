@@ -15,8 +15,7 @@ Estado real verificado — no se marca ✅ nada que no se haya confirmado.
 
 ## Plugins nativos (requieren development build / EAS, no Expo Go)
 
-- ✅ `@stripe/stripe-react-native` (0.64.0) — se retira al pasar al checkout web de OpenPay.
-- ✅ `expo-image-picker`, `expo-video`, `expo-audio`, `expo-location`, `expo-notifications`, `expo-secure-store`, `react-native-nfc-manager`.
+- ✅ `expo-image-picker`, `expo-video`, `expo-audio`, `expo-location`, `expo-notifications`, `expo-secure-store`, `expo-iap`, `react-native-nfc-manager`. (`@stripe/stripe-react-native` retirado: pago web de OpenPay.)
 
 ## Permisos
 
@@ -29,18 +28,19 @@ Estado real verificado — no se marca ✅ nada que no se haya confirmado.
 
 ## Configuración externa pendiente (lo único que el código no puede resolver)
 
-### Pagos — Stripe (backend `.env`)
-- `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET`; webhook en Stripe Dashboard → `https://finisherlegacy.com/api/webhooks/stripe`. Probar primero con llaves `pk_test_/sk_test_` y tarjetas de prueba de Stripe (**nunca cobros reales de prueba**). Detalle en `COMMERCE_ARCHITECTURE.md`.
-- Sin llaves: la app muestra "El pago con tarjeta todavía no está activo" y el pedido queda guardado.
+### Pagos — OpenPay y compras dentro de la app (backend)
+- OpenPay: llaves y webhook `https://finisherlegacy.com/api/webhooks/openpay` (backend `docs/PENDIENTES_EXTERNOS.md` §1, `docs/renovacion/pagos.md`).
+- Compras dentro de la app: credenciales `APPLE_IAP_*` / `GOOGLE_PLAY_*` e IDs de producto en Admin › Límites y tarifas (backend `docs/renovacion/compras-dentro-de-app.md`).
+- Sin llaves: la app muestra "El pago con tarjeta todavía no está activo" y el pedido queda guardado; sin credenciales de tienda oculta «Ampliar espacio».
 
 ### Google / Apple sign-in
 - Retirado de la app (código `socialSignIn` y variables `EXPO_PUBLIC_GOOGLE_*` eliminados). Las cuentas antiguas sin contraseña pueden eliminarse escribiendo ELIMINAR.
 
 ### Push
-- Proveedor real (FCM/APNs vía Expo Push) y reemplazar `NullPushNotificationGateway` en el backend. Hoy las notificaciones sociales/pedidos son internas (bandeja de la app), no push.
+- Envío real por Expo Push ya implementado: `PUSH_PROVIDER=expo` en el servidor + credenciales FCM (archivo `GOOGLE_SERVICES_JSON` en EAS) y APNs en EAS.
 
 ### Universal Links / App Links
-- `apple-app-site-association` (Team ID) y `assetlinks.json` (SHA-256 de firma Android) en `finisherlegacy.com`, + `ios.associatedDomains` / `android.intentFilters`. Sin esto, los enlaces `https://` abren el navegador (los `finisherlegacy://` y el escáner ya funcionan).
+- El backend ya sirve `apple-app-site-association` y `assetlinks.json`; faltan `APPLE_TEAM_ID` y `ANDROID_SHA256_CERT_FINGERPRINTS` en su `.env` (`ios.associatedDomains` / `android.intentFilters` ya están en `app.config.ts`). Sin ellos, los enlaces `https://` abren el navegador (los `finisherlegacy://` ya funcionan).
 - Web: la ruta `/moments/{uuid}` todavía no existe en el sitio (ver `SOCIAL_ARCHITECTURE.md` › URLs).
 
 ### Tiendas
@@ -56,8 +56,8 @@ Estado real verificado — no se marca ✅ nada que no se haya confirmado.
 
 ## Seguridad cliente
 
-- ✅ Token sólo en SecureStore. ✅ Sin secretos en el bundle (la llave publicable de Stripe llega del backend en runtime).
-- ✅ Datos de tarjeta nunca pasan por Laravel (PaymentSheet). ✅ Logger silencioso en producción.
+- ✅ Token sólo en SecureStore. ✅ Sin secretos en el bundle (la app no lleva llaves de pago).
+- ✅ Datos de tarjeta nunca pasan por la app ni por Laravel (Openpay.js tokeniza en la página de pago). ✅ Logger silencioso en producción.
 - ✅ Caché persistido sólo de lectura y borrado al cerrar sesión.
 
 ## Quality gates (antes de cada build)

@@ -26,7 +26,7 @@ Nada de esto lo puede resolver el código. Marcado en orden de bloqueo.
 |---|---|
 | **Push Android (FCM)** | Crear proyecto Firebase, app Android `com.finisherlegacy.app`, descargar `google-services.json` → `eas env:create --environment production --name GOOGLE_SERVICES_JSON --type file --value ./secrets/google-services.json`. Subir la **llave de cuenta de servicio FCM V1** en `eas credentials -p android` → Push Notifications. |
 | **Push iOS (APNs)** | `eas credentials -p ios` → generar/subir la APNs key (.p8). |
-| **Proveedor push en el backend** | Reemplazar `NullPushNotificationGateway` por el envío real vía Expo Push si se quieren notificaciones push (hoy son internas en la bandeja). No bloquea la revisión. |
+| **Proveedor push en el backend** | El envío por Expo Push ya existe: definir `PUSH_PROVIDER=expo` en el `.env` del servidor (con otro valor no se envía nada). |
 | **App Links Android** | SHA-256 de Play App Signing (Play Console › Integridad de la app) → `ANDROID_SHA256_CERT_FINGERPRINTS` en el servidor. |
 | **Universal links iOS** | `APPLE_TEAM_ID` en el servidor (sirve `/.well-known/apple-app-site-association`). |
 | **HTTPS válido** en `finisherlegacy.com` con `/privacy`, `/terms`, `/eliminar-cuenta`, `/contact` y `/.well-known/*` accesibles sin login. Desplegar la web con estos cambios **antes** de enviar. |
@@ -36,5 +36,4 @@ Nada de esto lo puede resolver el código. Marcado en orden de bloqueo.
 ## Recomendado (no bloquea)
 
 - Actualizar parches de Expo SDK 57 (`npx expo install --check`; hay 15 paquetes con parche pendiente según `expo-doctor`) en un momento sin otros agentes trabajando, y reconstruir.
-- Instalar `expo-asset` (dependencia par que exige `expo-audio`; sin ella el audio puede fallar fuera de Expo Go): `npx expo install expo-asset`.
-- Ícono de notificación Android monocromo de 96×96 (hoy se usa el ícono por defecto con color `#0B0B0C`).
+- Lista completa con URL, pantalla y variable de cada pendiente: backend `docs/PENDIENTES_EXTERNOS.md`.

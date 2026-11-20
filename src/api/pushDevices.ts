@@ -14,7 +14,7 @@ export interface RegisterPushDevicePayload {
  * (confirmed reading `Me\PushDeviceController`). Actual delivery requires a
  * real Expo push token obtained on-device (`expo-notifications`, not yet a
  * dependency) and a physical device/EAS build — Expo Go cannot receive
- * remote push. See docs/MOBILE_BACKEND_REQUIREMENTS.md.
+ * remote push. See docs/historico/MOBILE_BACKEND_REQUIREMENTS.md.
  */
 export async function registerPushDevice(payload: RegisterPushDevicePayload): Promise<PushDevice> {
   try {
