@@ -46,6 +46,7 @@ function MessageCardBase({ message, current, playing, progress, offline, onPress
   const label = [
     t('Mensaje de {name}', { name: message.sender_name }),
     message.relationship,
+    message.source === 'nfc_card' ? t('desde tu Tarjeta de ánimo') : null,
     unheard ? t('sin escuchar') : null,
     message.favorite ? t('favorito') : null,
     processing ? t('audio procesándose') : hasAudio && duration ? t('audio de {seconds} segundos', { seconds: Math.round(duration) }) : t('mensaje de texto'),
@@ -99,7 +100,8 @@ function MessageCardBase({ message, current, playing, progress, offline, onPress
                 {message.sender_name}
               </AppText>
               <AppText variant="caption" tone="subtle" numberOfLines={1}>
-                {[message.relationship, relativeTime(message.created_at)].filter(Boolean).join(' · ')}
+                {/* A cheer left by tapping a Tarjeta de ánimo NFC says so. */}
+                {[message.relationship, message.source === 'nfc_card' ? t('Tarjeta NFC') : null, relativeTime(message.created_at)].filter(Boolean).join(' · ')}
               </AppText>
             </View>
             {message.favorite ? <Star size={16} color={colors.gold} fill={colors.gold} /> : null}

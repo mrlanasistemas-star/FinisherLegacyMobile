@@ -681,6 +681,8 @@ export interface CartItem {
   tag_design?: unknown;
   /** Additive: the Portarretrato design this line will be printed with. */
   portrait_design?: { uuid: string; title: string | null; template_label: string | null; thumb_url: string | null } | null;
+  /** Additive: the cheer link a Tarjeta de ánimo line will open. */
+  cheer_link?: { uuid: string; title: string } | null;
 }
 
 export interface CartCoupon {

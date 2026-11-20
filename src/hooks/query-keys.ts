@@ -42,4 +42,5 @@ export const queryKeys = {
   trainingMessagesAll: ['training', 'messages'] as const,
   trainingMessages: (filter: 'all' | 'unheard' | 'favorites') => ['training', 'messages', filter] as const,
   trainingLinks: ['training', 'links'] as const,
+  cheerCards: ['training', 'cards'] as const,
 };

@@ -3,6 +3,8 @@
  * friends open on the web (no account, no app) to record a voice note or
  * write a message. Create a link (title + expiry), share it with the native
  * Share sheet, see how many messages each link collected, and revoke it.
+ * Each link also shows its counters and its Tarjetas de ánimo NFC (buy one
+ * bound to the link, re-bind or deactivate) — cheer-card-panel.tsx.
  */
 import { Link2, MessageCircleHeart, Share2, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
@@ -22,9 +24,10 @@ import { Skeleton } from '@/components/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { LargeTitleScroll } from '@/components/ui/top-bar';
-import { useCreateTrainingLink, useRevokeTrainingLink, useTrainingLinks } from '@/features/training/use-training';
+import { BuyCardButton, CardRow, LinkCardsList, LinkStatsRow } from '@/features/training/components/cheer-card-panel';
+import { useCheerCards, useCreateTrainingLink, useRevokeTrainingLink, useTrainingLinks } from '@/features/training/use-training';
 import { useI18n, type Translate, type TranslateCount } from '@/i18n';
-import { createTrainingLinkSchema, isLinkActive, type CreateTrainingLinkInput, type TrainingLink } from '@/schemas/training';
+import { createTrainingLinkSchema, isLinkActive, type CheerCard, type CheerCardOffer, type CreateTrainingLinkInput, type TrainingLink } from '@/schemas/training';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
 import { colors, fontFamily, radius, shadows, spacing } from '@/theme/tokens';
@@ -58,6 +61,8 @@ export default function TrainingShareScreen() {
   const links = useTrainingLinks();
   const create = useCreateTrainingLink();
   const revoke = useRevokeTrainingLink();
+  // Cards are optional extras: if this call fails the links still work.
+  const cheerCards = useCheerCards();
   const firstName = useAuthStore((s) => s.user?.name?.split(' ')[0] ?? null);
   const [title, setTitle] = useState('');
   const [expiry, setExpiry] = useState<CreateTrainingLinkInput['expires_in_days']>(30);
@@ -85,6 +90,10 @@ export default function TrainingShareScreen() {
   };
 
   const list = links.data ?? [];
+  const cards = cheerCards.data?.cards ?? [];
+  const offer = cheerCards.data?.offer ?? null;
+  // Cards that open no link (deactivated or never bound): shown on their own so they can be bound again.
+  const unboundCards = cards.filter((card) => !card.link);
   const notFound = links.error instanceof AppError && links.error.kind === 'not_found';
 
   return (
@@ -171,11 +180,29 @@ export default function TrainingShareScreen() {
           ) : (
             list.map((link, index) => (
               <StaggerItem key={link.uuid} index={index}>
-                <LinkCard link={link} onShare={() => void shareLink(link, firstName, t)} onRevoke={() => setRevokeTarget(link)} />
+                <LinkCard
+                  link={link}
+                  links={list}
+                  cards={cards.filter((card) => card.link?.uuid === link.uuid)}
+                  offer={offer}
+                  onShare={() => void shareLink(link, firstName, t)}
+                  onRevoke={() => setRevokeTarget(link)}
+                />
               </StaggerItem>
             ))
           )}
         </View>
+
+        {unboundCards.length > 0 ? (
+          <View style={{ gap: spacing.sm }}>
+            <AppText variant="eyebrow" tone="subtle" style={{ marginLeft: spacing.xxs }}>
+              {t('Tarjetas sin enlace')}
+            </AppText>
+            {unboundCards.map((card) => (
+              <CardRow key={card.uuid} card={card} links={list} />
+            ))}
+          </View>
+        ) : null}
       </LargeTitleScroll>
 
       <ConfirmDialog
@@ -198,7 +225,21 @@ export default function TrainingShareScreen() {
   );
 }
 
-function LinkCard({ link, onShare, onRevoke }: { link: TrainingLink; onShare: () => void; onRevoke: () => void }) {
+function LinkCard({
+  link,
+  links,
+  cards,
+  offer,
+  onShare,
+  onRevoke,
+}: {
+  link: TrainingLink;
+  links: TrainingLink[];
+  cards: CheerCard[];
+  offer: CheerCardOffer | null;
+  onShare: () => void;
+  onRevoke: () => void;
+}) {
   const { t, tc } = useI18n();
   const active = isLinkActive(link);
   const state = link.revoked_at
@@ -246,6 +287,9 @@ function LinkCard({ link, onShare, onRevoke }: { link: TrainingLink; onShare: ()
           {link.url.replace(/^https?:\/\//, '')}
         </AppText>
       </View>
+      <LinkStatsRow link={link} />
+      <LinkCardsList cards={cards} links={links} />
+      <BuyCardButton link={link} offer={offer} />
     </View>
   );
 }

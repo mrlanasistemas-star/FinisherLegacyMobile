@@ -1,9 +1,13 @@
 import { apiClient } from '@/api/client';
 import { toAppError } from '@/api/errors';
 import {
+  parseCheerCard,
+  parseCheerCards,
   parseTrainingLink,
   parseTrainingLinks,
   parseTrainingMessagesPage,
+  type CheerCard,
+  type CheerCardsResponse,
   type CreateTrainingLinkInput,
   type TrainingFilter,
   type TrainingLink,
@@ -81,6 +85,38 @@ export async function createTrainingLink(input: CreateTrainingLinkInput): Promis
 export async function revokeTrainingLink(uuid: string): Promise<void> {
   try {
     await apiClient.delete(`training/links/${encodeURIComponent(uuid)}`);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+// ── Tarjeta de ánimo NFC (cards bound to a link) ────────────────────────────
+
+/** My Tarjetas de ánimo + the product offer to buy another one. */
+export async function fetchCheerCards(): Promise<CheerCardsResponse> {
+  try {
+    const { data } = await apiClient.get('training/cards');
+    return parseCheerCards(data);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** Points the card at another of my links (422 `link_uuid` when not possible). */
+export async function rebindCheerCard(uuid: string, linkUuid: string): Promise<CheerCard> {
+  try {
+    const { data } = await apiClient.put(`training/cards/${encodeURIComponent(uuid)}`, { link_uuid: linkUuid });
+    return parseCheerCard(data);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** Deactivates the card: tapping it shows a friendly "inactive" page until it is bound again. */
+export async function deactivateCheerCard(uuid: string): Promise<CheerCard> {
+  try {
+    const { data } = await apiClient.delete(`training/cards/${encodeURIComponent(uuid)}/link`);
+    return parseCheerCard(data);
   } catch (error) {
     throw toAppError(error);
   }

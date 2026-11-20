@@ -34,6 +34,10 @@ export const trainingMessageSchema = z.object({
   duration_seconds: z.coerce.number().nonnegative().catch(0),
   listened_at: z.string().nullish().transform((v) => v ?? null),
   favorite: z.boolean().catch(false),
+  /** Additive: the sender chose not to give a name (`sender_name` already says "Anónimo"). */
+  anonymous: z.boolean().catch(false),
+  /** Additive: left from the shared link or by tapping a Tarjeta de ánimo NFC. */
+  source: z.enum(['link', 'nfc_card']).catch('link'),
   created_at: z.string(),
   link: z
     .object({ uuid: z.string(), title: z.string().nullish().transform((v) => v ?? null) })
@@ -87,9 +91,80 @@ export const trainingLinkSchema = z.object({
   expires_at: z.string().nullish().transform((v) => v ?? null),
   revoked_at: z.string().nullish().transform((v) => v ?? null),
   messages_count: z.coerce.number().int().min(0).catch(0),
+  /**
+   * Additive (Tarjeta de ánimo): counters of this link — free messages used of
+   * those included, paid ones and the NFC cards that open it. Null on create.
+   */
+  stats: z
+    .object({
+      free_used: z.coerce.number().int().min(0).catch(0),
+      free_limit: z.coerce.number().int().min(0).catch(0),
+      after_free: z.enum(['blocked', 'free', 'paid']).catch('blocked'),
+      paid_count: z.coerce.number().int().min(0).catch(0),
+      cards_count: z.coerce.number().int().min(0).catch(0),
+      card_messages_count: z.coerce.number().int().min(0).catch(0),
+    })
+    .nullish()
+    .catch(null)
+    .transform((v) => v ?? null),
 });
 
 export type TrainingLink = z.infer<typeof trainingLinkSchema>;
+export type TrainingLinkStats = NonNullable<TrainingLink['stats']>;
+
+/**
+ * A Tarjeta de ánimo NFC the athlete owns (`GET /training/cards`): its chip
+ * opens `link` in any browser; `active` is false once deactivated.
+ */
+export const cheerCardSchema = z.object({
+  uuid: z.string().min(1),
+  code: z.string(),
+  active: z.boolean().catch(false),
+  link: z
+    .object({ uuid: z.string(), title: z.string(), state: z.string().nullish().transform((v) => v ?? null) })
+    .nullish()
+    .transform((v) => v ?? null),
+  stats: z
+    .object({
+      messages_count: z.coerce.number().int().min(0).catch(0),
+      free_used: z.coerce.number().int().min(0).catch(0),
+      free_limit: z.coerce.number().int().min(0).catch(0),
+      paid_count: z.coerce.number().int().min(0).catch(0),
+    })
+    .catch({ messages_count: 0, free_used: 0, free_limit: 0, paid_count: 0 }),
+  activated_at: z.string().nullish().transform((v) => v ?? null),
+  bound_at: z.string().nullish().transform((v) => v ?? null),
+});
+
+export type CheerCard = z.infer<typeof cheerCardSchema>;
+
+/** The card product to buy one for a link (`GET /training/card-offer`, also `meta.offer` of the cards list). */
+export const cheerCardOfferSchema = z.object({
+  available: z.boolean().catch(false),
+  product_slug: z.string().catch('tarjeta-animo-nfc'),
+  product_variant_uuid: z.string().nullish().transform((v) => v ?? null),
+  name: z.string().nullish().transform((v) => v ?? null),
+  price_minor: z.coerce.number().int().nullish().transform((v) => v ?? null),
+  currency: z.string().nullish().transform((v) => v ?? null),
+  image_url: z.string().nullish().transform((v) => v ?? null),
+});
+
+export type CheerCardOffer = z.infer<typeof cheerCardOfferSchema>;
+
+export interface CheerCardsResponse {
+  cards: CheerCard[];
+  offer: CheerCardOffer | null;
+}
+
+export function parseCheerCards(raw: unknown): CheerCardsResponse {
+  const envelope = z.object({ data: z.unknown(), meta: z.object({ offer: z.unknown().optional() }).passthrough().optional() }).parse(raw);
+  const offer = cheerCardOfferSchema.safeParse(envelope.meta?.offer);
+  return { cards: parseRows(cheerCardSchema, envelope.data), offer: offer.success ? offer.data : null };
+}
+
+export function parseCheerCard(raw: unknown): CheerCard {
+  return z.object({ data: cheerCardSchema }).parse(raw).data;
+}
 
 export function parseTrainingLinks(raw: unknown): TrainingLink[] {
   const envelope = z.object({ data: z.unknown() }).parse(raw);

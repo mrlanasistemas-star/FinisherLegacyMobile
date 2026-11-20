@@ -3,10 +3,13 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type InfiniteD
 import {
   blockTrainingSender,
   createTrainingLink,
+  deactivateCheerCard,
   deleteTrainingMessage,
+  fetchCheerCards,
   fetchTrainingLinks,
   fetchTrainingMessages,
   markTrainingMessageListened,
+  rebindCheerCard,
   revokeTrainingLink,
   setTrainingMessageFavorite,
 } from '@/api/training';
@@ -251,5 +254,32 @@ export function useRevokeTrainingLink() {
     },
     onError: (_error, _uuid, context) => client.setQueryData(queryKeys.trainingLinks, context?.previous),
     onSettled: () => client.invalidateQueries({ queryKey: queryKeys.trainingLinks }),
+  });
+}
+
+// ── Tarjeta de ánimo NFC ────────────────────────────────────────────────────
+
+/** My cards + the offer to buy one (`meta.offer`). */
+export function useCheerCards() {
+  return useQuery({
+    queryKey: queryKeys.cheerCards,
+    queryFn: fetchCheerCards,
+    retry: (count, error) => count < 2 && !(error && typeof error === 'object' && 'kind' in error && error.kind === 'not_found'),
+  });
+}
+
+/** Re-bind or deactivate a card; both refresh cards and link counters (cards_count). */
+export function useUpdateCheerCard() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { uuid: string; linkUuid: string | null }) => {
+      await ensureOnline();
+      return input.linkUuid ? rebindCheerCard(input.uuid, input.linkUuid) : deactivateCheerCard(input.uuid);
+    },
+    onSuccess: () => haptics.success(),
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: queryKeys.cheerCards });
+      void client.invalidateQueries({ queryKey: queryKeys.trainingLinks });
+    },
   });
 }

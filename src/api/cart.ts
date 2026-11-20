@@ -20,6 +20,8 @@ export interface AddCartItemPayload {
   legacy_plate_model_uuid?: string;
   /** A saved Portarretrato design: the line carries it so the order is printed with it. */
   portrait_design_uuid?: string;
+  /** Tarjeta de ánimo NFC: the athlete's cheer link the card will open (bound when it ships). */
+  cheer_link_uuid?: string;
 }
 
 export async function addCartItem(payload: AddCartItemPayload): Promise<Cart> {

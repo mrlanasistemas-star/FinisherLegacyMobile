@@ -193,7 +193,9 @@ function CartRow({ item, last }: { item: CartItem; last: boolean }) {
   const sizeColor = [item.color, item.size ? t('Talla {size}', { size: item.size }) : null].filter(Boolean) as string[];
   // A Portarretrato line names the design it will be printed with.
   const portrait = item.portrait_design ? t('Diseño: {name}', { name: item.portrait_design.title || item.portrait_design.template_label || t('Mi portarretrato') }) : null;
-  const details = [...(sizeColor.length > 0 ? sizeColor : item.variant_name ? [item.variant_name] : []), item.event_edition_name, portrait].filter(Boolean) as string[];
+  // A Tarjeta de ánimo line names the cheer link it will open.
+  const cheer = item.cheer_link ? t('Abre: {title}', { title: item.cheer_link.title }) : null;
+  const details = [...(sizeColor.length > 0 ? sizeColor : item.variant_name ? [item.variant_name] : []), item.event_edition_name, portrait, cheer].filter(Boolean) as string[];
 
   const remove = () => removeItem.mutate(item.id, { onError, onSuccess: () => showToast(t('Quitamos {name}.', { name: item.product_name }), 'default') });
 
