@@ -238,6 +238,8 @@ export default function TrainingHubScreen() {
           </ListGroup>
         </View>
       </ScrollView>
+      {/* Status-bar scrim: scrolled content must not run under the clock and icons. */}
+      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: colors.background }} />
     </View>
   );
 }
