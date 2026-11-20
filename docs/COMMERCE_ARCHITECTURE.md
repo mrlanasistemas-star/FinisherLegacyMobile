@@ -12,7 +12,7 @@
 > - Código: `src/api/payments.ts`, `src/payments/openpay-checkout.ts`, `src/payments/payment-flow.ts` (máquina de estados pura, con tests), `src/payments/checkout-return.ts`, `src/hooks/use-payment-flow.ts`.
 > - El deep link de regreso no trae resultado y nunca se confía en él; `+native-intent` no navega mientras el checkout espera, y fuera de eso lleva a `/orders/{uuid}`.
 > - Solo productos físicos: el catálogo no trae `digital_photo`; un pedido con `app_payable: false` no muestra "Pagar" (sin enlazar a la web).
-> - `@stripe/stripe-react-native` desinstalado; el plugin se filtra en `app.config.ts` (quitar también de `app.json`). **Requiere nueva build nativa.**
+> - `@stripe/stripe-react-native` desinstalado y fuera de `app.json`/`app.config.ts` (2026-11-20). **Requiere nueva build nativa.**
 > - Sin llaves en la app: todo lo configura el backend (admin → Configuración → Pagos).
 
 > **Actualización 2026-11-20 — entrega, envío y cancelación.**
