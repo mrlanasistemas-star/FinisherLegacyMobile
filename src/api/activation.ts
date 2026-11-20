@@ -26,6 +26,9 @@ export interface ActivationStartInput {
   tag_code?: string;
   nfc_uid?: string;
   platform: 'android' | 'ios';
+  /** `cheer` activates a Tarjeta de ánimo NFC bound to `cheer_link_uuid` (one of my links). */
+  purpose?: 'story' | 'cheer';
+  cheer_link_uuid?: string;
 }
 
 const accept2xxOr422 = (status: number) => (status >= 200 && status < 300) || status === 422;

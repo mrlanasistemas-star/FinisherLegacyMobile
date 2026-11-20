@@ -30,7 +30,9 @@ function formatCode(code: string): string {
 export default function ActivationSuccessScreen() {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
-  const { tagCode = '', storyUrl, editUrl, storyId } = useLocalSearchParams<{ tagCode?: string; storyUrl?: string; editUrl?: string; storyId?: string }>();
+  const { tagCode = '', storyUrl, editUrl, storyId, cheerTitle } = useLocalSearchParams<{ tagCode?: string; storyUrl?: string; editUrl?: string; storyId?: string; cheerTitle?: string }>();
+  // Tarjeta de ánimo NFC: no story — it opens the cheer link it was bound to.
+  const cheerCard = cheerTitle !== undefined && !storyId;
   const completeUrl = ownUrl(editUrl) ?? ownUrl(storyUrl);
   // The memory is built in the app (race data, story, photos); the web page stays as the fallback.
   const nativeStory = storyId && /^[a-z0-9]{8,16}$/.test(storyId) ? storyId : null;
@@ -61,13 +63,17 @@ export default function ActivationSuccessScreen() {
 
         <Animated.View entering={FadeInDown.delay(180).springify().damping(20)} style={{ gap: spacing.sm, alignItems: 'center' }}>
           <AppText variant="label" style={{ color: colors.accent, letterSpacing: 2.5 }}>
-            {t('ACTIVADO')}
+            {cheerCard ? t('ACTIVADA') : t('ACTIVADO')}
           </AppText>
           <AppText variant="title" align="center" accessibilityRole="header">
-            {t('Tu Finisher Legacy ya es tuyo')}
+            {cheerCard ? t('Tu Tarjeta de ánimo está lista') : t('Tu Finisher Legacy ya es tuyo')}
           </AppText>
           <AppText variant="body" tone="muted" align="center">
-            {t('Quedó escrito y verificado. Cada vez que alguien lo acerque a su teléfono verá tu historia.')}
+            {cheerCard
+              ? cheerTitle
+                ? t('Ahora abre «{title}». Quien la acerque a su celular podrá dejarte un mensaje de voz, sin cuenta ni app.', { title: cheerTitle })
+                : t('Quien la acerque a su celular podrá dejarte un mensaje de voz, sin cuenta ni app.')
+              : t('Quedó escrito y verificado. Cada vez que alguien lo acerque a su teléfono verá tu historia.')}
           </AppText>
           {tagCode ? (
             <AppText variant="caption" tone="muted" align="center" accessibilityLabel={t('Código {code}', { code: tagCode.split('').join(' ') })}>
@@ -78,8 +84,14 @@ export default function ActivationSuccessScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        {nativeStory || completeUrl ? <StepButton label={t('Completar mi recuerdo')} onPress={completeStory} /> : null}
-        <StepButton label={t('Ir a mi Legacy')} variant={nativeStory || completeUrl ? 'plain' : 'primary'} onPress={() => router.replace('/legacy')} />
+        {cheerCard ? (
+          <StepButton label={t('Ver mis tarjetas')} onPress={() => router.replace('/training/share' as Href)} />
+        ) : (
+          <>
+            {nativeStory || completeUrl ? <StepButton label={t('Completar mi recuerdo')} onPress={completeStory} /> : null}
+            <StepButton label={t('Ir a mi Legacy')} variant={nativeStory || completeUrl ? 'plain' : 'primary'} onPress={() => router.replace('/legacy')} />
+          </>
+        )}
       </View>
     </View>
   );

@@ -11,7 +11,7 @@ export interface FailureCopy {
 }
 
 /** A function, not a table: the copy is resolved in the language active when it is shown. */
-function apiCopy(code: string): FailureCopy | undefined {
+function apiCopy(code: string, serverMessage?: string): FailureCopy | undefined {
   switch (code) {
     case 'ACTIVATION_CODE_INVALID':
       return {
@@ -28,7 +28,8 @@ function apiCopy(code: string): FailureCopy | undefined {
     case 'TAG_NOT_ACTIVATABLE':
       return {
         title: t('No se puede activar'),
-        body: t('Este Finisher Legacy no está disponible para activarse. Escríbenos a hola@finisherlegacy.com y lo revisamos.'),
+        // The server says why (lost, disabled… or "this is a Tarjeta de ánimo: choose it"), already translated.
+        body: serverMessage || t('Este Finisher Legacy no está disponible para activarse. Escríbenos a hola@finisherlegacy.com y lo revisamos.'),
         action: 'none',
       };
     case 'TAG_UID_MISMATCH':
@@ -125,7 +126,7 @@ export function failureCopy(failure: ActivationFailure): FailureCopy {
       return { title: t('Tu sesión expiró'), body: t('Inicia sesión de nuevo para continuar.'), action: 'login' };
     case 'api':
       return (
-        (failure.code ? apiCopy(failure.code) : undefined) ?? {
+        (failure.code ? apiCopy(failure.code, failure.message) : undefined) ?? {
           title: t('No pudimos activarlo'),
           body: failure.message ?? t('Intenta de nuevo en un momento.'),
           action: 'retry',

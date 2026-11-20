@@ -1,8 +1,8 @@
 import { router, useLocalSearchParams, type Href } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { ChevronLeft, KeyRound, ShieldAlert, Smartphone, X } from 'lucide-react-native';
+import { Check, ChevronLeft, KeyRound, Link2, Plus, ShieldAlert, Smartphone, X } from 'lucide-react-native';
 import { useCallback, useEffect, useReducer, useRef, useState, type Dispatch } from 'react';
-import { BackHandler, Keyboard, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { BackHandler, Keyboard, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 import { AppText } from '@/components/app-text';
@@ -11,6 +11,7 @@ import { ActivationShell } from '@/components/nfc/activation-shell';
 import { StepButton } from '@/components/nfc/step-button';
 import { TapIllustration, type TapPhase } from '@/components/nfc/tap-illustration';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { SegmentedControl } from '@/components/ui/segmented-control';
 import { failureCopy, progressCopy } from '@/features/nfc/activation-copy';
 import { activationCodeForApi, initialWizardState, stepperIndex, stepperLabels, wizardReducer, type WizardAction, type WizardState } from '@/features/nfc/activation-flow';
 import { isActivationBusy } from '@/features/nfc/activation-session';
@@ -18,7 +19,9 @@ import { nativeNfcDriver } from '@/features/nfc/nfc-driver';
 import { securePendingActivationStore } from '@/features/nfc/pending-activation';
 import { useActivationRunner, webOrigin } from '@/features/nfc/use-activation';
 import { parseHttpUrl } from '@/features/nfc/url-policy';
+import { useCreateTrainingLink, useTrainingLinks } from '@/features/training/use-training';
 import { useI18n, type Translate } from '@/i18n';
+import { isLinkActive } from '@/schemas/training';
 import { useAuthStore } from '@/stores/authStore';
 import { useUiStore } from '@/stores/uiStore';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
@@ -32,10 +35,25 @@ function isOwnWebUrl(url: string | null | undefined): url is string {
   return !!parsed && parsed.scheme === webOrigin.scheme && parsed.host.replace(/^www\./, '') === webOrigin.host.replace(/^www\./, '');
 }
 
+/** What is being activated: a Finisher Legacy (story) or a Tarjeta de ánimo NFC bound to a cheer link. */
+type Purpose = 'story' | 'cheer';
+
+/** The cheer-card choice of the code step, kept in the screen (the wizard reducer stays purpose-agnostic). */
+interface CheerChoice {
+  purpose: Purpose;
+  setPurpose: (purpose: Purpose) => void;
+  linkUuid: string | null;
+  setLinkUuid: (uuid: string | null) => void;
+}
+
 /**
  * "Activar mi Finisher Legacy" — writes the Tag's permanent URL into a
  * blank NTAG21x with the phone's own NFC (no third-party app). See
  * docs/NFC_ACTIVATION.md for the flow and the error matrix.
+ *
+ * Also activates a Tarjeta de ánimo NFC: the person picks "Tarjeta de ánimo"
+ * and one of their cheer links; the chip gets the same `/t/{code}` URL and
+ * the server binds the card to that link on confirm.
  */
 export default function ActivateScreen() {
   const { t } = useI18n();
@@ -46,6 +64,9 @@ export default function ActivateScreen() {
 
   const [state, dispatch] = useReducer(wizardReducer, undefined, () => initialWizardState(authenticated, params.code ?? ''));
   const [confirmOverwrite, setConfirmOverwrite] = useState(false);
+  const [purpose, setPurpose] = useState<Purpose>('story');
+  const [cheerLinkUuid, setCheerLinkUuid] = useState<string | null>(null);
+  const cheer: CheerChoice = { purpose, setPurpose, linkUuid: cheerLinkUuid, setLinkUuid: setCheerLinkUuid };
   const { run, retryConfirm } = useActivationRunner((progress) => dispatch({ type: 'progress', progress }));
   const running = useRef(false);
 
@@ -69,12 +90,20 @@ export default function ActivateScreen() {
   useEffect(() => {
     if (state.step !== 'done' || !state.result) return;
     const { result } = state;
-    const query = [
-      ['tagCode', result.tag_code],
-      ['storyUrl', result.story.url],
-      ['editUrl', result.story.edit_url ?? ''],
-      ['storyId', result.story.public_id],
-    ]
+    // A Tarjeta de ánimo has no story: the success screen names the link it opens.
+    const query = (
+      result.story
+        ? [
+            ['tagCode', result.tag_code],
+            ['storyUrl', result.story.url],
+            ['editUrl', result.story.edit_url ?? ''],
+            ['storyId', result.story.public_id],
+          ]
+        : [
+            ['tagCode', result.tag_code],
+            ['cheerTitle', result.cheer_link?.title ?? ''],
+          ]
+    )
       .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
       .join('&');
     router.replace(`/activate/success?${query}` as Href);
@@ -86,13 +115,17 @@ export default function ActivateScreen() {
       running.current = true;
       dispatch({ type: 'session_started' });
       try {
-        const outcome = await run({ activationCode: activationCodeForApi(current), overwriteConsent: consent });
+        const outcome = await run({
+          activationCode: activationCodeForApi(current),
+          overwriteConsent: consent,
+          cheerLinkUuid: purpose === 'cheer' ? cheerLinkUuid : null,
+        });
         dispatch({ type: 'outcome', outcome });
       } finally {
         running.current = false;
       }
     },
-    [run],
+    [run, purpose, cheerLinkUuid],
   );
 
   const doRetryConfirm = useCallback(async () => {
@@ -157,8 +190,8 @@ export default function ActivateScreen() {
         title={t('Activar mi Finisher Legacy')}
         leading={leading}
         progress={<ActivationProgress labels={stepperLabels(t)} index={stepperIndex(state.step)} />}
-        footer={<Footer state={state} dispatch={dispatch} startSession={startSession} retryConfirm={doRetryConfirm} goToAuth={goToAuth} onOverwrite={() => setConfirmOverwrite(true)} />}>
-        <StepBody state={state} dispatch={dispatch} tapPhase={tapPhase} onSubmitCode={() => dispatch({ type: 'code_submitted' })} />
+        footer={<Footer state={state} dispatch={dispatch} cheer={cheer} startSession={startSession} retryConfirm={doRetryConfirm} goToAuth={goToAuth} onOverwrite={() => setConfirmOverwrite(true)} />}>
+        <StepBody state={state} dispatch={dispatch} cheer={cheer} tapPhase={tapPhase} onSubmitCode={() => dispatch({ type: 'code_submitted' })} />
       </ActivationShell>
 
       <ConfirmDialog
@@ -220,11 +253,13 @@ function Heading({ title, body }: { title: string; body?: string }) {
 function StepBody({
   state,
   dispatch,
+  cheer,
   tapPhase,
   onSubmitCode,
 }: {
   state: WizardState;
   dispatch: Dispatch<WizardAction>;
+  cheer: CheerChoice;
   tapPhase: TapPhase;
   onSubmitCode: () => void;
 }) {
@@ -245,7 +280,7 @@ function StepBody({
       );
 
     case 'code':
-      return <CodeStep state={state} dispatch={dispatch} onSubmit={onSubmitCode} />;
+      return <CodeStep state={state} dispatch={dispatch} cheer={cheer} onSubmit={onSubmitCode} />;
 
     case 'approach':
       return (
@@ -290,6 +325,21 @@ function StepBody({
 
     case 'already': {
       const product = state.already?.product;
+      if (state.already?.purpose === 'cheer') {
+        return (
+          <>
+            <Eyebrow>{t('YA ACTIVADA')}</Eyebrow>
+            <Heading
+              title={t('Esta Tarjeta de ánimo ya es tuya')}
+              body={
+                state.already.cheer_link
+                  ? t('Hoy abre «{title}». Para cambiar el enlace que abre, ve a Compartir mi enlace.', { title: state.already.cheer_link.title })
+                  : t('Para cambiar el enlace que abre, ve a Compartir mi enlace.')
+              }
+            />
+          </>
+        );
+      }
       return (
         <>
           <Eyebrow>{t('YA ACTIVADO')}</Eyebrow>
@@ -356,12 +406,29 @@ function Tips() {
   );
 }
 
-function CodeStep({ state, dispatch, onSubmit }: { state: WizardState; dispatch: Dispatch<WizardAction>; onSubmit: () => void }) {
+function CodeStep({ state, dispatch, cheer, onSubmit }: { state: WizardState; dispatch: Dispatch<WizardAction>; cheer: CheerChoice; onSubmit: () => void }) {
   const { t } = useI18n();
   const [focused, setFocused] = useState(false);
   return (
     <>
-      <Heading title={t('Tu código de activación')} body={t('Está en la tarjeta que viene dentro del empaque de tu Finisher Legacy.')} />
+      <View style={{ gap: spacing.xs }}>
+        <AppText variant="caption" tone="muted" style={{ fontFamily: fontFamily.semibold }}>
+          {t('¿Qué vas a activar?')}
+        </AppText>
+        <SegmentedControl
+          options={[
+            { value: 'story', label: t('Recuerdo Finisher Legacy') },
+            { value: 'cheer', label: t('Tarjeta de ánimo') },
+          ]}
+          value={cheer.purpose}
+          onChange={(value) => cheer.setPurpose(value)}
+        />
+      </View>
+      {cheer.purpose === 'cheer' ? <CheerLinkPicker cheer={cheer} /> : null}
+      <Heading
+        title={t('Tu código de activación')}
+        body={cheer.purpose === 'cheer' ? t('Está en el empaque de tu Tarjeta de ánimo.') : t('Está en la tarjeta que viene dentro del empaque de tu Finisher Legacy.')}
+      />
       <View style={{ gap: spacing.xs }}>
         <View style={[styles.codeField, focused && { borderColor: colors.gold }, state.codeError ? { borderColor: colors.destructive } : null]}>
           <KeyRound size={18} color={colors.accent} strokeWidth={1.8} />
@@ -407,6 +474,7 @@ function CodeStep({ state, dispatch, onSubmit }: { state: WizardState; dispatch:
 function Footer({
   state,
   dispatch,
+  cheer,
   startSession,
   retryConfirm,
   goToAuth,
@@ -414,6 +482,7 @@ function Footer({
 }: {
   state: WizardState;
   dispatch: Dispatch<WizardAction>;
+  cheer: CheerChoice;
   startSession: (state: WizardState, consent: { uid: string | null } | null) => void;
   retryConfirm: () => void;
   goToAuth: (screen: '/login' | '/register') => void;
@@ -430,7 +499,14 @@ function Footer({
         </>
       );
     case 'code':
-      return <StepButton label={t('Continuar')} onPress={() => dispatch({ type: 'code_submitted' })} disabled={state.code.replace(/-/g, '').length < 12} />;
+      return (
+        <StepButton
+          label={t('Continuar')}
+          onPress={() => dispatch({ type: 'code_submitted' })}
+          // A Tarjeta de ánimo needs the link it will open before writing.
+          disabled={state.code.replace(/-/g, '').length < 12 || (cheer.purpose === 'cheer' && !cheer.linkUuid)}
+        />
+      );
     case 'approach':
       return <StepButton label={t('Estoy listo')} accessibilityHint={t('Activa el lector NFC del teléfono')} onPress={() => startSession(state, state.overwriteConsent)} />;
     case 'session':
@@ -445,6 +521,9 @@ function Footer({
         </>
       );
     case 'already':
+      if (state.already?.purpose === 'cheer') {
+        return <StepButton label={t('Ver mis tarjetas')} onPress={() => router.replace('/training/share' as Href)} />;
+      }
       return state.existingTagCode ? (
         <StepButton label={t('Ver este Finisher Legacy')} onPress={() => router.replace(`/nfc/t/${state.existingTagCode}` as Href)} />
       ) : (
@@ -473,7 +552,114 @@ function Footer({
   }
 }
 
+/**
+ * Which of my cheer links the card will open: active links as rows, plus a
+ * quick "Nuevo enlace" (e.g. «Para mamá») using the same create API as the
+ * training screen. Loading / error / empty states are visible inline.
+ */
+function CheerLinkPicker({ cheer }: { cheer: CheerChoice }) {
+  const { t } = useI18n();
+  const links = useTrainingLinks();
+  const create = useCreateTrainingLink();
+  const [title, setTitle] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const active = (links.data ?? []).filter((link) => isLinkActive(link));
+
+  const createLink = () => {
+    const clean = title.trim();
+    if (clean.length < 2) {
+      setError(t('Escribe un título de al menos 2 letras.'));
+      return;
+    }
+    setError(null);
+    create.mutate(
+      { title: clean, expires_in_days: null },
+      {
+        onSuccess: (link) => {
+          setTitle('');
+          cheer.setLinkUuid(link.uuid);
+        },
+        onError: (e) => setError(e.message),
+      },
+    );
+  };
+
+  return (
+    <View style={{ gap: spacing.xs }}>
+      <AppText variant="caption" tone="muted" style={{ fontFamily: fontFamily.semibold }}>
+        {t('¿Qué enlace abrirá la tarjeta?')}
+      </AppText>
+      {links.isPending ? (
+        <AppText variant="caption" tone="subtle">
+          {t('Cargando tus enlaces…')}
+        </AppText>
+      ) : links.isError ? (
+        <AppText variant="caption" tone="destructive">
+          {t('No pudimos cargar tus enlaces.')}
+        </AppText>
+      ) : null}
+      {active.map((link) => {
+        const selected = cheer.linkUuid === link.uuid;
+        return (
+          <Pressable
+            key={link.uuid}
+            onPress={() => cheer.setLinkUuid(link.uuid)}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            style={[styles.linkRow, selected && { borderColor: colors.black, backgroundColor: colors.card }]}>
+            <Link2 size={16} color={colors.accent} />
+            <AppText variant="bodyStrong" numberOfLines={1} style={{ flex: 1 }}>
+              {link.title}
+            </AppText>
+            {selected ? <Check size={18} color={colors.black} /> : null}
+          </Pressable>
+        );
+      })}
+      <View style={[styles.linkRow, { paddingRight: spacing.xxs }]}>
+        <TextInput
+          value={title}
+          onChangeText={(value) => {
+            setTitle(value);
+            if (error) setError(null);
+          }}
+          placeholder={t('Nuevo enlace, ej. Para mamá')}
+          placeholderTextColor={colors.subtle}
+          maxLength={80}
+          returnKeyType="done"
+          onSubmitEditing={createLink}
+          accessibilityLabel={t('Título del nuevo enlace')}
+          style={{ flex: 1, minHeight: 44, color: colors.foreground, fontFamily: fontFamily.regular, fontSize: 15 }}
+        />
+        <Pressable
+          onPress={createLink}
+          disabled={create.isPending}
+          accessibilityRole="button"
+          accessibilityLabel={t('Crear enlace')}
+          style={{ minHeight: 40, minWidth: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.black, opacity: create.isPending ? 0.5 : 1 }}>
+          <Plus size={18} color={colors.gold} />
+        </Pressable>
+      </View>
+      {error ? (
+        <AppText variant="caption" tone="destructive" accessibilityLiveRegion="polite">
+          {error}
+        </AppText>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  linkRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.inputBorder,
+    backgroundColor: colors.input,
+  },
   iconBadge: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   dot: { width: 5, height: 5, borderRadius: 3, backgroundColor: colors.gold, marginTop: 8 },
   codeField: {

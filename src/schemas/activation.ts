@@ -28,16 +28,24 @@ export const activationStartSchema = z.object({
   status: z.enum(['ready_to_write', 'already_activated']),
   product: activationProductSchema.nullable().optional(),
   story: activationStorySchema.nullable().optional(),
+  /** Additive: `cheer` for a Tarjeta de ánimo NFC (opens a cheer link, never a story). */
+  purpose: z.enum(['story', 'cheer']).catch('story').optional(),
+  cheer_link: z.object({ uuid: z.string(), title: z.string() }).nullable().optional(),
 });
 
 export const activationConfirmSchema = z.object({
   status: z.literal('activated'),
   tag_code: z.string(),
-  story: z.object({
-    public_id: z.string(),
-    url: z.string(),
-    edit_url: z.string().nullable().optional(),
-  }),
+  /** Null for a Tarjeta de ánimo NFC: it opens `cheer_link` instead of a story. */
+  story: z
+    .object({
+      public_id: z.string(),
+      url: z.string(),
+      edit_url: z.string().nullable().optional(),
+    })
+    .nullable(),
+  purpose: z.enum(['story', 'cheer']).catch('story').optional(),
+  cheer_link: z.object({ uuid: z.string(), title: z.string(), url: z.string().optional() }).nullable().optional(),
 });
 
 /** 422 body: the contract's `{message, code}`, or the app-wide `{error:{code,message}}` ApiException shape. */

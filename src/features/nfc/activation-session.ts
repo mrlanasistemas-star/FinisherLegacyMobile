@@ -26,7 +26,7 @@ import { extractFlTagCode, isAllowedWriteUrl, normalizeTagCode, sameUrl, type We
 export type SessionProgress = 'waiting' | 'detected' | 'authorizing' | 'writing' | 'verifying' | 'confirming';
 
 export interface ActivationApi {
-  start(input: { activation_code?: string; tag_code?: string; nfc_uid?: string; platform: 'android' | 'ios' }): Promise<ActivationStart>;
+  start(input: { activation_code?: string; tag_code?: string; nfc_uid?: string; platform: 'android' | 'ios'; purpose?: 'story' | 'cheer'; cheer_link_uuid?: string }): Promise<ActivationStart>;
   confirm(intentId: string, input: { nfc_uid?: string; written_url: string }): Promise<ActivationConfirm>;
   fail(intentId: string, reason: string): Promise<void>;
 }
@@ -49,6 +49,8 @@ export interface OverwriteConsent {
 export interface ActivationRequest {
   activationCode: string;
   overwriteConsent?: OverwriteConsent | null;
+  /** Tarjeta de ánimo NFC: the server binds the card to this link of mine on confirm. */
+  cheerLinkUuid?: string | null;
 }
 
 export interface ForeignSummary {
@@ -246,6 +248,8 @@ export async function runActivation(deps: ActivationDeps, request: ActivationReq
         tag_code: flCode ?? undefined,
         nfc_uid: snapshot.uid ?? undefined,
         platform: driver.platform,
+        // Only sent for a cheer card, so story activations keep the exact old body.
+        ...(request.cheerLinkUuid ? { purpose: 'cheer' as const, cheer_link_uuid: request.cheerLinkUuid } : {}),
       });
     } catch (error) {
       const failure = appErrorToFailure(error);
