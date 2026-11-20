@@ -100,6 +100,9 @@ export interface LegacyMoment {
   reactions: MomentReactionCounts;
   my_reactions: ReactionType[];
   comments_count: number;
+  /** Content PIN (additive): owner-protected / locked placeholder (caption null, media []). */
+  pin_protected?: boolean;
+  locked?: boolean;
 }
 
 export interface MomentComment {

@@ -102,6 +102,9 @@ export const storySummarySchema = z.object({
   audio_url: z.string().nullable().optional(),
   /** `album` = the story a Portarretrato inteligente opens; `tag` otherwise (additive, older backends omit it). */
   kind: z.enum(['album', 'tag']).nullish().catch(null),
+  /** Content PIN (additive): protected by the owner / currently a locked placeholder (no text, no media). */
+  pin_protected: z.boolean().optional().catch(false),
+  locked: z.boolean().optional().catch(false),
 });
 
 export type StorySummary = z.infer<typeof storySummarySchema>;

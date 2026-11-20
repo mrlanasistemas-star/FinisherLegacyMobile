@@ -8,12 +8,14 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, type Href } from 'expo-router';
-import { ImagePlus, Images } from 'lucide-react-native';
+import { ImagePlus, Images, Lock } from 'lucide-react-native';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { AppText } from '@/components/app-text';
 import { GradientOverlay } from '@/components/brand/gradient-overlay';
 import { PressableScale } from '@/components/motion/pressable-scale';
+import { LockBadge } from '@/components/pin/content-locked';
+import { openContentUnlock } from '@/features/content-pin/use-content-pin';
 import { useI18n } from '@/i18n';
 import type { StorySummary } from '@/schemas/iap';
 import { gradients } from '@/theme/gradients';
@@ -36,6 +38,30 @@ export function storyDateLabel(story: StorySummary): string | null {
 
 export function StoryCard({ story, width, height = 220, style }: StoryCardProps) {
   const { t, tc } = useI18n();
+
+  // Content PIN: a locked memory shows nothing of itself — tap to unlock.
+  if (story.locked) {
+    return (
+      <PressableScale
+        onPress={openContentUnlock}
+        accessibilityRole="button"
+        accessibilityLabel={t('Recuerdo protegido con NIP')}
+        accessibilityHint={t('Escribe tu NIP para verlo')}
+        style={[{ width, height, borderRadius: radius.xl, borderCurve: 'continuous', overflow: 'hidden', ...shadows.card }, style]}>
+        <LinearGradient colors={gradients.carbon} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.xs, padding: spacing.md }}>
+          <Lock size={26} color={colors.gold} strokeWidth={1.8} />
+          <AppText maxFontSizeMultiplier={1.3} style={{ fontFamily: fontFamily.heading, fontSize: 18, color: colors.onDark }}>
+            {t('Recuerdo protegido')}
+          </AppText>
+          <AppText maxFontSizeMultiplier={1.3} style={{ fontFamily: fontFamily.medium, fontSize: 13, color: colors.onDarkMuted }}>
+            {t('Toca para desbloquear con tu NIP')}
+          </AppText>
+        </View>
+      </PressableScale>
+    );
+  }
+
   const title = story.title || story.event?.name || t('Mi recuerdo');
   const eventName = story.title && story.event?.name && story.event.name !== story.title ? story.event.name : null;
   const date = storyDateLabel(story);
@@ -88,6 +114,12 @@ export function StoryCard({ story, width, height = 220, style }: StoryCardProps)
             </View>
           </>
         )}
+
+        {story.pin_protected ? (
+          <View style={{ position: 'absolute', top: spacing.md, right: spacing.md }}>
+            <LockBadge onDark />
+          </View>
+        ) : null}
 
         <View style={{ padding: spacing.md, gap: 3 }}>
           {eventName ? (

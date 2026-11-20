@@ -3,6 +3,8 @@ import { Lock, Play } from 'lucide-react-native';
 import { View } from 'react-native';
 
 import { PressScale } from '@/components/motion/press-scale';
+import { LockBadge } from '@/components/pin/content-locked';
+import { openContentUnlock } from '@/features/content-pin/use-content-pin';
 import { colors, radius, spacing } from '@/theme/tokens';
 import type { AthleteEventMedia } from '@/types/models';
 
@@ -16,17 +18,23 @@ export function MediaGrid({ items, onPress }: { items: AthleteEventMedia[]; onPr
         const tileWidth = `${100 / COLUMNS}%` as const;
         return (
           <View key={item.uuid} style={{ width: tileWidth, aspectRatio: 1, padding: GAP / 2 }}>
-            <PressScale onPress={() => onPress(index)} haptic style={{ flex: 1 }}>
+            {/* Content PIN: a locked tile has no URL — tapping it asks for the PIN. */}
+            <PressScale onPress={() => (item.locked ? openContentUnlock() : onPress(index))} haptic style={{ flex: 1 }}>
               <View style={{ flex: 1, borderRadius: radius.sm, overflow: 'hidden', backgroundColor: colors.surfaceMuted }}>
                 {/* No poster/thumbnail field exists for video (confirmed —
                     backend has no thumbnail generation yet, see
                     docs/MOBILE_BACKEND_REQUIREMENTS.md), so video tiles show
                     a plain placeholder + play icon rather than trying to
                     decode a video URL as a static image. */}
-                {item.type === 'image' ? (
+                {item.locked ? (
+                  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldWash }}>
+                    <Lock color={colors.accent} size={20} />
+                  </View>
+                ) : null}
+                {item.type === 'image' && item.url && !item.locked ? (
                   <Image source={{ uri: item.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" transition={150} />
                 ) : null}
-                {item.type === 'video' ? (
+                {item.type === 'video' && !item.locked ? (
                   <View
                     style={{
                       position: 'absolute',
@@ -51,7 +59,11 @@ export function MediaGrid({ items, onPress }: { items: AthleteEventMedia[]; onPr
                     </View>
                   </View>
                 ) : null}
-                {!item.is_public ? (
+                {item.pin_protected ? (
+                  <View style={{ position: 'absolute', top: 4, right: 4 }}>
+                    <LockBadge onDark />
+                  </View>
+                ) : !item.is_public ? (
                   <View style={{ position: 'absolute', top: 4, right: 4 }}>
                     <Lock color={colors.white} size={12} />
                   </View>

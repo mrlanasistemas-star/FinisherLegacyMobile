@@ -159,6 +159,16 @@ export function toAppError(error: unknown): AppError {
         details,
         requestId,
       });
+    // Content PIN: the item is locked (CONTENT_LOCKED) — the server message is human.
+    case 423:
+      return new AppError({
+        kind: 'forbidden',
+        message: backendMessage ?? t('Este contenido está protegido con NIP. Desbloquéalo para continuar.'),
+        code,
+        status,
+        details,
+        requestId,
+      });
     case 429:
       return new AppError({
         kind: 'rate_limited',

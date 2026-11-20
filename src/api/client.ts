@@ -3,6 +3,7 @@ import axios from 'axios';
 import { tokenStorage } from '@/api/secureStore';
 import { getActiveLocale } from '@/i18n/active-locale';
 import { useAuthStore } from '@/stores/authStore';
+import { currentUnlockToken, useContentPinStore } from '@/stores/contentPinStore';
 import { env } from '@/utils/env';
 import { logger } from '@/utils/logger';
 import { uuidv4 } from '@/utils/uuid';
@@ -29,6 +30,12 @@ apiClient.interceptors.request.use((config) => {
   // failed request can be traced end-to-end in our own logs too.
   config.headers['X-Request-ID'] = uuidv4();
 
+  // Content PIN grant (memory only, ~10 min) — see stores/contentPinStore.ts.
+  const unlock = currentUnlockToken();
+  if (unlock) {
+    config.headers['X-Content-Unlock'] = unlock;
+  }
+
   // Language of the app: the server answers (messages, catalog content)
   // in it. `X-Locale` is the explicit choice, `Accept-Language` the standard.
   const locale = getActiveLocale();
@@ -51,6 +58,11 @@ apiClient.interceptors.response.use(
     logger.debug(`x ${appError.status ?? 'ERR'} ${error.config?.url} — ${appError.message}`, {
       requestId: appError.requestId,
     });
+
+    // The server no longer honours our unlock grant (expired / revoked / PIN changed).
+    if (appError.code === 'CONTENT_LOCKED') {
+      useContentPinStore.getState().lock();
+    }
 
     if (appError.kind === 'unauthenticated' && useAuthStore.getState().status === 'authenticated' && !handlingUnauthorized) {
       handlingUnauthorized = true;

@@ -26,6 +26,7 @@ import { Card } from '@/components/card';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
 import { MediaGrid } from '@/components/media/media-grid';
+import { ProtectToggle } from '@/features/content-pin/protect-toggle';
 import { MediaUploadSheet } from '@/components/media/media-upload-sheet';
 import { MediaViewer } from '@/components/media/media-viewer';
 import { Reveal } from '@/components/motion/reveal';
@@ -82,6 +83,8 @@ export default function MyEventDetailScreen() {
   const entitlement = useMediaEntitlement(participantId);
   const reorderMedia = useReorderEventMedia(participantId);
   const mediaItems = useMemo(() => [...(media.data ?? [])].sort((a, b) => a.sort_order - b.sort_order), [media.data]);
+  // Content PIN: locked items have no URL — the viewer only gets the readable ones.
+  const viewerItems = useMemo(() => mediaItems.filter((item) => !item.locked), [mediaItems]);
   const imageCount = entitlement.data?.images.used ?? mediaItems.filter((item) => item.type === 'image').length;
   const videoCount = entitlement.data?.videos.used ?? mediaItems.filter((item) => item.type === 'video').length;
   // Limits come from the backend (free tier + any Memory Pack) — never hardcoded here.
@@ -385,7 +388,7 @@ export default function MyEventDetailScreen() {
               onAction={() => setUploadOpen(true)}
             />
           ) : (
-            <MediaGrid items={mediaItems} onPress={(index) => setViewerIndex(index)} />
+            <MediaGrid items={mediaItems} onPress={(index) => setViewerIndex(Math.max(0, viewerItems.indexOf(mediaItems[index])))} />
           )}
 
           {imagesFull && videosFull ? (
@@ -507,7 +510,7 @@ export default function MyEventDetailScreen() {
       <MediaViewer
         key={viewerIndex ?? 'closed'}
         visible={viewerIndex !== null}
-        items={mediaItems}
+        items={viewerItems}
         initialIndex={viewerIndex ?? 0}
         onClose={() => setViewerIndex(null)}
         onOpenActions={(item) => setActionsFor(item)}
@@ -524,11 +527,14 @@ export default function MyEventDetailScreen() {
       <Sheet visible={actionsFor !== null} onClose={() => setActionsFor(null)}>
         {actionsFor ? (
           <>
-            <SheetActionRow
-              icon={actionsFor.is_public ? Lock : Globe}
-              label={actionsFor.is_public ? t('Hacer sólo mío') : t('Hacer público')}
-              onPress={() => handleToggleVisibility(actionsFor)}
-            />
+            <ProtectToggle type="media" id={actionsFor.uuid} isProtected={!!actionsFor.pin_protected} />
+            {actionsFor.pin_protected ? null : (
+              <SheetActionRow
+                icon={actionsFor.is_public ? Lock : Globe}
+                label={actionsFor.is_public ? t('Hacer sólo mío') : t('Hacer público')}
+                onPress={() => handleToggleVisibility(actionsFor)}
+              />
+            )}
             {mediaItems.length > 1 && mediaItems[0]?.uuid !== actionsFor.uuid ? (
               <SheetActionRow
                 icon={ArrowLeft}

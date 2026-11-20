@@ -9,6 +9,9 @@ export default function SettingsLayout() {
       <Stack.Screen name="account" />
       <Stack.Screen name="privacy" />
       <Stack.Screen name="security" />
+      <Stack.Screen name="content-pin" />
+      <Stack.Screen name="pin-unlock" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="pin-recovery" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="about" />
     </Stack>

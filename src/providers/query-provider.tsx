@@ -9,6 +9,7 @@ import { AppState, type AppStateStatus } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { useAuthStore } from '@/stores/authStore';
+import { bindContentPinQueryClient } from '@/stores/contentPinStore';
 
 // Offline-aware queries (§127): TanStack learns the real connection state
 // from expo-network, so stale data refetches as soon as the phone is back
@@ -69,6 +70,9 @@ export function QueryProvider({ children }: PropsWithChildren) {
         },
       }),
   );
+
+  // Lock/unlock of the content PIN refreshes (and purges) this cache.
+  useEffect(() => bindContentPinQueryClient(client), [client]);
 
   // Whenever the session ends — explicit logout, expired token, account
   // deletion — drop every cached query and the persisted copy, so the next

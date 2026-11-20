@@ -79,6 +79,8 @@ export const editableStorySchema = z.object({
   official: officialFlags,
   /** `album` when a Portarretrato inteligente opens this story, `tag` otherwise (additive). */
   kind: z.enum(['album', 'tag']).nullish().catch(null),
+  /** Content PIN (additive). Readable at all means it is unlocked right now. */
+  pin_protected: z.boolean().optional().catch(false),
 });
 
 export type EditableStory = z.infer<typeof editableStorySchema>;

@@ -5,6 +5,7 @@ import { Pressable, Share, View, useWindowDimensions } from 'react-native';
 
 import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
+import { ContentLocked, LockBadge } from '@/components/pin/content-locked';
 import { MomentMediaPager } from '@/components/social/moment-media';
 import { CommentsSheet } from '@/components/social/comments-sheet';
 import { ReactionBar } from '@/components/social/reaction-bar';
@@ -14,6 +15,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
+import { ProtectToggle } from '@/features/content-pin/protect-toggle';
 import { momentMetricLine, momentTypeLabel, trainingHeadline, visibilityLabel } from '@/features/social/moment-state';
 import { useDeleteMoment } from '@/hooks/use-social';
 import { showToast } from '@/stores/toastStore';
@@ -102,8 +104,16 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
             ) : null}
           </View>
         </Pressable>
+        {moment.pin_protected ? <LockBadge /> : null}
         <IconButton icon={MoreHorizontal} label={t('Más opciones')} onPress={() => setMenuOpen(true)} size={20} color={colors.muted} />
       </View>
+
+      {/* Content PIN: a locked moment shows only who/when — never its content. */}
+      {moment.locked ? (
+        <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.sm }}>
+          <ContentLocked compact title={t('Momento protegido')} />
+        </View>
+      ) : null}
 
       {/* Activity: the sporting fact, big and clear */}
       {headline || metrics.length > 0 ? (
@@ -150,13 +160,17 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
         </Pressable>
       ) : null}
 
-      <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xxs }}>
-        <ReactionBar moment={moment} onComment={detail ? undefined : () => setCommentsOpen(true)} onShare={detail ? undefined : () => shareMoment(moment, t)} />
-      </View>
+      {moment.locked ? null : (
+        <View style={{ paddingHorizontal: spacing.md, paddingTop: spacing.xxs }}>
+          <ReactionBar moment={moment} onComment={detail ? undefined : () => setCommentsOpen(true)} onShare={detail ? undefined : () => shareMoment(moment, t)} />
+        </View>
+      )}
 
       {menuOpen ? (
       <Sheet visible onClose={() => setMenuOpen(false)}>
         {moment.is_owner ? (
+          <View>
+          <ProtectToggle type="moment" id={moment.uuid} isProtected={!!moment.pin_protected} />
           <SheetActionRow
             icon={Trash2}
             label={t('Eliminar momento')}
@@ -166,6 +180,7 @@ export const MomentCard = memo(function MomentCard({ moment, detail = false }: M
               setConfirmDelete(true);
             }}
           />
+          </View>
         ) : (
           <SheetActionRow
             icon={Flag}

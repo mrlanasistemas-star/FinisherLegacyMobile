@@ -76,6 +76,9 @@ export default function MomentDetailScreen() {
             message={t('Este momento ya no está disponible o no tienes acceso a él.')}
             onRetry={moment.error instanceof AppError && moment.error.kind === 'not_found' ? undefined : moment.refetch}
           />
+        ) : moment.data.locked ? (
+          // The card itself shows the lock + "Desbloquear"; no comments while locked.
+          <MomentCard moment={moment.data} detail />
         ) : (
           <FlatList
             data={list}

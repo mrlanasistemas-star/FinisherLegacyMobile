@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { KeyRound, Trash2 } from 'lucide-react-native';
+import { router, type Href } from 'expo-router';
+import { KeyRound, ShieldCheck, Trash2 } from 'lucide-react-native';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -85,6 +86,10 @@ export default function SecurityScreen() {
             onPress={sendReset}
             loading={sendingReset}
           />
+        </ListGroup>
+
+        <ListGroup title={t('Contenido privado')} footer={t('Opcional: pide un NIP para abrir los recuerdos, momentos y fotos que tú elijas.')}>
+          <ListRow icon={ShieldCheck} label={t('Protección con NIP')} onPress={() => router.push('/settings/content-pin' as Href)} />
         </ListGroup>
 
         <ListGroup title={t('Zona de riesgo')}>

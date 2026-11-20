@@ -31,9 +31,12 @@ import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { Reveal } from '@/components/motion/reveal';
 import { ScrollHeader, useParallax, useScrollY } from '@/components/motion/scroll-header';
+import { ContentLocked } from '@/components/pin/content-locked';
 import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { SectionHeader } from '@/components/ui/section-header';
+import { ProtectToggle } from '@/features/content-pin/protect-toggle';
+import { isContentLockedError } from '@/features/content-pin/use-content-pin';
 import { useStory } from '@/features/iap/use-photo-expansion';
 import { MediaTile } from '@/features/stories/components/media-tile';
 import { hasRaceData, RaceDataCard } from '@/features/stories/components/race-data-card';
@@ -166,6 +169,20 @@ export default function StoryScreen() {
   const back = () => (router.canGoBack() ? router.back() : router.replace('/legacy'));
   const VisibilityIcon = editable ? VISIBILITY_ICON[editable.visibility] : Lock;
 
+  // Content PIN: locked → nothing of the memory is on screen, only the gate.
+  if (summary.data?.locked || isContentLockedError(story.error) || isContentLockedError(media.error)) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
+        <View style={{ paddingHorizontal: spacing.sm, minHeight: 52, justifyContent: 'center' }}>
+          <IconButton icon={ChevronLeft} label={t('Volver')} onPress={back} size={26} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
+          <ContentLocked title={t('Recuerdo protegido')} message={t('Escribe tu NIP para ver y editar este recuerdo. Nadie más puede abrirlo.')} />
+        </View>
+      </View>
+    );
+  }
+
   if (failed) {
     const error = story.error ?? summary.error;
     const missing = notDeployed(story.error) && (summary.isError ? notDeployed(summary.error) : true);
@@ -257,6 +274,7 @@ export default function StoryScreen() {
                 <AppText style={{ fontFamily: fontFamily.regular, fontSize: 14, color: colors.subtle }}>{t('· Cambiar')}</AppText>
               </PressableScale>
             ) : null}
+            {editable ? <ProtectToggle type="story" id={publicId} isProtected={!!editable.pin_protected} /> : null}
 
             {editingUnavailable && fallback?.is_owner ? (
               <View style={{ padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.goldWash }}>

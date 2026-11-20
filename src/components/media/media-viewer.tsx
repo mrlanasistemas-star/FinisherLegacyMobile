@@ -105,9 +105,9 @@ export function MediaViewer({ visible, items, initialIndex, onClose, onOpenActio
   const renderItem = useCallback(
     ({ item, index }: { item: AthleteEventMedia; index: number }) =>
       item.type === 'video' ? (
-        <VideoSlide url={item.url} active={visible && index === activeIndex} />
+        <VideoSlide url={item.url ?? ''} active={visible && index === activeIndex} />
       ) : (
-        <ZoomableImage url={item.url} active={visible && index === activeIndex} />
+        <ZoomableImage url={item.url ?? ''} active={visible && index === activeIndex} />
       ),
     [visible, activeIndex],
   );

@@ -321,7 +321,7 @@ export default function CreateMomentScreen() {
                         accessibilityState={{ checked: selected }}
                         accessibilityLabel={t('Foto de la carrera')}
                         style={{ width: 84, height: 84, borderRadius: 12, overflow: 'hidden', borderWidth: 2, borderColor: selected ? colors.gold : 'transparent' }}>
-                        <Image source={{ uri: media.url }} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                        <Image source={media.url ? { uri: media.url } : undefined} style={{ width: '100%', height: '100%', backgroundColor: colors.goldWash }} contentFit="cover" />
                       </Pressable>
                     );
                   })}

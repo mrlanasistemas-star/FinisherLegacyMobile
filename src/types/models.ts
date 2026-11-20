@@ -398,12 +398,16 @@ export interface EventParticipantDetail {
 export interface AthleteEventMedia {
   uuid: string;
   type: 'image' | 'video';
-  url: string;
+  /** null only while PIN-locked (`locked: true`). */
+  url: string | null;
   width: number | null;
   height: number | null;
   duration_seconds: number | null;
   is_public: boolean;
   sort_order: number;
+  /** Content PIN (additive): locked → every URL is null. */
+  pin_protected?: boolean;
+  locked?: boolean;
 }
 
 // ---------------------------------------------------------------------------
