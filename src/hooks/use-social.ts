@@ -25,7 +25,6 @@ import {
   setBlock,
   setFollow,
   setReaction,
-  updateMoment,
   type ConnectionKind,
   type FeedScope,
   type SearchType,
@@ -157,17 +156,6 @@ export function useCreateMoment() {
       keyRef.current = null;
     },
   };
-}
-
-export function useUpdateMoment(uuid: string) {
-  const client = useQueryClient();
-  return useMutation({
-    mutationFn: async (patch: Parameters<typeof updateMoment>[1]) => {
-      await ensureOnline();
-      return updateMoment(uuid, patch);
-    },
-    onSuccess: (moment) => updateMomentEverywhere(client, uuid, () => moment),
-  });
 }
 
 export function useDeleteMoment() {

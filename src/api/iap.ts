@@ -13,11 +13,9 @@ import { AppError, toAppError } from '@/api/errors';
 import {
   iapOfferSchema,
   iapPurchaseResultSchema,
-  quotaSchema,
   storySummarySchema,
   type IapOffer,
   type IapPurchaseResult,
-  type StoryQuota,
   type StorySummary,
 } from '@/schemas/iap';
 import { t } from '@/i18n';
@@ -58,16 +56,6 @@ export async function submitIapPurchase(body: SubmitPurchaseBody): Promise<IapPu
   try {
     const { data } = await apiClient.post<{ data: unknown }>('iap/purchases', body, { timeout: 30000 });
     return parsed(iapPurchaseResultSchema, data.data);
-  } catch (error) {
-    throw toAppError(error);
-  }
-}
-
-/** `GET /stories/{publicId}/quota` — owner only. */
-export async function getStoryQuota(storyPublicId: string): Promise<StoryQuota> {
-  try {
-    const { data } = await apiClient.get<{ data: unknown }>(`stories/${storyPublicId}/quota`);
-    return parsed(quotaSchema, data.data);
   } catch (error) {
     throw toAppError(error);
   }

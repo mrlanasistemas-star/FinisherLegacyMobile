@@ -1,6 +1,5 @@
 import { apiClient } from '@/api/client';
 import { toAppError } from '@/api/errors';
-import type { Preregistration } from '@/types/models';
 
 export interface PreregisterPayload {
   /** The race's public uuid, exactly as `GET /events/{slug}` exposes it. */
@@ -20,17 +19,6 @@ export async function preregister(
     const { data } = await apiClient.post<{ data: { token: string; status: string } }>(
       `events/${editionId}/preregister`,
       payload,
-    );
-    return data.data;
-  } catch (error) {
-    throw toAppError(error);
-  }
-}
-
-export async function fetchPreregistration(token: string): Promise<Preregistration> {
-  try {
-    const { data } = await apiClient.get<{ data: Preregistration }>(
-      `preregistrations/${encodeURIComponent(token)}`,
     );
     return data.data;
   } catch (error) {

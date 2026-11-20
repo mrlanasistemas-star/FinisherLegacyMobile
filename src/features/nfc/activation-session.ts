@@ -152,10 +152,6 @@ async function preflight(driver: NfcDriver): Promise<ActivationFailure | null> {
   return null;
 }
 
-export async function checkNfcReadiness(driver: NfcDriver): Promise<ActivationFailure | null> {
-  return preflight(driver);
-}
-
 async function confirmWith(deps: ActivationDeps, pending: PendingActivation): Promise<ActivationOutcome> {
   deps.onProgress?.('confirming');
   try {

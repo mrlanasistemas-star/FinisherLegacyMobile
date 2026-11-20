@@ -3,7 +3,6 @@ import { toAppError } from '@/api/errors';
 import type { FlatMetaPaginatedResponse } from '@/types/api';
 import type {
   SupportSessionDetail,
-  SupportSessionManifest,
   SupportSessionSummary,
   SupportTriggeredMessage,
 } from '@/types/models';
@@ -39,15 +38,6 @@ export async function createSupportSession(payload: CreateSupportSessionPayload)
 export async function fetchSupportSession(id: number): Promise<SupportSessionDetail> {
   try {
     const { data } = await apiClient.get<{ data: SupportSessionDetail }>(`me/support-sessions/${id}`);
-    return data.data;
-  } catch (error) {
-    throw toAppError(error);
-  }
-}
-
-export async function fetchSupportSessionManifest(id: number): Promise<SupportSessionManifest> {
-  try {
-    const { data } = await apiClient.get<{ data: SupportSessionManifest }>(`me/support-sessions/${id}/manifest`);
     return data.data;
   } catch (error) {
     throw toAppError(error);

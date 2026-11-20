@@ -91,13 +91,6 @@ export async function createMoment(input: CreateMomentInput, idempotencyKey: str
   ).data;
 }
 
-export async function updateMoment(
-  uuid: string,
-  patch: { caption?: string | null; visibility?: LegacyMoment['visibility'] },
-): Promise<LegacyMoment> {
-  return (await request(() => apiClient.patch<ApiSuccessEnvelope<LegacyMoment>>(`moments/${uuid}`, patch))).data;
-}
-
 export async function deleteMoment(uuid: string): Promise<void> {
   await request(() => apiClient.delete(`moments/${uuid}`));
 }

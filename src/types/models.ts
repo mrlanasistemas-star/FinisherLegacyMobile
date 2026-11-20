@@ -136,8 +136,6 @@ export interface MyProfileResponse {
   };
 }
 
-export type LegacyCodeStatus = 'active' | 'blocked' | 'cancelled' | 'replaced' | (string & {});
-
 export interface LegacyCodeLookup {
   code: string;
   available: boolean;
@@ -212,17 +210,6 @@ export interface EventDetail {
     registration_close_at: string | null;
     races: EventRace[];
   } | null;
-}
-
-export interface Preregistration {
-  token: string;
-  status: string;
-  first_name?: string;
-  last_name?: string;
-  bib_number?: string | null;
-  event?: string;
-  edition?: string;
-  race?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -554,23 +541,6 @@ export interface SupportSessionSummary {
 
 export interface SupportSessionDetail extends SupportSessionSummary {
   messages: SupportMessageOwnerView[];
-}
-
-export interface SupportManifestMessage {
-  id: number;
-  type: string;
-  trigger_type: string;
-  trigger_distance_meters: number | null;
-  is_surprise: boolean;
-  has_audio: boolean;
-  audio_mime: string | null;
-  audio_size_bytes: number | null;
-  audio_duration_seconds: number | null;
-  updated_at: string;
-}
-
-export interface SupportSessionManifest extends SupportSessionSummary {
-  messages: SupportManifestMessage[];
 }
 
 export interface SupportTriggeredMessage {

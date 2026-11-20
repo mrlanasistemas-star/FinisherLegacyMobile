@@ -7,11 +7,7 @@ import { useEventParticipant } from '@/hooks/use-my-events';
 import { useSupportSessions } from '@/hooks/use-support';
 import { ensureOnline } from '@/utils/network';
 
-import { updateTrackingRecord, useTrackingStore } from './tracking-storage';
-
-export function useTrackingRecord() {
-  return useTrackingStore((s) => s.record);
-}
+import { updateTrackingRecord } from './tracking-storage';
 
 /** Re-renders every `intervalMs` — for the elapsed clock and "hace X s". */
 export function useNow(intervalMs = 1000): number {

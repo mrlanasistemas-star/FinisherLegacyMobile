@@ -15,12 +15,3 @@ export function timeOfDayGreeting(name?: string | null, date: Date = new Date())
   if (hour < 19) return t('Buenas tardes, {name}', params);
   return t('Buenas noches, {name}', params);
 }
-
-/** The greeting alone, for when there is no name to greet. */
-export function timeOfDayGreetingAlone(date: Date = new Date()): string {
-  const hour = date.getHours();
-
-  if (hour < 12) return t('Buenos días');
-  if (hour < 19) return t('Buenas tardes');
-  return t('Buenas noches');
-}

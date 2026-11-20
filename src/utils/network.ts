@@ -20,11 +20,3 @@ export async function ensureOnline(): Promise<void> {
     throw new AppError({ kind: 'network', message: offlineMessage() });
   }
 }
-
-/** Wraps a mutation function so it rejects immediately when offline. */
-export function onlineOnly<TArgs extends unknown[], TResult>(fn: (...args: TArgs) => Promise<TResult>) {
-  return async (...args: TArgs): Promise<TResult> => {
-    await ensureOnline();
-    return fn(...args);
-  };
-}

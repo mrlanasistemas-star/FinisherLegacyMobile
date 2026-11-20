@@ -1,17 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { registerPushDevice, unregisterPushDevice, type RegisterPushDevicePayload } from '@/api/pushDevices';
-
-export function useRegisterPushDevice() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: RegisterPushDevicePayload) => registerPushDevice(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['me', 'push-devices'] });
-    },
-  });
-}
+import { unregisterPushDevice } from '@/api/pushDevices';
 
 export function useUnregisterPushDevice() {
   const queryClient = useQueryClient();

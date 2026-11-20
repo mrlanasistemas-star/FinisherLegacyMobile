@@ -160,11 +160,6 @@ export async function resumeLiveTracking(): Promise<void> {
   await updateTrackingRecord((r) => ({ ...r, mode }));
 }
 
-export async function isLocationRunning(): Promise<boolean> {
-  if (foregroundWatcher) return true;
-  return Location.hasStartedLocationUpdatesAsync(LIVE_TRACKING_TASK).catch(() => false);
-}
-
 /**
  * GPS stops immediately, always. Then the buffer is uploaded and the
  * session closed; if that can't happen now (offline), it finishes on its

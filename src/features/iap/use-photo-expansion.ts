@@ -12,7 +12,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useReducer, useRef } from 'react';
 
-import { getIapOffer, getMyStories, getStory, getStoryQuota, type IapKind } from '@/api/iap';
+import { getIapOffer, getMyStories, getStory, type IapKind } from '@/api/iap';
 import { t } from '@/i18n';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
@@ -35,10 +35,6 @@ export function useMyStories() {
 
 export function useStory(publicId: string) {
   return useQuery({ queryKey: iapKeys.story(publicId), queryFn: () => getStory(publicId), enabled: publicId !== '' });
-}
-
-export function useStoryQuota(publicId: string) {
-  return useQuery({ queryKey: iapKeys.quota(publicId), queryFn: () => getStoryQuota(publicId), enabled: publicId !== '' });
 }
 
 function grantedCount(outcomes: PurchaseOutcome[]): number {
