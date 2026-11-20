@@ -14,9 +14,12 @@ import { AndroidConfig, withAndroidStyles, type ConfigPlugin } from 'expo/config
  * bumped by hand for each store release.
  *
  * Universal links / App Links: the domain comes from EXPO_PUBLIC_WEB_URL
- * (default production). `https://<domain>/n/{token}`, `/t/{code}` and the
- * password-reset link `/reset-password/{token}` open the app when
- * installed, the web otherwise. The web serves
+ * (default production). `https://<domain>/n/{token}`, `/t/{code}`, the
+ * password-reset link `/reset-password/{token}`, the live-tracking link
+ * `/live/{token}` and the family invite `/familia/invitacion/{token}` open the
+ * app when installed, the web otherwise (same list as the backend's
+ * config/nfc.php `app.paths`). `/animo/{token}` (cheers) stays web-only: it is
+ * meant for people without the app. The web serves
  * /.well-known/apple-app-site-association (needs APPLE_TEAM_ID on the
  * server) and /.well-known/assetlinks.json (needs the Play App Signing
  * SHA-256) — see docs/store/pendientes-externos.md.
@@ -100,17 +103,9 @@ function pluginName(entry: unknown): string | null {
   return null;
 }
 
-/**
- * Plugins of packages the app no longer ships. `@stripe/stripe-react-native`
- * was uninstalled when the app moved to the OpenPay web checkout in an in-app
- * browser (docs/COMMERCE_ARCHITECTURE.md); its app.json entry would otherwise
- * fail to resolve at prebuild. Remove the app.json entry too, then drop this.
- */
-const REMOVED_PLUGINS = new Set(['@stripe/stripe-react-native']);
-
 function mergePlugins(base: ExpoConfig['plugins'] = []): NonNullable<ExpoConfig['plugins']> {
   const ours = new Set(STORE_PLUGINS.map(pluginName));
-  const kept = base.filter((entry) => !ours.has(pluginName(entry)) && !REMOVED_PLUGINS.has(pluginName(entry) ?? ''));
+  const kept = base.filter((entry) => !ours.has(pluginName(entry)));
   return [...kept, ...STORE_PLUGINS];
 }
 
@@ -150,7 +145,7 @@ const withNavigationBarContrastOff: ConfigPlugin = (config) =>
     return mod;
   });
 
-type PrivacyManifest =NonNullable<NonNullable<ExpoConfig['ios']>['privacyManifests']>;
+type PrivacyManifest = NonNullable<NonNullable<ExpoConfig['ios']>['privacyManifests']>;
 
 /**
  * iOS Privacy Manifest (PrivacyInfo.xcprivacy). Required-reason APIs are
