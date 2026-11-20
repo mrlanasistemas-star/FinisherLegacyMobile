@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/skeleton';
 import { Chip } from '@/components/ui/chip';
 import { IconButton } from '@/components/ui/icon-button';
 import { TopBar } from '@/components/ui/top-bar';
+import { StatusBarScrim } from '@/components/ui/status-bar-scrim';
 import { bootstrapWorkouts } from '@/features/training/workout/workout-controller';
 import { enqueue } from '@/features/training/workout/workout-outbox';
 import { useWorkoutSports } from '@/features/training/workout/use-workouts';
@@ -168,6 +169,7 @@ export default function LogPastActivityScreen() {
         <FormInput label={t('Distancia en km (opcional)')} value={km} onChangeText={setKm} kind="decimal" placeholder="10.5" error={errors.km} hint={t('Déjala vacía si no la sabes.')} />
         <FormInput label={t('Notas (opcional)')} value={notes} onChangeText={setNotes} multiline maxLength={1000} />
       </ScrollView>
+      <StatusBarScrim />
 
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.md, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.hairline }}>
         <AppButton label={t('Guardar actividad')} onPress={() => void bootstrapWorkouts().then(save)} loading={saving} />

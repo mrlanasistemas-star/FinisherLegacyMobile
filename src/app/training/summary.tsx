@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { Reveal } from '@/components/motion/reveal';
+import { StatusBarScrim } from '@/components/ui/status-bar-scrim';
 import { RouteShape } from '@/features/training/workout/components/route-shape';
 import { ShareMomentSheet } from '@/features/training/workout/components/share-moment-sheet';
 import { SyncStatus } from '@/features/training/workout/components/sync-status';
@@ -93,6 +94,7 @@ export default function WorkoutSummaryScreen() {
 
         {finished.polyline ? <RouteShape polyline={finished.polyline} label={t('Tu recorrido')} /> : null}
       </ScrollView>
+      <StatusBarScrim />
 
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: insets.bottom + spacing.md, gap: spacing.xs, backgroundColor: colors.background, borderTopWidth: 1, borderTopColor: colors.hairline }}>
         {moment ? (

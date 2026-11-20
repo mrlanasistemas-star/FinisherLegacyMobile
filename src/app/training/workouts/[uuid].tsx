@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { IconButton } from '@/components/ui/icon-button';
 import { TopBar } from '@/components/ui/top-bar';
+import { StatusBarScrim } from '@/components/ui/status-bar-scrim';
 import { workoutDateLabel } from '@/features/training/workout/format';
 import { RouteShape } from '@/features/training/workout/components/route-shape';
 import { ShareMomentSheet } from '@/features/training/workout/components/share-moment-sheet';
@@ -114,6 +115,7 @@ export default function WorkoutDetailScreen() {
         <TopBar title={w?.sport?.name ?? t('Entrenamiento')} right={w ? <IconButton icon={Trash2} label={t('Eliminar entrenamiento')} onPress={() => setConfirmDelete(true)} /> : undefined} />
         {body}
       </ScrollView>
+      <StatusBarScrim />
 
       {uuid ? <ShareMomentSheet uuid={uuid} visible={shareOpen} onClose={() => setShareOpen(false)} /> : null}
 

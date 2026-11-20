@@ -15,6 +15,7 @@ import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { Skeleton } from '@/components/skeleton';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { TopBar } from '@/components/ui/top-bar';
+import { StatusBarScrim } from '@/components/ui/status-bar-scrim';
 import { WorkoutRow, workoutToRow, type WorkoutRowData } from '@/features/training/workout/components/workout-row';
 import { flattenWorkouts, useRefreshOnSync, useWorkoutHistory } from '@/features/training/workout/use-workouts';
 import { useWorkoutOutbox } from '@/features/training/workout/workout-outbox';
@@ -103,6 +104,7 @@ export default function WorkoutHistoryScreen() {
           />
         }
       />
+      <StatusBarScrim />
     </View>
   );
 }

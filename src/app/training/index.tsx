@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { ListGroup, ListRow } from '@/components/ui/list-row';
 import { StatStrip } from '@/components/ui/stat-strip';
+import { StatusBarScrim } from '@/components/ui/status-bar-scrim';
 import { useTrainingMessages } from '@/features/training/use-training';
 import { InterruptedWorkoutCard, WORKOUT_HREF } from '@/features/training/workout/components/interrupted-workout-card';
 import { ServerOpenWorkoutCard } from '@/features/training/workout/components/server-open-workout-card';
@@ -238,8 +239,7 @@ export default function TrainingHubScreen() {
           </ListGroup>
         </View>
       </ScrollView>
-      {/* Status-bar scrim: scrolled content must not run under the clock and icons. */}
-      <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: insets.top, backgroundColor: colors.background }} />
+      <StatusBarScrim />
     </View>
   );
 }
