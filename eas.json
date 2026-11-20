@@ -13,7 +13,8 @@
       },
       "ios": {
         "simulator": false
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -27,7 +28,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://finisherlegacy.com/api/v1",
         "EXPO_PUBLIC_WEB_URL": "https://finisherlegacy.com"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "environment": "production",
@@ -38,7 +40,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://finisherlegacy.com/api/v1",
         "EXPO_PUBLIC_WEB_URL": "https://finisherlegacy.com"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

@@ -84,6 +84,14 @@
         "projectId": "f6dce084-4b31-4f64-980a-917784b1f5c3"
       }
     },
-    "owner": "zuriel2026s-team"
+    "owner": "zuriel2026s-team",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/f6dce084-4b31-4f64-980a-917784b1f5c3",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }
