@@ -14,8 +14,9 @@ import { AndroidConfig, withAndroidStyles, type ConfigPlugin } from 'expo/config
  * bumped by hand for each store release.
  *
  * Universal links / App Links: the domain comes from EXPO_PUBLIC_WEB_URL
- * (default production). `https://<domain>/n/{token}` and `/t/{code}` open
- * the app when installed, the web otherwise. The web serves
+ * (default production). `https://<domain>/n/{token}`, `/t/{code}` and the
+ * password-reset link `/reset-password/{token}` open the app when
+ * installed, the web otherwise. The web serves
  * /.well-known/apple-app-site-association (needs APPLE_TEAM_ID on the
  * server) and /.well-known/assetlinks.json (needs the Play App Signing
  * SHA-256) — see docs/store/pendientes-externos.md.
@@ -217,6 +218,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           data: [
             { scheme: 'https', host: domain, pathPrefix: '/n/' },
             { scheme: 'https', host: domain, pathPrefix: '/t/' },
+            // Password-reset email → in-app reset screen (map-incoming-path.ts).
+            // Kept in sync with the backend's config/nfc.php `app.paths`.
+            { scheme: 'https', host: domain, pathPrefix: '/reset-password/' },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
         },
