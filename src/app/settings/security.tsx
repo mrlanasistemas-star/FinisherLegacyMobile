@@ -15,6 +15,7 @@ import { Sheet } from '@/components/ui/sheet';
 import { LargeTitleScroll } from '@/components/ui/top-bar';
 import { useAuthStore } from '@/stores/authStore';
 import { showToast } from '@/stores/toastStore';
+import { useUiStore } from '@/stores/uiStore';
 import { fontFamily, spacing } from '@/theme/tokens';
 import { deleteConfirmationWord, resolveDeleteConfirmation } from '@/utils/delete-confirmation';
 import { ensureOnline } from '@/utils/network';
@@ -55,6 +56,9 @@ export default function SecurityScreen() {
     try {
       await ensureOnline();
       await deleteAccount(socialMode ? { confirmation: resolveDeleteConfirmation(secret) } : { password: secret });
+      // The server already deleted every push device of the account; forget
+      // this phone's registration id so nothing refers to it anymore.
+      useUiStore.getState().setPushDeviceUuid(null);
       await tokenStorage.clear();
       queryClient.clear();
       useAuthStore.getState().clearSession();
