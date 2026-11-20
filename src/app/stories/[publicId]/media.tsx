@@ -5,7 +5,8 @@
  * the athlete leaves), and "Agregar" → photos / a video from the phone or
  * photos bought from the event photographers.
  *
- * Tapping a tile opens its actions (view, move, delete with confirm; for
+ * Tapping a tile opens its actions (view, caption, move / use as cover,
+ * delete with confirm; for
  * an upload: retry / cancel). Hitting a limit — in the picker, on a 422
  * `MEDIA_LIMIT_REACHED` from an upload or an import — keeps everything on
  * screen and opens the purchase sheet of that kind (or only the limit
@@ -15,12 +16,13 @@
 
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { ArrowLeftToLine, ChevronLeft, ChevronRight, Expand, ImagePlus, Mic, RotateCw, Trash2, X } from 'lucide-react-native';
+import { ArrowLeftToLine, ChevronLeft, ChevronRight, Expand, ImagePlus, Mic, RotateCw, Text as TextIcon, Trash2, X } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
+import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
@@ -42,7 +44,7 @@ import { pickPhotos, pickVideo, type PickOutcome } from '@/features/stories/medi
 import { kindForRole, partialFitMessage, uploadingMessage } from '@/features/stories/quota';
 import { pendingCount, uploadsForStory, type UploadItem } from '@/features/stories/upload-queue';
 import { cancelUpload, clearFinishedUploads, resumeBlockedUploads, retryUpload, useUploadStore } from '@/features/stories/upload-store';
-import { useDeleteStoryMedia, useReorderStoryMedia, useStoryMedia } from '@/features/stories/use-stories';
+import { useDeleteStoryMedia, useReorderStoryMedia, useStoryMedia, useUpdateMediaCaption } from '@/features/stories/use-stories';
 import { useResponsive } from '@/hooks/use-responsive';
 import { useI18n } from '@/i18n';
 import type { QuotaKind, StoryMedia } from '@/schemas/story';
@@ -68,6 +70,7 @@ export default function StoryMediaScreen() {
   const media = useStoryMedia(publicId);
   const remove = useDeleteStoryMedia(publicId);
   const reorder = useReorderStoryMedia(publicId);
+  const captionSave = useUpdateMediaCaption(publicId);
   const queue = useUploadStore((state) => state.queue);
   const limitHit = useUploadStore((state) => state.limitHit);
   const clearLimit = useUploadStore((state) => state.clearLimit);
@@ -81,6 +84,10 @@ export default function StoryMediaScreen() {
   const [localRequest, setLocalRequest] = useState<OpenRequest | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  // Caption editor: the item being captioned and the text typed so far.
+  const [captionFor, setCaptionFor] = useState<StoryMedia | null>(null);
+  const [captionText, setCaptionText] = useState('');
+  const [captionError, setCaptionError] = useState<string | null>(null);
 
   const quota = media.data?.quota ?? null;
   const items = useMemo(() => media.data?.items ?? [], [media.data]);
@@ -179,6 +186,22 @@ export default function StoryMediaScreen() {
         showToast(caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : t('No pudimos guardar el nuevo orden.'), 'destructive');
       },
     });
+  }
+
+  function saveCaption() {
+    const item = captionFor;
+    if (!item) return;
+    setCaptionError(null);
+    captionSave.mutate(
+      { uuid: item.uuid, caption: captionText.trim() === '' ? null : captionText.trim() },
+      {
+        onSuccess: () => {
+          haptics.success();
+          setCaptionFor(null);
+        },
+        onError: (caught) => setCaptionError(caught instanceof AppError && caught.kind !== 'not_found' ? caught.message : t('No pudimos guardar el texto. Intenta de nuevo.')),
+      },
+    );
   }
 
   function confirmDelete() {
@@ -348,6 +371,18 @@ export default function StoryMediaScreen() {
                 }}
               />
             ) : null}
+            {selected.status !== 'failed' ? (
+              <SheetActionRow
+                icon={TextIcon}
+                label={selected.caption ? t('Editar pie de foto') : t('Escribir pie de foto')}
+                onPress={() => {
+                  setCaptionText(selected.caption ?? '');
+                  setCaptionError(null);
+                  setCaptionFor(selected);
+                  setSelected(null);
+                }}
+              />
+            ) : null}
             {selectedIndex > 0 ? (
               <>
                 <SheetActionRow
@@ -444,6 +479,34 @@ export default function StoryMediaScreen() {
             ) : null}
           </View>
         ) : null}
+      </Sheet>
+
+      {/* Caption of a photo / video (shown under it on the story page). */}
+      <Sheet visible={!!captionFor} onClose={() => setCaptionFor(null)}>
+        <View style={{ gap: spacing.md, paddingBottom: spacing.xs }}>
+          <AppText variant="subtitle" accessibilityRole="header">
+            {t('Pie de foto')}
+          </AppText>
+          <TextInput
+            value={captionText}
+            onChangeText={setCaptionText}
+            placeholder={t('Lo que pasó en este momento…')}
+            maxLength={280}
+            multiline
+            autoFocus
+            editable={!captionSave.isPending}
+            accessibilityLabel={t('Pie de foto')}
+            placeholderTextColor={colors.subtle}
+            selectionColor={colors.accent}
+            cursorColor={colors.accent}
+            style={{ minHeight: 88, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.inputBorder, backgroundColor: colors.input, fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 22, color: colors.foreground, textAlignVertical: 'top' }}
+          />
+          <AppText variant="caption" tone="subtle" align="right">
+            {captionText.length}/280
+          </AppText>
+          <InlineError message={captionError} />
+          <AppButton label={t('Guardar')} loading={captionSave.isPending} onPress={saveCaption} />
+        </View>
       </Sheet>
 
       <ConfirmDialog

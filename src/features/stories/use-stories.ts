@@ -12,13 +12,17 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClie
 import { useEffect } from 'react';
 
 import {
+  createStoryShare,
   deleteStoryMedia,
   getEditableStory,
   getPurchasedPhotos,
   getStoryMedia,
+  getStoryShares,
   importPurchasedPhotos,
   reorderStoryMedia,
+  revokeStoryShare,
   updateStory,
+  updateStoryMediaCaption,
   type StoryPatch,
 } from '@/api/stories';
 import { iapKeys } from '@/features/iap/use-photo-expansion';
@@ -34,6 +38,7 @@ export const storyKeys = {
   detail: (publicId: string) => ['stories', 'detail', publicId] as const,
   media: (publicId: string) => ['stories', 'media', publicId] as const,
   purchased: ['stories', 'purchased-photos'] as const,
+  shares: (publicId: string) => ['stories', 'shares', publicId] as const,
 };
 
 const PROCESSING_POLL_MS = 4000;
@@ -135,6 +140,55 @@ export function useReorderStoryMedia(publicId: string) {
       if (context?.previous) queryClient.setQueryData(key, context.previous);
     },
     onSuccess: () => invalidateStoryEverywhere(queryClient, publicId),
+  });
+}
+
+/** Saves the caption of one photo / video and writes it into the cached gallery. */
+export function useUpdateMediaCaption(publicId: string) {
+  const queryClient = useQueryClient();
+  const key = storyKeys.media(publicId);
+  return useMutation({
+    mutationFn: async ({ uuid, caption }: { uuid: string; caption: string | null }) => {
+      await ensureOnline();
+      return updateStoryMediaCaption(publicId, uuid, caption);
+    },
+    onSuccess: (updated) => {
+      const current = queryClient.getQueryData<StoryMediaPayload>(key);
+      if (current) {
+        queryClient.setQueryData<StoryMediaPayload>(key, {
+          ...current,
+          items: current.items.map((item) => (item.uuid === updated.uuid ? { ...item, caption: updated.caption } : item)),
+        });
+      }
+      invalidateStoryEverywhere(queryClient, publicId);
+    },
+  });
+}
+
+/** Recipient links ("Para mamá") of the story — owner only. */
+export function useStoryShares(publicId: string) {
+  return useQuery({ queryKey: storyKeys.shares(publicId), queryFn: () => getStoryShares(publicId), enabled: publicId !== '' });
+}
+
+export function useCreateStoryShare(publicId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (label: string) => {
+      await ensureOnline();
+      return createStoryShare(publicId, label);
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: storyKeys.shares(publicId) }),
+  });
+}
+
+export function useRevokeStoryShare(publicId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (shareId: string) => {
+      await ensureOnline();
+      await revokeStoryShare(publicId, shareId);
+    },
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: storyKeys.shares(publicId) }),
   });
 }
 

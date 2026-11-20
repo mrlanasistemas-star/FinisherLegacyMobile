@@ -77,6 +77,8 @@ export const editableStorySchema = z.object({
   /** Thumbnail of the first ready photo (optional: not every backend sends it). */
   cover_url: text,
   official: officialFlags,
+  /** `album` when a Portarretrato inteligente opens this story, `tag` otherwise (additive). */
+  kind: z.enum(['album', 'tag']).nullish().catch(null),
 });
 
 export type EditableStory = z.infer<typeof editableStorySchema>;
@@ -94,6 +96,8 @@ export const storyMediaSchema = z.object({
   status: z.enum(['processing', 'ready', 'failed']),
   sort_order: z.number().nullish().transform((value) => value ?? 0),
   source: z.enum(['upload', 'purchased']).catch('upload'),
+  /** Short text under the photo / video on the story page (optional, max 280). */
+  caption: text,
 });
 
 export type StoryMedia = z.infer<typeof storyMediaSchema>;
@@ -186,3 +190,15 @@ export interface PurchasedPhotosPage {
   page: number;
   hasMore: boolean;
 }
+
+/** A recipient link ("Para mamá") of a story: opens it even while private. */
+export const storyShareSchema = z.object({
+  id: z.union([z.number(), z.string()]).transform((value) => String(value)),
+  label: z.string().min(1),
+  url: z.string().min(1),
+  open_count: z.number().int().nonnegative().catch(0),
+  last_opened_at: text,
+  active: z.boolean().catch(true),
+});
+
+export type StoryShare = z.infer<typeof storyShareSchema>;

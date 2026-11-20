@@ -15,7 +15,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { ChevronLeft, Globe, ImagePlus, Images, Link2, Lock, PenLine, Share2, type LucideIcon } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Frame, Globe, ImagePlus, Images, Link2, Lock, PenLine, Share2, type LucideIcon } from 'lucide-react-native';
 import { useMemo, useState } from 'react';
 import { Share, View } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -104,6 +104,7 @@ export default function StoryScreen() {
       status: 'ready' as const,
       sort_order: index,
       source: 'upload' as const,
+      caption: null,
     }));
   }, [media.data, fallback]);
 
@@ -116,7 +117,9 @@ export default function StoryScreen() {
   const firstLocal = gallery.find((item) => item.role === 'photo' && previews[item.uuid]);
   const coverUrl = firstPhoto?.url ?? firstPhoto?.thumb_url ?? fallback?.cover_url ?? editable?.cover_url ?? (firstLocal ? previews[firstLocal.uuid] : null) ?? null;
 
-  const title = editable?.title || fallback?.title || editable?.event_name || fallback?.event?.name || t('Mi recuerdo');
+  // A story opened by a Portarretrato inteligente is presented as an album.
+  const isAlbum = (editable?.kind ?? fallback?.kind) === 'album';
+  const title = editable?.title || fallback?.title || editable?.event_name || fallback?.event?.name || (isAlbum ? t('Mi álbum') : t('Mi recuerdo'));
   const eventName = editable?.event_name ?? fallback?.event?.name ?? null;
   const date = dateLabel(editable?.race_date ?? fallback?.event?.date);
   const eyebrow = [eventName && eventName !== title ? eventName : null, date].filter(Boolean).join('  ·  ');
@@ -340,6 +343,36 @@ export default function StoryScreen() {
                   </AppText>
                 </View>
               </PressableScale>
+            ) : null}
+
+            {/* Owner extras: the printed frame and the recipient links */}
+            {isOwner ? (
+              <View style={{ borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline, overflow: 'hidden' }}>
+                {[
+                  { icon: Frame, label: t('Portarretrato'), hint: t('Diseña la foto impresa de tu marco y pídela'), href: `/stories/${publicId}/portrait` },
+                  { icon: Link2, label: t('Enlaces para compartir'), hint: t('Un enlace para cada persona, aunque sea privado'), href: `/stories/${publicId}/shares` },
+                ].map((entry, index) => (
+                  <PressableScale
+                    key={entry.href}
+                    onPress={() => router.push(entry.href as Href)}
+                    scaleTo={0.985}
+                    accessibilityRole="button"
+                    accessibilityLabel={entry.label}
+                    accessibilityHint={entry.hint}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.md, borderTopWidth: index > 0 ? 1 : 0, borderTopColor: colors.hairline }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 10, borderCurve: 'continuous', backgroundColor: colors.goldWash, alignItems: 'center', justifyContent: 'center' }}>
+                      <entry.icon size={18} color={colors.accent} strokeWidth={1.9} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <AppText variant="bodyStrong">{entry.label}</AppText>
+                      <AppText variant="caption" tone="muted">
+                        {entry.hint}
+                      </AppText>
+                    </View>
+                    <ChevronRight size={18} color={colors.subtle} />
+                  </PressableScale>
+                ))}
+              </View>
             ) : null}
 
             {/* Voice */}

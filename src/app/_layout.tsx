@@ -99,6 +99,8 @@ function RootNavigator() {
         <Stack.Screen name="stories/[publicId]/index" />
         <Stack.Screen name="stories/[publicId]/edit" />
         <Stack.Screen name="stories/[publicId]/media" />
+        <Stack.Screen name="stories/[publicId]/portrait" />
+        <Stack.Screen name="stories/[publicId]/shares" />
         <Stack.Screen name="stories/[publicId]/purchased" options={{ presentation: 'modal' }} />
         {/* Full-screen sheet: slides up and drags down itself (see training/player.tsx). */}
         <Stack.Screen name="training/player" options={{ presentation: 'transparentModal', animation: 'none', gestureEnabled: false }} />

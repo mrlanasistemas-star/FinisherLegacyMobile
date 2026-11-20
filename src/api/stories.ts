@@ -16,11 +16,13 @@ import {
   purchasedPhotoSchema,
   storyMediaResponseSchema,
   storyMediaSchema,
+  storyShareSchema,
   type EditableStory,
   type MediaRole,
   type PurchasedPhotosPage,
   type StoryMedia,
   type StoryMediaPayload,
+  type StoryShare,
   type StoryTextField,
   type StoryVisibility,
 } from '@/schemas/story';
@@ -167,6 +169,45 @@ export async function importPurchasedPhotos(publicId: string, saleIds: (number |
   try {
     const { data } = await apiClient.post<{ data: unknown }>(`${path(publicId)}/media/import`, { sale_ids: saleIds }, { timeout: 60_000 });
     return parsedList(storyMediaSchema, data.data);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** `PATCH /me/stories/{publicId}/media/{uuid}` `{caption}` → the updated item. */
+export async function updateStoryMediaCaption(publicId: string, uuid: string, caption: string | null): Promise<StoryMedia> {
+  try {
+    const { data } = await apiClient.patch<{ data: unknown }>(`${path(publicId)}/media/${encodeURIComponent(uuid)}`, { caption });
+    return parsed(storyMediaSchema, data.data);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** `GET /me/stories/{publicId}/shares` — the recipient links of the story, newest first. */
+export async function getStoryShares(publicId: string): Promise<StoryShare[]> {
+  try {
+    const { data } = await apiClient.get<{ data: unknown }>(`${path(publicId)}/shares`);
+    return parsedList(storyShareSchema, data.data);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** `POST /me/stories/{publicId}/shares` `{label}` → 201 with the new link. */
+export async function createStoryShare(publicId: string, label: string): Promise<StoryShare> {
+  try {
+    const { data } = await apiClient.post<{ data: unknown }>(`${path(publicId)}/shares`, { label });
+    return parsed(storyShareSchema, data.data);
+  } catch (error) {
+    throw toAppError(error);
+  }
+}
+
+/** `DELETE /me/stories/{publicId}/shares/{id}` → 204. The link stops opening the story at once. */
+export async function revokeStoryShare(publicId: string, shareId: string): Promise<void> {
+  try {
+    await apiClient.delete(`${path(publicId)}/shares/${encodeURIComponent(shareId)}`);
   } catch (error) {
     throw toAppError(error);
   }
