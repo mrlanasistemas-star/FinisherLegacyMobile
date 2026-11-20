@@ -66,4 +66,15 @@ describe('toAppError', () => {
     expect(result.kind).toBe('server');
     expect(result.message).toBe('Algo salió mal. Intenta nuevamente.');
   });
+
+  it('turns a content-PIN lockout (429 PIN_LOCKED) into a countdown message instead of the generic one', () => {
+    const result = toAppError(
+      axiosError({
+        response: { status: 429, data: { error: { code: 'PIN_LOCKED', message: 'x', details: { retry_after: 125 } } } },
+      }),
+    );
+    expect(result.kind).toBe('rate_limited');
+    expect(result.code).toBe('PIN_LOCKED');
+    expect(result.message).toBe('Demasiados intentos. Vuelve a intentarlo en 2:05.');
+  });
 });

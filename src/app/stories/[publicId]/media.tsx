@@ -26,6 +26,7 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ContentLockedBody } from '@/components/pin/content-locked';
 import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { Skeleton } from '@/components/skeleton';
@@ -34,6 +35,7 @@ import { InlineError } from '@/components/ui/inline-error';
 import { Sheet } from '@/components/ui/sheet';
 import { SheetActionRow } from '@/components/ui/sheet-action-row';
 import { HeaderTextButton, TopBar } from '@/components/ui/top-bar';
+import { isContentLockedError } from '@/features/content-pin/use-content-pin';
 import { AddMediaSheet, type AddAction } from '@/features/stories/components/add-media-sheet';
 import { MediaTile, UploadTile } from '@/features/stories/components/media-tile';
 import { QuotaMeters, type OpenRequest } from '@/features/stories/components/quota-meters';
@@ -232,7 +234,9 @@ export default function StoryMediaScreen() {
         <TopBar title={t('Fotos y videos')} onBack={leave} right={quota ? <HeaderTextButton label={t('Agregar')} onPress={() => setAddOpen(true)} /> : null} />
       </View>
 
-      {media.isError && !media.data ? (
+      {isContentLockedError(media.error) ? (
+        <ContentLockedBody title={t('Recuerdo protegido')} message={t('Escribe tu NIP para ver y editar este recuerdo. Nadie más puede abrirlo.')} onUnlocked={media.refetch} />
+      ) : media.isError && !media.data ? (
         <ErrorState
           error={media.error}
           title={missing ? t('Aún no disponible') : undefined}

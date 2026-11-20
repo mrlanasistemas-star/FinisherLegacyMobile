@@ -20,12 +20,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppError } from '@/api/errors';
 import { ErrorState } from '@/components/error-state';
+import { ContentLockedBody } from '@/components/pin/content-locked';
 import { Skeleton } from '@/components/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { InlineError } from '@/components/ui/inline-error';
 import { HeaderTextButton, TopBar } from '@/components/ui/top-bar';
 import { FormArea, FormGroup, FormRow } from '@/features/stories/components/form-row';
 import { buildPatch, isOfficial, maskDate, serverFieldErrors, storyFormSchema, toFormValues, type StoryFormValues } from '@/features/stories/story-form';
+import { isContentLockedError } from '@/features/content-pin/use-content-pin';
 import { useEditableStory, useUpdateStory } from '@/features/stories/use-stories';
 import { useKeyboardInset, useRevealFocusedInput } from '@/hooks/use-keyboard-inset';
 import { useI18n } from '@/i18n';
@@ -276,7 +278,9 @@ export default function EditStoryScreen() {
       <View style={{ paddingHorizontal: spacing.md }}>
         <TopBar title={t('Editar recuerdo')} onBack={leave} />
       </View>
-      {story.isError ? (
+      {isContentLockedError(story.error) ? (
+        <ContentLockedBody title={t('Recuerdo protegido')} message={t('Escribe tu NIP para ver y editar este recuerdo. Nadie más puede abrirlo.')} onUnlocked={story.refetch} />
+      ) : story.isError ? (
         <ErrorState
           error={story.error}
           title={missing ? t('Aún no disponible') : undefined}

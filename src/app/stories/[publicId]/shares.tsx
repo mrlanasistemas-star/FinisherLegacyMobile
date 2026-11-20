@@ -17,11 +17,13 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ContentLockedBody } from '@/components/pin/content-locked';
 import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { Skeleton } from '@/components/skeleton';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { InlineError } from '@/components/ui/inline-error';
 import { TopBar } from '@/components/ui/top-bar';
+import { isContentLockedError } from '@/features/content-pin/use-content-pin';
 import { useCreateStoryShare, useRevokeStoryShare, useStoryShares } from '@/features/stories/use-stories';
 import { useI18n } from '@/i18n';
 import type { StoryShare } from '@/schemas/story';
@@ -86,7 +88,9 @@ export default function StorySharesScreen() {
         <TopBar title={t('Enlaces para compartir')} onBack={leave} />
       </View>
 
-      {shares.isError && !shares.data ? (
+      {isContentLockedError(shares.error) ? (
+        <ContentLockedBody title={t('Recuerdo protegido')} message={t('Escribe tu NIP para ver y editar este recuerdo. Nadie más puede abrirlo.')} onUnlocked={shares.refetch} />
+      ) : shares.isError && !shares.data ? (
         <ErrorState
           error={shares.error}
           title={missing ? t('Aún no disponible') : undefined}

@@ -1843,6 +1843,7 @@
     "Código por correo": "Code by email",
     "De 4 a 6 números. Evita fechas o números obvios.": "4 to 6 digits. Avoid dates or obvious numbers.",
     "Demasiados intentos. Vuelve a intentarlo en {time}.": "Too many attempts. Try again in {time}.",
+    "Demasiados intentos. Espera un momento antes de volver a intentarlo.": "Too many attempts. Wait a moment before trying again.",
     "Desactivar protección": "Turn off protection",
     "Desbloqueado": "Unlocked",
     "El código tiene 6 números.": "The code has 6 digits.",

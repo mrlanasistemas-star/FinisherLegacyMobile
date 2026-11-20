@@ -11,7 +11,7 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Check, ShoppingBag } from 'lucide-react-native';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,11 +19,13 @@ import { AppError } from '@/api/errors';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ContentLockedBody } from '@/components/pin/content-locked';
 import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { Skeleton } from '@/components/skeleton';
 import { InlineError } from '@/components/ui/inline-error';
 import { HeaderTextButton, TopBar } from '@/components/ui/top-bar';
+import { isContentLockedError } from '@/features/content-pin/use-content-pin';
 import { limitFromError, limitMessage, slotsLeft } from '@/features/stories/quota';
 import { pendingCount } from '@/features/stories/upload-queue';
 import { useUploadStore } from '@/features/stories/upload-store';
@@ -114,6 +116,9 @@ export default function PurchasedPhotosScreen() {
   }
 
   const missing = photos.error instanceof AppError && photos.error.kind === 'not_found';
+  const refetchMedia = media.refetch;
+  const refetchPhotos = photos.refetch;
+  const refetchLocked = useCallback(() => Promise.all([refetchMedia(), refetchPhotos()]), [refetchMedia, refetchPhotos]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -132,7 +137,9 @@ export default function PurchasedPhotosScreen() {
         />
       </View>
 
-      {photos.isPending ? (
+      {isContentLockedError(media.error) || isContentLockedError(photos.error) ? (
+        <ContentLockedBody title={t('Recuerdo protegido')} message={t('Escribe tu NIP para ver y editar este recuerdo. Nadie más puede abrirlo.')} onUnlocked={refetchLocked} />
+      ) : photos.isPending ? (
         <View style={{ alignItems: 'center', paddingTop: spacing.lg }}>
           <View style={{ width: contentWidth, flexDirection: 'row', flexWrap: 'wrap', gap: GAP }}>
             {Array.from({ length: columns * 3 }, (_, index) => (

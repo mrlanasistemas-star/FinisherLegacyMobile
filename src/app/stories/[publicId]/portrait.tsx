@@ -26,12 +26,14 @@ import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { EmptyState } from '@/components/empty-state';
 import { ErrorState } from '@/components/error-state';
+import { ContentLockedBody } from '@/components/pin/content-locked';
 import { PressableScale } from '@/components/motion/pressable-scale';
 import { Skeleton } from '@/components/skeleton';
 import { Chip } from '@/components/ui/chip';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { InlineError } from '@/components/ui/inline-error';
 import { TopBar } from '@/components/ui/top-bar';
+import { isContentLockedError } from '@/features/content-pin/use-content-pin';
 import { FormArea, FormGroup, FormRow } from '@/features/stories/components/form-row';
 import { useDeletePortraitDesign, usePortraitBuilder, usePortraitPreview, useSavePortraitDesign } from '@/features/stories/use-portrait';
 import { useAddCartItem } from '@/hooks/use-cart';
@@ -448,7 +450,9 @@ export default function PortraitScreen() {
         <TopBar title={mode === 'editor' ? (editing ? t('Editar diseño') : t('Diseña tu portarretrato')) : t('Portarretrato')} onBack={back} />
       </View>
 
-      {builder.isError && !data ? (
+      {isContentLockedError(builder.error) ? (
+        <ContentLockedBody title={t('Recuerdo protegido')} message={t('Escribe tu NIP para ver y editar este recuerdo. Nadie más puede abrirlo.')} onUnlocked={builder.refetch} />
+      ) : builder.isError && !data ? (
         <ErrorState
           error={builder.error}
           title={missing ? t('Aún no disponible') : undefined}

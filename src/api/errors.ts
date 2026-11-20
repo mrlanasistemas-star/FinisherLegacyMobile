@@ -63,6 +63,18 @@ function genericMessage(): string {
   return t('Algo salió mal. Intenta nuevamente.');
 }
 
+/**
+ * Content-PIN lockout (429 PIN_LOCKED, `retry_after` seconds): say how long
+ * to wait instead of the generic "too many attempts". Screens with a PIN pad
+ * show a live countdown on top of this (features/content-pin).
+ */
+function pinLockedMessage(details: Record<string, unknown> | undefined): string {
+  const seconds = Math.max(0, Math.ceil(Number(details?.retry_after ?? 0)));
+  if (!seconds) return t('Demasiados intentos. Espera un momento antes de volver a intentarlo.');
+  const time = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  return t('Demasiados intentos. Vuelve a intentarlo en {time}.', { time });
+}
+
 export function toAppError(error: unknown): AppError {
   if (error instanceof AppError) return error;
 
@@ -172,7 +184,7 @@ export function toAppError(error: unknown): AppError {
     case 429:
       return new AppError({
         kind: 'rate_limited',
-        message: t('Has realizado demasiados intentos. Intenta nuevamente en unos momentos.'),
+        message: code === 'PIN_LOCKED' ? pinLockedMessage(details) : t('Has realizado demasiados intentos. Intenta nuevamente en unos momentos.'),
         code,
         status,
         details,

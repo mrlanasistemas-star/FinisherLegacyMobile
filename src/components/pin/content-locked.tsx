@@ -5,12 +5,15 @@
  */
 
 import { Lock } from 'lucide-react-native';
+import { useEffect } from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
 import { openContentUnlock } from '@/features/content-pin/use-content-pin';
 import { useI18n } from '@/i18n';
+import { useIsContentUnlocked } from '@/stores/contentPinStore';
 import { colors, fontFamily, radius, spacing } from '@/theme/tokens';
 
 interface ContentLockedProps {
@@ -49,6 +52,27 @@ export function ContentLocked({ title, message, compact = false, style }: Conten
         {message ?? t('Escribe tu NIP para verlo. Nadie más puede abrirlo.')}
       </AppText>
       <AppButton label={t('Desbloquear')} size="sm" onPress={openContentUnlock} />
+    </View>
+  );
+}
+
+/**
+ * Full-screen body for a sub-screen whose data came back 423 CONTENT_LOCKED:
+ * the gate centered under the screen's own top bar. After "Desbloquear" the
+ * grant invalidates every query (stores/contentPinStore.ts) and `onUnlocked`
+ * refetches this screen's data explicitly, so it reopens with the content.
+ */
+export function ContentLockedBody({ title, message, onUnlocked }: { title?: string; message?: string; onUnlocked?: () => unknown }) {
+  const insets = useSafeAreaInsets();
+  const unlocked = useIsContentUnlocked();
+
+  useEffect(() => {
+    if (unlocked && onUnlocked) void onUnlocked();
+  }, [unlocked, onUnlocked]);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}>
+      <ContentLocked title={title} message={message} />
     </View>
   );
 }
