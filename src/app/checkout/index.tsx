@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { CircleAlert, Clock, CreditCard, Lock, PartyPopper, ShieldCheck, Truck, UserRound, X } from 'lucide-react-native';
 import type { LucideIcon } from 'lucide-react-native';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, ScrollView, View } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,17 @@ import { IconButton } from '@/components/ui/icon-button';
 import { InlineError } from '@/components/ui/inline-error';
 import { StickyFooter } from '@/components/ui/sticky-footer';
 import { CartItemThumb } from '@/features/commerce/components/cart-item-thumb';
+import { DeliveryForm } from '@/features/commerce/components/delivery-form';
+import {
+  checkoutPayload,
+  deliveryErrorsFromServer,
+  deliveryOptions,
+  initialDeliveryForm,
+  shippingFee,
+  validateDelivery,
+  type DeliveryErrors,
+  type DeliveryForm as DeliveryFormState,
+} from '@/features/commerce/delivery';
 import { useCart } from '@/hooks/use-cart';
 import { useOrder } from '@/hooks/use-orders';
 import { usePaymentFlow } from '@/hooks/use-payment-flow';
@@ -51,6 +62,37 @@ export default function CheckoutScreen() {
   }, [settled]);
   const shownOrder = (watching && settlement.data) || order;
 
+  // Delivery form: derived from the cart (last address prefilled) until
+  // the buyer edits it.
+  const [edited, setEdited] = useState<DeliveryFormState | null>(null);
+  const delivery = edited ?? (cart ? initialDeliveryForm(cart, user?.phone) : null);
+  // Local validation errors, plus the server's 422 next to its field; a
+  // field the buyer edits since the last submit hides its error.
+  const [localErrors, setLocalErrors] = useState<DeliveryErrors>({});
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const deliveryErrors: DeliveryErrors = Object.fromEntries(
+    Object.entries({ ...deliveryErrorsFromServer(flow.fieldErrors), ...localErrors }).filter(([key]) => !dismissed.includes(key)),
+  );
+  const fee = cart && delivery ? shippingFee(cart, delivery.method) : 0;
+
+  function updateDelivery(patch: Partial<DeliveryFormState>) {
+    if (!delivery) return;
+    setEdited({ ...delivery, ...patch });
+    setDismissed((current) => [...current, ...Object.keys(patch)]);
+  }
+
+  function placeOrder() {
+    if (!delivery) return;
+    const errors = validateDelivery(delivery);
+    setLocalErrors(errors);
+    setDismissed([]);
+    if (Object.keys(errors).length > 0) {
+      haptics.error();
+      return;
+    }
+    void flow.checkoutAndPay(checkoutPayload(delivery));
+  }
+
   function close() {
     if (order) router.replace(`/orders/${order.uuid}`);
     else router.back();
@@ -77,7 +119,7 @@ export default function CheckoutScreen() {
           </View>
         ) : (
           <>
-            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }}>
+            <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets>
               <Section icon={UserRound} title={t('Tus datos')}>
                 <AppText variant="body">{user?.name ?? t('Tu cuenta')}</AppText>
                 {user?.email ? (
@@ -88,9 +130,11 @@ export default function CheckoutScreen() {
               </Section>
 
               <Section icon={Truck} title={t('Entrega')}>
-                <AppText variant="caption" tone="muted">
-                  {t('Preparamos tu pedido al confirmar el pago y te avisamos cuando esté listo para entregarse o enviarse. Si tu compra es de un evento, la recibes en la entrega de kits.')}
-                </AppText>
+                {delivery ? (
+                  <View style={{ marginTop: spacing.xs }}>
+                    <DeliveryForm form={delivery} options={deliveryOptions(cart)} currency={cart.currency} errors={deliveryErrors} onChange={updateDelivery} />
+                  </View>
+                ) : null}
               </Section>
 
               <Section icon={CreditCard} title={t('Pago')}>
@@ -125,7 +169,8 @@ export default function CheckoutScreen() {
               <View style={{ gap: spacing.xs, paddingTop: spacing.sm, paddingHorizontal: spacing.md }}>
                 <Row label={t('Subtotal')} value={formatMoney(cart.subtotal_minor, cart.currency)} />
                 {cart.discount_minor > 0 ? <Row label={cart.coupon ? t('Descuento ({code})', { code: cart.coupon.code }) : t('Descuento')} value={`−${formatMoney(cart.discount_minor, cart.currency)}`} /> : null}
-                <Row label={t('Total')} value={formatMoney(cart.total_minor, cart.currency)} strong />
+                {delivery?.method === 'shipping' ? <Row label={t('Envío')} value={fee > 0 ? formatMoney(fee, cart.currency) : t('Sin costo')} /> : null}
+                <Row label={t('Total')} value={formatMoney(cart.total_minor + fee, cart.currency)} strong />
               </View>
 
               <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' }}>
@@ -138,7 +183,7 @@ export default function CheckoutScreen() {
 
             <StickyFooter>
               <InlineError message={message} />
-              <AppButton label={t('Pagar {total}', { total: formatMoney(cart.total_minor, cart.currency) })} variant="legacy" onPress={flow.checkoutAndPay} disabled={cart.items.length === 0} />
+              <AppButton label={t('Pagar {total}', { total: formatMoney(cart.total_minor + fee, cart.currency) })} variant="legacy" onPress={placeOrder} disabled={cart.items.length === 0 || !delivery} />
             </StickyFooter>
           </>
         )}

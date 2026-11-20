@@ -21,3 +21,17 @@ export async function fetchOrder(uuid: string): Promise<Order> {
     throw toAppError(error);
   }
 }
+
+/**
+ * The buyer cancels their own unpaid order (stock and coupon are released).
+ * 409 `ORDER_NOT_CANCELLABLE` when it is paid, closed, or a card attempt may
+ * still complete. Cancelling twice is not an error.
+ */
+export async function cancelOrder(uuid: string): Promise<Order> {
+  try {
+    const { data } = await apiClient.post<{ data: Order }>(`orders/${uuid}/cancel`);
+    return data.data;
+  } catch (error) {
+    throw toAppError(error);
+  }
+}

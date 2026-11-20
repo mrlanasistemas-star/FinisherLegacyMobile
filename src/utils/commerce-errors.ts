@@ -51,6 +51,8 @@ export function describeCommerceError(error: AppError): string {
       return t('Este producto no corresponde al evento seleccionado en tu carrito.');
     case 'ORDER_NOT_PAYABLE':
       return t('Este pedido ya no puede pagarse.');
+    case 'ORDER_NOT_CANCELLABLE':
+      return t('Este pedido ya no se puede cancelar desde la app. Escríbenos y te ayudamos.');
     case 'ORDER_EXPIRED':
       return t('Este pedido expiró. Crea uno nuevo desde tu carrito.');
     case 'PAYMENT_AMOUNT_MISMATCH':

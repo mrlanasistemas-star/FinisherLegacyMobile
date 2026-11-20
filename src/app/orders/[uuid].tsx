@@ -1,12 +1,19 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Check, Lock, X } from 'lucide-react-native';
-import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BrandRefreshControl } from '@/components/motion/brand-refresh-control';
 import { AppButton } from '@/components/app-button';
 import { AppText } from '@/components/app-text';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { AppError } from '@/api/errors';
+import { cancelOrder } from '@/api/orders';
+import { queryKeys } from '@/hooks/query-keys';
+import { describeCommerceError } from '@/utils/commerce-errors';
+import { haptics } from '@/utils/haptics';
 import { ErrorState } from '@/components/error-state';
 import { Skeleton } from '@/components/skeleton';
 import { InlineError } from '@/components/ui/inline-error';
@@ -54,6 +61,31 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
   const steps = orderTimeline(current);
   const state = paymentStateLabel(current.payment_state);
   const busy = ['preparing', 'in_browser', 'confirming'].includes(flow.phase);
+  const queryClient = useQueryClient();
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // "Cancelar pedido": the server re-checks (unpaid, no card attempt in
+  // progress) under a lock and releases the reserved stock and coupon.
+  async function cancel() {
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const updated = await cancelOrder(current.uuid);
+      flow.setOrder(updated);
+      queryClient.setQueryData(queryKeys.order(updated.uuid), updated);
+      queryClient.invalidateQueries({ queryKey: queryKeys.orders, exact: true });
+      haptics.success();
+      setConfirmCancel(false);
+    } catch (error) {
+      setCancelError(error instanceof AppError ? describeCommerceError(error) : t('No pudimos cancelar el pedido. Intenta otra vez.'));
+      setConfirmCancel(false);
+      onRefresh();
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   // Keep the flow's copy of the order in sync with refetches (webhook updates).
   useEffect(() => {
@@ -127,10 +159,13 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
           ))}
         </View>
 
+        <DeliveryCard order={current} />
+
         <View style={{ gap: spacing.xs, paddingHorizontal: spacing.md }}>
           <Row label={t('Subtotal')} value={formatMoney(current.subtotal_minor, current.currency)} />
           {current.discount_minor > 0 ? <Row label={current.coupon_code ? t('Descuento ({code})', { code: current.coupon_code }) : t('Descuento')} value={`−${formatMoney(current.discount_minor, current.currency)}`} /> : null}
           {current.tax_minor > 0 ? <Row label={t('Impuestos')} value={formatMoney(current.tax_minor, current.currency)} /> : null}
+          {current.delivery?.method === 'shipping' ? <Row label={t('Envío')} value={(current.shipping_minor ?? 0) > 0 ? formatMoney(current.shipping_minor ?? 0, current.currency) : t('Sin costo')} /> : null}
           <Row label={t('Total')} value={formatMoney(current.total_minor, current.currency)} strong />
         </View>
       </ScrollView>
@@ -151,9 +186,61 @@ function OrderDetail({ order, refreshing, onRefresh }: { order: Order; refreshin
             loading={busy}
             onPress={flow.payExisting}
           />
+          {current.cancellable && !busy ? <AppButton label={t('Cancelar pedido')} variant="ghost" onPress={() => setConfirmCancel(true)} /> : null}
+          <InlineError message={cancelError} />
+        </StickyFooter>
+      ) : current.cancellable ? (
+        // Unpaid but not payable here (e.g. digital goods): it can still be cancelled.
+        <StickyFooter>
+          <InlineError message={cancelError} />
+          <AppButton label={t('Cancelar pedido')} variant="ghost" onPress={() => setConfirmCancel(true)} />
         </StickyFooter>
       ) : null}
+
+      <ConfirmDialog
+        visible={confirmCancel}
+        title={t('¿Cancelar este pedido?')}
+        description={t('Liberamos las piezas apartadas y no se te cobrará nada. Si quieres comprar después, haces un pedido nuevo.')}
+        confirmLabel={t('Cancelar pedido')}
+        loading={cancelling}
+        onConfirm={cancel}
+        onCancel={() => setConfirmCancel(false)}
+      />
     </>
+  );
+}
+
+/** How and where it is delivered, plus carrier/tracking once shipped. */
+function DeliveryCard({ order }: { order: Order }) {
+  const { t } = useI18n();
+  const delivery = order.delivery;
+  if (!delivery) return null;
+  const address = delivery.address;
+  const lines = address
+    ? [address.line, address.neighborhood, [address.postal_code, address.city].filter(Boolean).join(' '), address.state].filter((part): part is string => !!part && part.trim() !== '')
+    : [];
+  const shipment = order.shipment;
+
+  return (
+    <View style={{ gap: spacing.xs, padding: spacing.md, borderRadius: radius.lg, borderCurve: 'continuous', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.hairline }}>
+      <AppText variant="eyebrow" tone="subtle">{t('Entrega')}</AppText>
+      <AppText variant="body">{delivery.method === 'shipping' ? t('Envío a domicilio') : delivery.method === 'in_person' ? t('Entrega inmediata') : t('Recoger en evento o punto de entrega')}</AppText>
+      {lines.map((line) => (
+        <AppText key={line} variant="caption" tone="muted">
+          {line}
+        </AppText>
+      ))}
+      {shipment?.tracking_number ? (
+        <AppText variant="caption" selectable>
+          {shipment.carrier ? t('{carrier} · guía {number}', { carrier: shipment.carrier, number: shipment.tracking_number }) : t('Guía {number}', { number: shipment.tracking_number })}
+        </AppText>
+      ) : null}
+      {shipment?.shipped_at ? (
+        <AppText variant="caption" tone="muted">
+          {t('Enviado el {date}', { date: formatDateTime(shipment.shipped_at) })}
+        </AppText>
+      ) : null}
+    </View>
   );
 }
 

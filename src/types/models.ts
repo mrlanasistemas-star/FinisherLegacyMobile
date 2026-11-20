@@ -723,6 +723,43 @@ export interface Cart {
   discount_minor: number;
   total_minor: number;
   coupon: CartCoupon | null;
+  /** Additive: some line ships physically (home delivery makes sense). */
+  requires_shipping?: boolean;
+  /** Additive: delivery choices priced by the server (`ShippingRates`). */
+  delivery_options?: DeliveryOption[];
+  /** Additive: the buyer's last home-delivery address, to prefill checkout. */
+  last_shipping_address?: ShippingAddress | null;
+}
+
+export type DeliveryMethod = 'pickup' | 'shipping' | 'in_person';
+
+export interface DeliveryOption {
+  value: Exclude<DeliveryMethod, 'in_person'>;
+  label: string;
+  /** What the order will add for this method (0 = no charge). */
+  fee_minor: number;
+  /** Subtotal (after discount) from which shipping is free; null = never. */
+  free_over_minor: number | null;
+}
+
+export interface ShippingAddress {
+  line: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+}
+
+export interface OrderDelivery {
+  method: DeliveryMethod;
+  address: ShippingAddress | null;
+}
+
+export interface OrderShipment {
+  carrier: string | null;
+  tracking_number: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -787,6 +824,8 @@ export interface Order {
   subtotal_minor: number;
   discount_minor: number;
   tax_minor: number;
+  /** Additive: home delivery charge frozen on the order (0 = none). */
+  shipping_minor?: number;
   total_minor: number;
   currency: string;
   coupon_code: string | null;
@@ -797,6 +836,12 @@ export interface Order {
   /** When an unpaid order stops being payable (null once paid/closed). */
   expires_at: string | null;
   payment: OrderPaymentSummary | null;
+  /** Additive: how it is delivered (and where, for home delivery). */
+  delivery?: OrderDelivery | null;
+  /** Additive: carrier/tracking once the team ships it. */
+  shipment?: OrderShipment | null;
+  /** Additive: the buyer may cancel it (unpaid, no card attempt in progress). */
+  cancellable?: boolean;
   /** Omitted when the server didn't load items (e.g. right after checkout it does). */
   items?: OrderItem[];
 }

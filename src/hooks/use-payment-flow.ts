@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useRef, useState } from 'react';
 
-import { checkout } from '@/api/checkout';
+import { checkout, type CheckoutPayload } from '@/api/checkout';
 import { AppError } from '@/api/errors';
 import { fetchOrder } from '@/api/orders';
 import { createCheckoutSession } from '@/api/payments';
@@ -35,7 +35,12 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
   const [phase, setPhase] = useState<PaymentPhase>(initialOrder ? phaseFromOrder(initialOrder, null) : 'review');
   const [order, setOrder] = useState<Order | null>(initialOrder);
   const [message, setMessage] = useState<string | null>(null);
+  // Server validation of the checkout form (422), keyed by field name.
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]> | null>(null);
   const checkoutKey = useRef<string | null>(null);
+  // The body the current key was minted for: a different delivery/address
+  // is a different request and gets its own key.
+  const checkoutBody = useRef<string | null>(null);
   const busy = useRef(false);
 
   const refreshOrderCaches = useCallback(
@@ -114,23 +119,37 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
   );
 
   /** From the review step: create the order (once), then pay it. */
-  const checkoutAndPay = useCallback(async () => {
+  const checkoutAndPay = useCallback(async (payload?: CheckoutPayload) => {
     if (busy.current) return;
     busy.current = true;
     try {
       let target = order;
       if (!target) {
         setMessage(null);
+        setFieldErrors(null);
         setPhase('creating_order');
         try {
           await ensureOnline();
+          const body = JSON.stringify(payload ?? {});
+          if (checkoutBody.current !== body) {
+            checkoutKey.current = null;
+            checkoutBody.current = body;
+          }
           checkoutKey.current ??= uuidv4();
-          target = await checkout(checkoutKey.current);
+          target = await checkout(checkoutKey.current, payload);
           checkoutKey.current = null;
+          checkoutBody.current = null;
           setOrder(target);
           queryClient.invalidateQueries({ queryKey: queryKeys.cart });
           queryClient.invalidateQueries({ queryKey: queryKeys.orders, exact: true });
         } catch (error) {
+          // A definitive 4xx (sold out, invalid form…) created nothing: the
+          // next attempt is a new request. Timeouts/5xx keep the key, so a
+          // retry can never create a second order.
+          if (error instanceof AppError && error.status !== undefined && error.status >= 400 && error.status < 500) {
+            checkoutKey.current = null;
+          }
+          setFieldErrors(error instanceof AppError ? (error.fieldErrors ?? null) : null);
           setMessage(error instanceof AppError ? describeCommerceError(error) : t('No pudimos crear tu pedido. Intenta otra vez.'));
           setPhase('review');
           return;
@@ -164,5 +183,5 @@ export function usePaymentFlow(initialOrder: Order | null = null) {
     }
   }, [confirm, order]);
 
-  return { phase, order, message, checkoutAndPay, payExisting, checkAgain, setOrder };
+  return { phase, order, message, fieldErrors, checkoutAndPay, payExisting, checkAgain, setOrder };
 }
