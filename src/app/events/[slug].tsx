@@ -20,6 +20,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { useEvent } from '@/hooks/use-events';
 import { colors, radius, shadows, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
+import { formatDistanceValue } from '@/utils/distance';
 import { useI18n } from '@/i18n';
 
 const HERO_HEIGHT = 320;
@@ -136,8 +137,8 @@ export default function EventDetailScreen() {
                           {race.name}
                         </AppText>
                         <AppText variant="caption" tone="muted">
-                          {race.distance_value} {race.distance_unit}
-                          {race.start_time ? ` · ${race.start_time}` : ''}
+                          {formatDistanceValue(race.distance_value)} {race.distance_unit}
+                          {race.start_time ? ` · ${race.start_time.slice(0, 5)}` : ''}
                         </AppText>
                       </View>
                     ))}

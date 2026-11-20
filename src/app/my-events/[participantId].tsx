@@ -51,6 +51,7 @@ import { plateStatusLabel, supportStatusLabel } from '@/components/my-event-row'
 import { showToast } from '@/stores/toastStore';
 import { colors, radius, spacing } from '@/theme/tokens';
 import { formatLongDate } from '@/utils/dates';
+import { formatDistanceValue } from '@/utils/distance';
 import { formatMoney } from '@/utils/money';
 import type { AthleteEventMedia, AthleteOwnedProduct } from '@/types/models';
 import { useI18n } from '@/i18n';
@@ -271,7 +272,7 @@ export default function MyEventDetailScreen() {
                       }}>
                       <AppText variant="caption">{split.label}</AppText>
                       <AppText variant="caption" tone="muted">
-                        {split.distance_value} {split.distance_unit}
+                        {formatDistanceValue(split.distance_value)} {split.distance_unit}
                       </AppText>
                       <AppText variant="caption" tone="gold">
                         {split.segment_time}
