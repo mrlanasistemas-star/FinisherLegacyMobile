@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react';
-import { Keyboard, Platform, TextInput, type KeyboardEvent, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView, type View } from 'react-native';
+import { Dimensions, Keyboard, Platform, TextInput, type KeyboardEvent, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView, type View } from 'react-native';
 import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
 
 /**
@@ -10,6 +10,18 @@ import { Easing, useSharedValue, withTiming } from 'react-native-reanimated';
  * deep link while Search had focus), which pushed pinned footers to the middle
  * of the screen and clipped the content above them.
  */
+/**
+ * Android edge-to-edge: `endCoordinates.height` leaves out the navigation /
+ * gesture bar the keyboard also covers, so pinned footers sat a few dp behind
+ * it ("¿No tienes cuenta? Crea una" was cut). Measure from the keyboard's top
+ * edge to the bottom of the screen instead, never less than the reported height.
+ */
+function coveredHeight(event: KeyboardEvent): number {
+  const { height, screenY } = event.endCoordinates;
+  if (Platform.OS !== 'android' || !screenY) return height;
+  return Math.max(height, Dimensions.get('screen').height - screenY);
+}
+
 export function useKeyboardInset() {
   const initial = Keyboard.isVisible() ? (Keyboard.metrics()?.height ?? 0) : 0;
   const height = useSharedValue(initial);
@@ -20,7 +32,7 @@ export function useKeyboardInset() {
     const animate = (to: number, duration: number) => {
       height.value = withTiming(to, { duration, easing: Easing.out(Easing.cubic) });
     };
-    const show = Keyboard.addListener(showEvent, (event: KeyboardEvent) => animate(event.endCoordinates.height, event.duration || 220));
+    const show = Keyboard.addListener(showEvent, (event: KeyboardEvent) => animate(coveredHeight(event), event.duration || 220));
     const hide = Keyboard.addListener(hideEvent, (event: KeyboardEvent) => animate(0, event?.duration || 200));
     // Re-sync on mount: the keyboard may have closed between render and effect.
     if (!Keyboard.isVisible()) height.value = 0;
