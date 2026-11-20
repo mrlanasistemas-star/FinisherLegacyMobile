@@ -28,6 +28,9 @@ export function dateFormatter(name: string, options: Intl.DateTimeFormatOptions)
  * most western timezones. Parse the parts directly instead (AGENTS.md §82).
  */
 function parseDateOnly(value: string): Date {
+  // Full ISO timestamps (e.g. a cheer link's `expires_at`) carry a real time
+  // zone, so they're parsed as instants and shown in the phone's local date.
+  if (value.includes('T')) return new Date(value);
   const [year, month, day] = value.split('-').map(Number);
   return new Date(year, (month ?? 1) - 1, day ?? 1);
 }
