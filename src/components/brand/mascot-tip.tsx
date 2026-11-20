@@ -31,7 +31,7 @@ export function MascotTip({ id, message, style }: MascotTipProps) {
       <GlassSurface rounded={false} intensity={50} style={{ borderRadius: 18, borderColor: colors.goldDim }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.sm }}>
           <Image
-            source={require('@/assets/images/brand/mascot-hero.png')}
+            source={require('@/assets/images/brand/mascot-tip.png')}
             style={{ width: 36, height: 36, borderRadius: 18 }}
             contentFit="cover"
           />
