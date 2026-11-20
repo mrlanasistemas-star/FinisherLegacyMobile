@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router, Tabs, type Href } from 'expo-router';
 import { BookHeart, Home, Nfc, ShoppingBag, Users, type LucideIcon } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Platform, Pressable, View } from 'react-native';
+import { Platform, Pressable, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -159,6 +159,9 @@ interface TabItemProps {
 function TabItem({ label, icon: Icon, focused, badge, accessibilityLabel, onPress, onLongPress }: TabItemProps) {
   const reduceMotion = useReducedMotion();
   const active = useSharedValue(focused ? 1 : 0);
+  // Five slots on a 360dp phone leave ~72dp per label: large system text would clip "Collections".
+  const { width: windowWidth } = useWindowDimensions();
+  const labelScaleCap = windowWidth < 400 ? 1 : 1.2;
 
   useEffect(() => {
     active.value = reduceMotion ? (focused ? 1 : 0) : withSpring(focused ? 1 : 0, springs.snappy);
@@ -202,7 +205,7 @@ function TabItem({ label, icon: Icon, focused, badge, accessibilityLabel, onPres
         ) : null}
       </Animated.View>
       <AppText
-        maxFontSizeMultiplier={1.2}
+        maxFontSizeMultiplier={labelScaleCap}
         numberOfLines={1}
         style={{ fontFamily: focused ? fontFamily.bold : fontFamily.medium, fontSize: 10.5, color: focused ? colors.foreground : colors.subtle }}>
         {label}

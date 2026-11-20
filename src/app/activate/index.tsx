@@ -382,6 +382,9 @@ function CodeStep({ state, dispatch, onSubmit }: { state: WizardState; dispatch:
             onBlur={() => setFocused(false)}
             onSubmitEditing={onSubmit}
             accessibilityLabel={t('Código de activación, 12 caracteres')}
+            // Fixed-format code: keep it on one line even with large system text.
+            maxFontSizeMultiplier={1}
+            numberOfLines={1}
             style={styles.codeInput}
           />
         </View>
