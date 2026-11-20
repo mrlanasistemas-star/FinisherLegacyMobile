@@ -43,7 +43,12 @@ const PERSIST_MAX_AGE = 1000 * 60 * 60 * 24; // 24h
 
 function shouldPersist(query: Query): boolean {
   const root = query.queryKey[0];
-  return query.state.status === 'success' && typeof root === 'string' && PERSISTED_ROOTS.has(root);
+  if (query.state.status !== 'success' || typeof root !== 'string' || !PERSISTED_ROOTS.has(root)) {
+    return false;
+  }
+  // Content PIN: anything touching protected items stays in memory only, so
+  // killing the app while unlocked leaves nothing readable on disk.
+  return !JSON.stringify(query.state.data ?? null).includes('"pin_protected":true');
 }
 
 const persister = createAsyncStoragePersister({ storage: AsyncStorage, key: 'fl_query_cache', throttleTime: 2000 });
