@@ -77,7 +77,7 @@ export default function ForgotPasswordScreen() {
         label={t('Correo electrónico')}
         icon={Mail}
         kind="email"
-        placeholder="tu@correo.com"
+        placeholder={t('tu@correo.com')}
         value={email}
         onChangeText={setEmail}
         returnKeyType="send"

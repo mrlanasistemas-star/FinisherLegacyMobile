@@ -84,7 +84,7 @@ export default function ResetPasswordScreen() {
       title={t('Crea una nueva contraseña')}
       footer={<AppButton label={t('Guardar contraseña')} onPress={submit} loading={saving} />}>
       <AuthFormError message={error} />
-      {!params.email ? <FormInput label={t('Correo electrónico')} kind="email" placeholder="tu@correo.com" value={email} onChangeText={setEmail} error={fieldErrors.email} /> : null}
+      {!params.email ? <FormInput label={t('Correo electrónico')} kind="email" placeholder={t('tu@correo.com')} value={email} onChangeText={setEmail} error={fieldErrors.email} /> : null}
       {!params.token ? (
         <FormInput label={t('Código del correo')} hint={t('Está al final del enlace que te enviamos.')} autoCapitalize="none" autoCorrect={false} value={token} onChangeText={setToken} error={fieldErrors.token} />
       ) : null}
