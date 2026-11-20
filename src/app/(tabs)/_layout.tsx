@@ -55,10 +55,12 @@ const ORDER: (string | null)[] = ['index', 'legacy', null, 'explore', 'store'];
 const BAR_HEIGHT = 62;
 
 export default function TabsLayout() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
-    <Tabs tabBar={(props) => <BrandTabBar {...props} />} screenLayout={localeScreenLayout} screenOptions={{ headerShown: false }}>
+    // Keyed by language: after switching it in Ajustes the bar kept "Activar"
+    // in the old language; remounting the bar (not the navigator) refreshes every label.
+    <Tabs tabBar={(props) => <BrandTabBar key={locale} {...props} />} screenLayout={localeScreenLayout} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="index" options={{ title: t('Inicio') }} />
       <Tabs.Screen name="legacy" options={{ title: t('Recuerdos') }} />
       <Tabs.Screen name="explore" options={{ title: t('Comunidad') }} />
