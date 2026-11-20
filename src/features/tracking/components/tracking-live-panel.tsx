@@ -1,5 +1,6 @@
 import { useVideoPlayer } from 'expo-video';
-import { CloudOff, HeartHandshake, Link2, Pause, Play, Share2, Square, TriangleAlert } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { CloudOff, HeartHandshake, Link2, LocateFixed, Pause, Play, Share2, Square, TriangleAlert } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Share, View } from 'react-native';
 import Animated, { Easing, FadeInDown, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
@@ -117,6 +118,13 @@ export function TrackingLivePanel({ record, eventName, onStopped }: { record: Tr
               {t('Quien abra el enlace verá tu avance en un mapa. No necesita cuenta.')}
             </AppText>
             <AppButton label={record.shares.length > 0 ? t('Compartir enlace') : t('Crear enlace y compartir')} icon={Share2} loading={createShare.isPending} onPress={share} />
+            {/* Family, duration and "dejar de compartir" (docs/renovacion/familia.md). */}
+            <AppButton
+              label={t('Quién ve mi ubicación')}
+              icon={LocateFixed}
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/family/sharing', params: { session: record.sessionUuid } })}
+            />
             <InlineError message={shareError} />
             {record.shares.map((item) => (
               <View key={item.uuid} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingTop: spacing.xs, borderTopWidth: 1, borderTopColor: colors.hairline }}>

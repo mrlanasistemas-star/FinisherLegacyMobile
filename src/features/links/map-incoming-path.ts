@@ -6,6 +6,8 @@
  *   finisherlegacy://nfc/<token>           → /nfc/<token>
  *   finisherlegacy://training              → /training      (Entrenamientos; push "nuevo mensaje de ánimo")
  *   finisherlegacy://stories/<publicId>    → /stories/<publicId> (a story; also …/edit and …/media)
+ *   https://finisherlegacy.com/familia/invitacion/<token> → /family/invite/<token> (family invite link)
+ *   https://finisherlegacy.com/live/<token> → /live/<token>  (public live-tracking link)
  *   https://finisherlegacy.com/@ana        → /athlete/ana
  *   https://finisherlegacy.com/moments/<u> → /moments/<u>
  *   https://finisherlegacy.com/events/<s>  → /events/<s>
@@ -58,6 +60,14 @@ export function mapIncomingPath(raw: string): string | null {
     return `/reset-password?${query.toString()}`;
   }
 
+  // Family invite link (`/familia/invitacion/{token}`, web) → the app's invite screen.
+  const familyInvite = path.match(/^\/(?:familia\/invitacion|family\/invite)\/([A-Za-z0-9]{20,128})\/?(?:\?.*)?$/);
+  if (familyInvite) return `/family/invite/${familyInvite[1]}`;
+
+  // Public live-tracking link `/live/{token}` — same path in the app.
+  const live = path.match(/^\/live\/([A-Za-z0-9]{20,128})\/?(?:\?.*)?$/);
+  if (live) return `/live/${live[1]}`;
+
   // Finisher Legacy Tag URL written at activation: `/t/{code}` → `/nfc/t/{code}`.
   const tag = path.match(/^\/t\/([A-Za-z0-9-]{8,24})\/?(?:\?.*)?$/);
   if (tag) return `/nfc/t/${tag[1]}`;
@@ -69,7 +79,7 @@ export function mapIncomingPath(raw: string): string | null {
   const campaign = campaignPath(path);
   if (campaign) return campaign;
 
-  if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search|training|stories)(\/|$|\?)/.test(path)) return path;
+  if (/^\/(athlete|moments|events|store|orders|medals|legacy|gear|my-events|notifications|explore|search|training|stories|family)(\/|$|\?)/.test(path)) return path;
 
   return raw;
 }

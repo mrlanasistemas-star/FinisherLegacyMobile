@@ -138,9 +138,15 @@ function targetHref(target: NotificationTarget | null | undefined): string | nul
       return target.slug ? `/store/${target.slug}` : null;
     case 'training':
       return '/training';
+    case 'family':
+      // Invitations / accepted invites → the Familia screen.
+      return '/family';
+    case 'tracking':
+      // "X está compartiendo su ubicación contigo" → that live share.
+      return target.uuid ? `/family/following/${target.uuid}` : null;
     default:
-      // support, legacy_plate, participant, tracking: no stable native
-      // screen keyed by these ids → fall back to action_url.
+      // support, legacy_plate, participant: no stable native screen keyed
+      // by these ids → fall back to action_url.
       return null;
   }
 }

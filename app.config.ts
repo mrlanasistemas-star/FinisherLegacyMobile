@@ -221,6 +221,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             // Password-reset email → in-app reset screen (map-incoming-path.ts).
             // Kept in sync with the backend's config/nfc.php `app.paths`.
             { scheme: 'https', host: domain, pathPrefix: '/reset-password/' },
+            // Public live-tracking link and family invite link (docs/renovacion/familia.md, backend).
+            { scheme: 'https', host: domain, pathPrefix: '/live/' },
+            { scheme: 'https', host: domain, pathPrefix: '/familia/invitacion/' },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
         },

@@ -89,6 +89,11 @@ function RootNavigator() {
         <Stack.Screen name="support/index" />
         <Stack.Screen name="support/[id]" />
         <Stack.Screen name="tracking/[participantId]" />
+        {/* Familia y enlaces de seguimiento (docs/renovacion/familia.md, backend). */}
+        <Stack.Screen name="family/index" />
+        <Stack.Screen name="family/sharing" />
+        <Stack.Screen name="family/following/[uuid]" />
+        <Stack.Screen name="family/invite/[token]" />
         <Stack.Screen name="athlete/[username]/index" />
         <Stack.Screen name="athlete/[username]/connections" />
         <Stack.Screen name="settings" />
@@ -110,6 +115,8 @@ function RootNavigator() {
       </Stack.Protected>
       {/* NFC taps resolve with or without a session (public lookup; login only to claim). */}
       <Stack.Screen name="nfc/[token]" options={{ presentation: 'fullScreenModal', animation: 'fade' }} />
+      {/* A public live-tracking link needs no account, like the web page. */}
+      <Stack.Screen name="live/[token]" />
     </Stack>
   );
 }

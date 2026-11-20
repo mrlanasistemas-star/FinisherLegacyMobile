@@ -10,6 +10,9 @@ describe('notificationDestination', () => {
     expect(notificationDestination({ target: { type: 'training', uuid: 'm-1' } })).toEqual({ kind: 'app', href: '/training' });
     expect(notificationDestination({ metadata: { deep_link: 'finisherlegacy://training' } })).toEqual({ kind: 'app', href: '/training' });
     expect(notificationDestination({ action_url: 'finisherlegacy://training' })).toEqual({ kind: 'app', href: '/training' });
+    // Familia: invitations → Familia; "está compartiendo su ubicación" → that share.
+    expect(notificationDestination({ target: { type: 'family', uuid: 'l-1' } })).toEqual({ kind: 'app', href: '/family' });
+    expect(notificationDestination({ target: { type: 'tracking', uuid: 's-1' } })).toEqual({ kind: 'app', href: '/family/following/s-1' });
   });
 
   it('maps web URLs the app knows to native screens', () => {

@@ -12,6 +12,14 @@ describe('mapIncomingPath', () => {
     expect(mapIncomingPath('https://finisherlegacy.com/events/medio-maraton')).toBe('/events/medio-maraton');
   });
 
+  it('opens family invite and public live-tracking links in the app', () => {
+    const token = 'Ab12Cd34Ef56Gh78Ij90Kl12';
+    expect(mapIncomingPath(`https://finisherlegacy.com/familia/invitacion/${token}`)).toBe(`/family/invite/${token}`);
+    expect(mapIncomingPath(`finisherlegacy://family/invite/${token}`)).toBe(`/family/invite/${token}`);
+    expect(mapIncomingPath(`https://finisherlegacy.com/live/${token}`)).toBe(`/live/${token}`);
+    expect(mapIncomingPath('https://finisherlegacy.com/familia/invitacion/../../x')).not.toBe('/family/invite/..');
+  });
+
   it('ignores stale Stripe 3-D Secure returns from old builds', () => {
     expect(mapIncomingPath('finisherlegacy://stripe-redirect?payment_intent=pi_1')).toBeNull();
   });
