@@ -86,6 +86,10 @@ export function AppText({ variant = 'body', tone, align, style, children, ...res
 
   return (
     <Text
+      // Android: the default "highQuality" breaker can need a few px more than
+      // the width the text was measured at, so a centered/auto-width line like
+      // "Your cart is empty" wrapped its last word into a clipped second line.
+      textBreakStrategy="simple"
       maxFontSizeMultiplier={FONT_SCALE_CAP[variant]}
       style={[base, responsiveStyle, { color: TONE_COLORS[resolvedTone], textAlign: align }, style]}
       {...rest}>

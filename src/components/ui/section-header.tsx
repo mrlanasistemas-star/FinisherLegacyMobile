@@ -15,8 +15,9 @@ interface SectionHeaderProps {
 /** Editorial section title with an optional "Ver todo" — no box around the section. */
 export function SectionHeader({ title, actionLabel, onAction, style }: SectionHeaderProps) {
   return (
-    <View style={[{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }, style]}>
-      <AppText accessibilityRole="header" style={{ fontFamily: fontFamily.heading, fontSize: 20, letterSpacing: -0.2 }}>
+    <View style={[{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }, style]}>
+      {/* flex:1 gives the title every pixel the action doesn't use — long English titles wrap instead of clipping. */}
+      <AppText accessibilityRole="header" style={{ flex: 1, fontFamily: fontFamily.heading, fontSize: 20, letterSpacing: -0.2 }}>
         {title}
       </AppText>
       {actionLabel && onAction ? (
@@ -27,7 +28,7 @@ export function SectionHeader({ title, actionLabel, onAction, style }: SectionHe
           hitSlop={12}
           accessibilityRole="button"
           accessibilityLabel={`${actionLabel}: ${title}`}
-          style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
+          style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44, flexShrink: 0 }}>
           <AppText variant="caption" tone="gold">
             {actionLabel}
           </AppText>

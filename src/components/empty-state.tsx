@@ -68,7 +68,8 @@ export function EmptyState({
         />
         <Icon size={compact ? 24 : 32} color={colors.accent} strokeWidth={1.6} />
       </Animated.View>
-      <AppText variant="subtitle" align="center" accessibilityRole="header">
+      {/* Stretched (not shrink-wrapped): an auto-width single line can come up a hair short on Android and drop its last word. */}
+      <AppText variant="subtitle" align="center" accessibilityRole="header" style={{ alignSelf: 'stretch' }}>
         {title}
       </AppText>
       <AppText variant="body" tone="muted" align="center" style={{ maxWidth: 320 }}>
